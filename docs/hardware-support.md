@@ -27,6 +27,8 @@ The second physical backend for the semantic `lamp` contract is implemented over
 - **Physical Verification:** **PENDING** — physical bench tests with physical Modbus Remote I/O units or PLCs are tracked in [`hardware/records/2026-09-05-modbus-lamp-pending.md`](../hardware/records/2026-09-05-modbus-lamp-pending.md).
 - **Documentation:** See [`docs/lamp-modbus.md`](lamp-modbus.md) for coil actuation, discrete input observation, and watchdog safety details.
 
+SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT (`pinout/mqtt-bridge`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
+
 ## Flashing Policy: Never Auto-Flash Unidentified Hardware
 
 Pinout enforces a strict safety boundary around device flashing:

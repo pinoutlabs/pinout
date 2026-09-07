@@ -37,3 +37,8 @@ export {
   type ModbusLampConfig,
   type ValidatedModbusLampConfig,
 } from './lampBackend.js';
+export {
+  RegisterMapDeviceBackend,
+  createRegisterMapBackend,
+  type RegisterMapBackendOptions,
+} from './registerMapBackend.js';

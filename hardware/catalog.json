@@ -89,16 +89,16 @@
       "target": "SCPI instruments (serial/TCP)",
       "integration": "@pinout/protocols-scpi",
       "status": "IMPLEMENTED",
-      "testedHow": "scripted loopback transport tests; exact-command assertions per instrument class",
-      "notes": "Power supply, DMM, function generator classes; conservative oscilloscope subset. Vendor-specific acquisition not implemented."
+      "testedHow": "scripted loopback transport tests; exact-command assertions per instrument class; ScpiPowerSupplyBackend simulator tests including PinoutRuntime module registration",
+      "notes": "Power supply, DMM, function generator classes; conservative oscilloscope subset. Simulated DeviceBackend/module `pinout/scpi-power-supply` is registered for runtime use. Vendor-specific acquisition not implemented. Not HARDWARE_VERIFIED."
     },
     {
       "category": "protocol",
       "target": "MQTT",
       "integration": "@pinout/protocols-mqtt MQTT 3.1.1 client + declarative topic\u2192capability mapping",
-      "status": "IMPLEMENTED",
-      "testedHow": "unit and regression tests with scripted broker traffic",
-      "notes": "Adapter package only: it is not yet a configured runtime device backend or a physical-equipment verification."
+      "status": "SIMULATED",
+      "testedHow": "unit and regression tests with in-process broker simulator; MqttBackend runtime DeviceBackend publish/ingest tests",
+      "notes": "Simulated DeviceBackend/module `pinout/mqtt-bridge` is registerable on PinoutRuntime. MQTT 3.1.1 client + declarative topic\u2192capability mapping remain unit-tested. Not a physical-equipment verification; never HARDWARE_VERIFIED."
     },
     {
       "category": "protocol",
@@ -161,8 +161,8 @@
       "target": "GRBL / CNC class",
       "integration": "@pinout/protocols-grbl",
       "status": "IMPLEMENTED",
-      "testedHow": "deterministic GRBL simulator (status, homing, motion, soft limits, typed errors)",
-      "notes": "Simulator-tested only. Physical CNC requires independent hardware safeguards; never HARDWARE_VERIFIED without a dated hardware record."
+      "testedHow": "deterministic GRBL simulator (status, homing, motion, soft limits, typed errors); GrblBackend DeviceBackend module registration tests",
+      "notes": "Simulated DeviceBackend/module `pinout/grbl` is registerable on PinoutRuntime. Simulator-tested only. Physical CNC requires independent hardware safeguards; never HARDWARE_VERIFIED without a dated hardware record."
     },
     {
       "category": "robotics",

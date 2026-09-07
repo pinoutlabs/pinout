@@ -1,5 +1,7 @@
 import { maxProtocolLineBytes } from './protocol.js';
 
+const textEncoder = new TextEncoder();
+
 export interface ReadLinesOptions {
   onOversize?: (length: number) => void;
 }
@@ -46,5 +48,5 @@ export async function* readLines(
 }
 
 export function encodeLine(text: string): Uint8Array {
-  return new TextEncoder().encode(text.endsWith('\n') ? text : `${text}\n`);
+  return textEncoder.encode(text.endsWith('\n') ? text : `${text}\n`);
 }

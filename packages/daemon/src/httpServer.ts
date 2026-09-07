@@ -36,6 +36,7 @@ import {
   type LeaseScopeInput,
   type LeaseMode,
   type ReconciliationResolution,
+  runtimeToAgentTools,
 } from '@pinout/core';
 
 export interface DaemonConfig {
@@ -402,8 +403,49 @@ export class DaemonHttpServer {
 
   private registerRoutes(): void {
     // -- Devices ------------------------------------------------------------
-    this.route('GET', '/v1/devices', async (c, _req, res) => {
-      sendJson(res, 200, { devices: c.runtime.devices() });
+    this.route('GET', '/v1/devices', async (c, req, res) => {
+      const includeCapabilities = parseInclude(req).has('capabilities');
+      if (!includeCapabilities) {
+        sendJson(res, 200, { devices: c.runtime.devices() });
+        return;
+      }
+      sendJson(res, 200, {
+        devices: c.runtime.devices().map((summary) => {
+          const device = c.runtime.getDevice(summary.id);
+          return {
+            ...summary,
+            capabilityDescriptors: device.capabilities,
+          };
+        }),
+      });
+    });
+
+    this.route('GET', '/v1/tools', async (c, _req, res) => {
+      sendJson(res, 200, {
+        tools: runtimeToAgentTools(c.runtime).map((tool) => ({
+          deviceId: tool.deviceId,
+          capability: tool.capability,
+          mcpName: tool.mcpName,
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+          outputSchema: tool.outputSchema,
+          annotations: tool.annotations,
+        })),
+      });
+    });
+
+    this.route('GET', '/v1/snapshot', async (c, _req, res) => {
+      sendJson(res, 200, {
+        ok: true,
+        uptimeMs: Date.now() - c.startedAt,
+        safety: c.halt.state,
+        reason: c.halt.reason,
+        estopRequested: c.halt.isEstopRequested,
+        devices: c.runtime.devices().map((summary) => {
+          return snapshotDevice(c.runtime.getDevice(summary.id));
+        }),
+      });
     });
 
     this.route('GET', '/v1/devices/:id', async (c, _req, res, match) => {
@@ -845,6 +887,27 @@ export class DaemonHttpServer {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function parseInclude(req: IncomingMessage): Set<string> {
+  const url = new URL(req.url ?? '/', 'http://localhost');
+  return new Set(
+    (url.searchParams.get('include') ?? '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0),
+  );
+}
+
+function snapshotDevice(device: ReturnType<PinoutRuntime['getDevice']>): Record<string, unknown> {
+  return {
+    ...deviceSummary(device),
+    capabilities: device.capabilityNames(),
+    capabilityDescriptors: device.capabilities,
+    operationalState: device.getOperationalStateSnapshot(),
+    stateEvidence: device.getStateEvidence(),
+    health: device.getHealth(),
+  };
+}
 
 function deviceSummary(device: ReturnType<PinoutRuntime['getDevice']>): Record<string, unknown> {
   const health = device.getHealth();

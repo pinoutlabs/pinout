@@ -39,6 +39,10 @@ class CapturingLogger implements Logger {
   child(): Logger {
     return this;
   }
+
+  isEnabled(): boolean {
+    return true;
+  }
 }
 
 interface EchoServer {

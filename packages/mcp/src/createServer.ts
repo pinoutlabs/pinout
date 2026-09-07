@@ -62,7 +62,7 @@ export function createPinoutMcpServer(device: Device): Server {
     try {
       const result = await runtime.invoke(deviceId, tool.name, args, { owner: 'mcp-stdio' });
       return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
         structuredContent: result,
       };
     } catch (error) {

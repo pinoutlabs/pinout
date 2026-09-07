@@ -24,6 +24,12 @@ reversibility, and lease requirements. `_pinout.idempotencyKey` is the retry
 boundary; never retry a physical action under a new key unless a fresh action
 is intended.
 
+`pinout__snapshot` returns safety plus every device's identity, health,
+operational state, and `stateEvidence` in one call — prefer it over list + N
+describe + N state. Tool results use compact JSON (`structuredContent` already
+holds the object). Capability invokes parse the MCP tool name and POST
+`/v1/devices/:id/invoke` without re-listing tools.
+
 ## Evidence-qualified state and the honesty rule
 
 Tools returning device state (`pinout__describe_device` and `pinout__read_state`) expose structured `stateEvidence` alongside legacy `operationalState`/`state` dictionaries. State evidence breaks down state into:

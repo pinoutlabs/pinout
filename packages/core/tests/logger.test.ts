@@ -20,7 +20,10 @@ describe('createLogger', () => {
   it('suppresses debug when level is info', () => {
     const info = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     try {
-      createLogger('info').debug('hidden', { action: 'gpio.write' });
+      const logger = createLogger('info');
+      expect(logger.isEnabled('debug')).toBe(false);
+      expect(logger.isEnabled('info')).toBe(true);
+      logger.debug('hidden', { action: 'gpio.write' });
       expect(info).not.toHaveBeenCalled();
     } finally {
       info.mockRestore();

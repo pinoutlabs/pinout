@@ -1,7 +1,7 @@
 import { DeviceError } from '../errors.js';
 import type { PolicyRule } from '../policy/types.js';
 import type { CapabilityDescriptor } from '../types.js';
-import type { StatePrerequisite } from '../spec/evidence.js';
+import type { EvidenceState, StatePrerequisite } from '../spec/evidence.js';
 import type { DeviceBackend, RuntimeEventEnvelope } from './types.js';
 import { DeviceInstance } from './deviceInstance.js';
 
@@ -89,6 +89,84 @@ export class CompositeDeviceBackend implements DeviceBackend {
     return state;
   }
 
+  getOperationalStateEvidence(): Record<string, EvidenceState<unknown>> {
+    const evidence: Record<string, EvidenceState<unknown>> = {};
+    for (const [driverName, driver] of Object.entries(this.drivers)) {
+      if (!driver.getOperationalStateEvidence) continue;
+      const driverEvidence = driver.getOperationalStateEvidence();
+      for (const [key, value] of Object.entries(driverEvidence)) {
+        evidence[`${driverName}.${key}`] = value;
+      }
+    }
+    return evidence;
+  }
+
+  async safeState(): Promise<Record<string, unknown>> {
+    const driversWithSafeState = Object.entries(this.drivers).filter(
+      ([, driver]) => driver.safeState !== undefined,
+    );
+    const results = await Promise.all(
+      driversWithSafeState.map(async ([driverName, driver]) => {
+        const result = await driver.safeState!();
+        return [driverName, result ?? { applied: true }] as const;
+      }),
+    );
+    return Object.fromEntries(results);
+  }
+
+  /**
+   * Invoke several routed capabilities. Actions on *different* drivers run in
+   * parallel; actions that share a driver run serially in call order.
+   * Unknown capabilities throw UNKNOWN_ACTION before any driver is invoked.
+   * Single {@link invoke} semantics are unchanged.
+   */
+  async invokeIndependent(
+    actions: Array<{ capability: string; payload: Record<string, unknown> }>,
+  ): Promise<Record<string, unknown>[]> {
+    if (this.closed) throw new DeviceError('DISCONNECTED', 'Composite device is closed.');
+    const planned: Array<{
+      index: number;
+      driverName: string;
+      action: string;
+      payload: Record<string, unknown>;
+    }> = [];
+    for (let index = 0; index < actions.length; index += 1) {
+      const item = actions[index]!;
+      const route = this.routes[item.capability];
+      if (!route) {
+        throw new DeviceError('UNKNOWN_ACTION', `No driver route for '${item.capability}'.`);
+      }
+      const driver = this.drivers[route.driver];
+      if (!driver) {
+        throw new DeviceError('DEVICE_ERROR', `Composite driver '${route.driver}' is unavailable.`);
+      }
+      planned.push({
+        index,
+        driverName: route.driver,
+        action: route.action ?? item.capability,
+        payload: item.payload,
+      });
+    }
+
+    const byDriver = new Map<string, typeof planned>();
+    for (const item of planned) {
+      const list = byDriver.get(item.driverName) ?? [];
+      list.push(item);
+      byDriver.set(item.driverName, list);
+    }
+
+    const results: Record<string, unknown>[] = new Array(actions.length);
+    await Promise.all(
+      [...byDriver.entries()].map(async ([driverName, items]) => {
+        const driver = this.drivers[driverName]!;
+        for (const item of items) {
+          results[item.index] = await driver.invoke(item.action, item.payload);
+        }
+      }),
+    );
+    return results;
+  }
+
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
@@ -171,10 +249,11 @@ export function createCompositeDevice(options: CreateCompositeDeviceOptions): De
       ...new Set(Object.values(options.drivers).map((driver) => driver.kind)),
     ],
     getOperationalState: () => backend.getOperationalState?.() ?? {},
+    getOperationalStateEvidence: backend.getOperationalStateEvidence
+      ? () => backend.getOperationalStateEvidence!()
+      : undefined,
     prerequisites: options.prerequisites,
     maxStateAgeMs: options.maxStateAgeMs,
     ...(options.onRuntimeEvent ? { onRuntimeEvent: options.onRuntimeEvent } : {}),
   });
 }
-
-/** Convenience descriptor for applications that expose a composite as a module. */

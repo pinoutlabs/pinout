@@ -1,17 +1,36 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { PinoutRuntime } from '@pinout/core';
-import { PINOUT_VERSION, runtimeToAgentTools, type RuntimeAgentTool } from '@pinout/core';
+import {
+  parseMcpToolName,
+  PINOUT_VERSION,
+  runtimeToAgentTools,
+  type RuntimeAgentTool,
+} from '@pinout/core';
 
 const listDevicesToolName = 'pinout__list_devices';
 const describeDeviceToolName = 'pinout__describe_device';
 const readStateToolName = 'pinout__read_state';
 const safetyStatusToolName = 'pinout__safety_status';
+const snapshotToolName = 'pinout__snapshot';
 const acquireLeaseToolName = 'pinout__acquire_lease';
 const releaseLeaseToolName = 'pinout__release_lease';
 const dryRunToolName = 'pinout__dry_run';
 const operationStatusToolName = 'pinout__operation_status';
 const cancelOperationToolName = 'pinout__cancel_operation';
+
+const reservedControlPlaneNames = new Set([
+  listDevicesToolName,
+  describeDeviceToolName,
+  readStateToolName,
+  safetyStatusToolName,
+  snapshotToolName,
+  acquireLeaseToolName,
+  releaseLeaseToolName,
+  dryRunToolName,
+  operationStatusToolName,
+  cancelOperationToolName,
+]);
 
 export interface RuntimeMcpServerOptions {
   /** Principal associated with this MCP transport for lease-aware policies. */
@@ -27,8 +46,21 @@ export function createRuntimeMcpServer(
     { capabilities: { tools: {} } },
   );
 
+  let cachedToolsKey = '';
+  let cachedRuntimeTools: RuntimeAgentTool[] = [];
+
+  function getRuntimeTools(): RuntimeAgentTool[] {
+    const key = runtimeToolsCacheKey(runtime);
+    if (key === cachedToolsKey) {
+      return cachedRuntimeTools;
+    }
+    cachedRuntimeTools = runtimeTools(runtime);
+    cachedToolsKey = key;
+    return cachedRuntimeTools;
+  }
+
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [...controlPlaneTools(), ...runtimeTools(runtime).map(toMcpTool)],
+    tools: [...controlPlaneTools(), ...getRuntimeTools().map(toMcpTool)],
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -76,6 +108,9 @@ export function createRuntimeMcpServer(
     if (request.params.name === safetyStatusToolName) {
       return success({ state: runtime.halt.state });
     }
+    if (request.params.name === snapshotToolName) {
+      return success(embeddedSnapshot(runtime));
+    }
     // These control-plane tools are intentionally capability-discovery tools
     // until a daemon-backed manager is supplied. Embedded runtimes can expose
     // compatible manager methods without making MCP reach into device backends.
@@ -95,11 +130,20 @@ export function createRuntimeMcpServer(
       });
     }
 
-    // Resolve on every call so devices registered after server creation are visible.
-    const tools = runtimeTools(runtime);
-    const toolByName = new Map(tools.map((tool) => [tool.mcpName, tool]));
-    const tool = toolByName.get(request.params.name);
-    if (!tool) {
+    const parsed = parseMcpToolName(request.params.name);
+    let deviceId: string | undefined;
+    let capability: string | undefined;
+    if (parsed) {
+      deviceId = parsed.deviceId;
+      capability = parsed.capability;
+    } else {
+      const tool = getRuntimeTools().find((candidate) => candidate.mcpName === request.params.name);
+      if (tool) {
+        deviceId = tool.deviceId;
+        capability = tool.capability;
+      }
+    }
+    if (!deviceId || !capability) {
       return {
         isError: true,
         content: [{ type: 'text', text: `Unknown tool '${request.params.name}'.` }],
@@ -109,7 +153,7 @@ export function createRuntimeMcpServer(
     const args = { ...((request.params.arguments ?? {}) as Record<string, unknown>) };
     delete args._pinout;
     try {
-      const result = await runtime.invoke(tool.deviceId, tool.capability, args, {
+      const result = await runtime.invoke(deviceId, capability, args, {
         owner: options.owner ?? 'mcp-stdio',
       });
       return success(result);
@@ -123,6 +167,26 @@ export function createRuntimeMcpServer(
 
 export function controlPlaneTools() {
   return [
+    {
+      name: snapshotToolName,
+      description:
+        'Read safety plus every device identity, health, operational state, and stateEvidence in one call. Prefer this over list + N describe + N state.',
+      inputSchema: { type: 'object' as const, additionalProperties: false, properties: {} },
+      outputSchema: {
+        type: 'object' as const,
+        required: ['safety', 'devices'],
+        properties: {
+          safety: {},
+          devices: { type: 'array', items: { type: 'object' } },
+        },
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        title: 'Snapshot Pinout runtime',
+      },
+    },
     {
       name: readStateToolName,
       description:
@@ -322,14 +386,40 @@ export function controlPlaneTools() {
 
 function runtimeTools(runtime: PinoutRuntime): RuntimeAgentTool[] {
   const tools = runtimeToAgentTools(runtime);
-  const reserved = new Set([listDevicesToolName, describeDeviceToolName]);
-  const conflict = tools.find((tool) => reserved.has(tool.mcpName));
+  const conflict = tools.find((tool) => reservedControlPlaneNames.has(tool.mcpName));
   if (conflict) {
     throw new Error(
       `Runtime tool '${conflict.mcpName}' conflicts with a reserved Pinout control-plane tool.`,
     );
   }
   return tools;
+}
+
+function runtimeToolsCacheKey(runtime: PinoutRuntime): string {
+  return runtime
+    .devices()
+    .map((summary) => {
+      const device = runtime.getDevice(summary.id);
+      return `${summary.id}:${device.capabilities.length}`;
+    })
+    .join('\0');
+}
+
+function embeddedSnapshot(runtime: PinoutRuntime): Record<string, unknown> {
+  const devices = runtime.devices().map((summary) => {
+    const device = runtime.getDevice(summary.id);
+    return {
+      identity: device.identity,
+      health: device.getHealth(),
+      simulated: device.simulated,
+      activeTransportKind: device.activeTransportKind,
+      supportedTransportKinds: device.transportKinds,
+      operationalState: device.getOperationalStateSnapshot(),
+      stateEvidence: device.getStateEvidence(),
+      capabilities: device.capabilities,
+    };
+  });
+  return { safety: runtime.halt.state, devices };
 }
 
 export function createPinoutMcpServerFromRuntime(runtime: PinoutRuntime): Server {
@@ -395,7 +485,7 @@ function describeCapability(tool: RuntimeAgentTool): string {
 
 export function success(result: Record<string, unknown>) {
   return {
-    content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+    content: [{ type: 'text' as const, text: JSON.stringify(result) }],
     structuredContent: result,
   };
 }
@@ -414,17 +504,13 @@ export function formatToolError(error: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(
-            {
-              code: record.code,
-              message: record.message,
-              retryable: record.retryable ?? false,
-              ...(record.operationId ? { operationId: record.operationId } : {}),
-              ...(record.metadata ? { details: record.metadata } : {}),
-            },
-            null,
-            2,
-          ),
+          text: JSON.stringify({
+            code: record.code,
+            message: record.message,
+            retryable: record.retryable ?? false,
+            ...(record.operationId ? { operationId: record.operationId } : {}),
+            ...(record.metadata ? { details: record.metadata } : {}),
+          }),
         },
       ],
     };

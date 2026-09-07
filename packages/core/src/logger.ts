@@ -21,6 +21,7 @@ export interface Logger {
   warn(message: string, context?: LogContext): void;
   error(message: string, context?: LogContext): void;
   child(context: LogContext): Logger;
+  isEnabled(level: LogLevel): boolean;
 }
 
 export function createLogger(level: LogLevel = 'info', baseContext: LogContext = {}): Logger {
@@ -53,8 +54,12 @@ class ConsoleLogger implements Logger {
     return new ConsoleLogger(this.level, { ...this.baseContext, ...context });
   }
 
+  isEnabled(level: LogLevel): boolean {
+    return levelRank[level] >= levelRank[this.level];
+  }
+
   private write(level: LogLevel, message: string, context?: LogContext): void {
-    if (levelRank[level] < levelRank[this.level]) {
+    if (!this.isEnabled(level)) {
       return;
     }
 

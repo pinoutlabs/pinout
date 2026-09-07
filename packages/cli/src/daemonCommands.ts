@@ -16,12 +16,18 @@ function daemonUrl(program: Command): string {
   return opts.url ?? process.env.PINOUT_DAEMON_URL ?? process.env.PINOUT_URL ?? DEFAULT_DAEMON_URL;
 }
 
-async function call(
+interface DaemonHttpResponse {
+  status: number;
+  ok: boolean;
+  payload: Record<string, unknown>;
+}
+
+async function requestDaemon(
   program: Command,
   method: string,
   path: string,
   body?: unknown,
-): Promise<unknown> {
+): Promise<DaemonHttpResponse> {
   const url = `${daemonUrl(program)}${path}`;
   let response: Response;
   try {
@@ -41,13 +47,37 @@ async function call(
     );
   }
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!response.ok) {
-    const error = payload.error as { code?: string; message?: string } | undefined;
-    throw new Error(
-      `Daemon error ${response.status} [${error?.code ?? 'UNKNOWN'}]: ${error?.message ?? 'request failed'}`,
-    );
+  return { status: response.status, ok: response.ok, payload };
+}
+
+function throwIfDaemonError(response: DaemonHttpResponse): Record<string, unknown> {
+  if (response.ok) {
+    return response.payload;
   }
-  return payload;
+  const error = response.payload.error as { code?: string; message?: string } | undefined;
+  throw new Error(
+    `Daemon error ${response.status} [${error?.code ?? 'UNKNOWN'}]: ${error?.message ?? 'request failed'}`,
+  );
+}
+
+async function call(
+  program: Command,
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<unknown> {
+  return throwIfDaemonError(await requestDaemon(program, method, path, body));
+}
+
+async function fetchDaemonStatus(program: Command): Promise<unknown> {
+  const snapshot = await requestDaemon(program, 'GET', '/v1/snapshot');
+  if (snapshot.ok) {
+    return snapshot.payload;
+  }
+  if (snapshot.status === 404) {
+    return call(program, 'GET', '/v1/health');
+  }
+  return throwIfDaemonError(snapshot);
 }
 
 export function registerDaemonCommands(program: Command, outputFor: OutputFactory): void {
@@ -64,9 +94,7 @@ export function registerDaemonCommands(program: Command, outputFor: OutputFactor
     .command('status')
     .description('Show daemon health, safety state, and device count.')
     .action(async () => {
-      const output = out();
-      output.log(await call(program, 'GET', '/v1/health'));
-      output.log(await call(program, 'GET', '/v1/safety'));
+      out().log(await fetchDaemonStatus(program));
     });
 
   program

@@ -235,6 +235,7 @@ export {
   runtimeToAgentTools,
   deviceToRuntimeAgentTools,
   buildMcpToolName,
+  parseMcpToolName,
   type RuntimeAgentTool,
 } from './runtime/agentTools.js';
 export { runtimeToToolDefinitions, classifyToolDanger } from './runtime/toolExport.js';

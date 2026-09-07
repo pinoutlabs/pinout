@@ -12,6 +12,8 @@ import { encodeRequest, maxProtocolLineBytes, parseDeviceInfo, parseLine } from 
 import type { ProtocolEvent, ProtocolResponse } from './protocol.js';
 import type { DeviceInfo, RequestOptions, Transport } from './types.js';
 
+const textEncoder = new TextEncoder();
+
 interface PendingRequest {
   resolve: (response: ProtocolResponse) => void;
   reject: (error: Error) => void;
@@ -28,6 +30,7 @@ export class Session {
   private readonly eventListeners = new Set<SessionEventListener>();
   private readonly logger: Logger;
   private readonly sessionId = randomUUID();
+  private nextRequestId = 0;
   private readerTask: Promise<void> | undefined;
   private open = false;
   private closed = false;
@@ -96,8 +99,10 @@ export class Session {
     }
 
     const timeoutMs = options.timeoutMs ?? this.timeoutMs;
-    const id = randomUUID();
-    this.logger.debug('request', { requestId: id, action });
+    const id = `${this.sessionId}:${this.nextRequestId++}`;
+    if (this.logger.isEnabled('debug')) {
+      this.logger.debug('request', { requestId: id, action });
+    }
     const response = await new Promise<ProtocolResponse>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.finishPending(id);
@@ -117,7 +122,7 @@ export class Session {
       this.pending.set(id, pending);
 
       this.transport
-        .write(new TextEncoder().encode(encodeRequest(id, action, payload)))
+        .write(textEncoder.encode(encodeRequest(id, action, payload)))
         .catch((error: unknown) => {
           this.finishPending(id);
           reject(

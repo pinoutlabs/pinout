@@ -95,6 +95,7 @@ describe('@pinout/mcp stdio subprocess lifecycle', () => {
     expect(toolNames).toContain('pinout__describe_device');
     expect(toolNames).toContain('pinout__acquire_lease');
     expect(toolNames).toContain('pinout__read_state');
+    expect(toolNames).toContain('pinout__snapshot');
 
     // 2. Describe device
     const describeResult = await session.client.callTool({

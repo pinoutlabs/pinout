@@ -38,6 +38,7 @@ const silentLogger: Logger = {
   warn: () => undefined,
   error: () => undefined,
   child: () => silentLogger,
+  isEnabled: () => false,
 };
 
 class NodeWebSocketTransport implements Transport {

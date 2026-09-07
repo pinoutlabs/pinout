@@ -45,7 +45,9 @@ Clients interacting with `pinoutd` (CLI daemon commands, Python SDK, MCP adapter
 | Route | Purpose |
 | --- | --- |
 | `GET /v1/health` | Readiness, safety state, device count |
-| `GET /v1/devices` | Device summaries |
+| `GET /v1/snapshot` | One-shot health + safety + per-device state (capabilities, evidence, health) |
+| `GET /v1/tools` | MCP-ready capability tools for every registered device |
+| `GET /v1/devices` | Device summaries (`?include=capabilities` adds `capabilityDescriptors`) |
 | `GET /v1/devices/:id` | Device detail: capabilities + operational state |
 | `GET /v1/devices/:id/state` | Operational state + health |
 | `POST /v1/devices/:id/invoke` | Invoke a capability (see below) |

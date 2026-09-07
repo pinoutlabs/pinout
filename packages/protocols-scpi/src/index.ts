@@ -34,3 +34,12 @@ export type {
   ScpiWaveformMetadata,
   WaveformDataFormat,
 } from './instruments/oscilloscope.js';
+export { ScpiPsuSimulator, createScpiPsuSimulator } from './simulator.js';
+export type { ScpiPsuChannelState, ScpiPsuSimulatorOptions } from './simulator.js';
+export { ScpiPowerSupplyBackend, createScpiPowerSupplyBackend } from './powerSupplyBackend.js';
+export type { ScpiPowerSupplyBackendOptions } from './powerSupplyBackend.js';
+export {
+  scpiPowerSupplyModule,
+  scpiPowerSupplyModuleId,
+  scpiPowerSupplyCapabilities,
+} from './powerSupplyModule.js';

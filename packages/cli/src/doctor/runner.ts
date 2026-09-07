@@ -3,6 +3,7 @@ import type {
   DoctorDependencies,
   DoctorOptions,
   DoctorReport,
+  DoctorStage,
   DoctorSummary,
 } from './types.js';
 import type { CliOutput } from '../output.js';
@@ -14,32 +15,46 @@ import { checkConfiguration } from './configuration.js';
 import { checkSimulator } from './simulator.js';
 import { renderDoctorReport } from './formatter.js';
 
+const stageOrder: DoctorStage[] = [
+  'environment',
+  'daemon',
+  'discovery',
+  'firmware',
+  'configuration',
+  'simulator',
+];
+
+function orderedChecks(checks: DoctorCheckResult[]): DoctorCheckResult[] {
+  return stageOrder.flatMap((stage) => checks.filter((check) => check.stage === stage));
+}
+
 export async function evaluateDoctor(
   options: DoctorOptions = {},
   deps: DoctorDependencies = {},
 ): Promise<DoctorReport> {
-  const checks: DoctorCheckResult[] = [];
+  const environmentChecks: DoctorCheckResult[] = [
+    checkNodeVersion(deps),
+    checkPinoutHome(deps),
+    checkEnvironmentVariables(deps),
+  ];
 
-  // Stage 1: Environment
-  checks.push(checkNodeVersion(deps));
-  checks.push(checkPinoutHome(deps));
-  checks.push(checkEnvironmentVariables(deps));
+  const discoveryTask = checkDiscovery(options, deps);
+  const daemonTask = checkDaemon(options, deps);
+  const simulatorTask = checkSimulator(deps);
+  const firmwareTask = discoveryTask.then(({ ports }) => checkFirmware(options, deps, ports));
+  const configurationTask = discoveryTask.then(({ ports }) => checkConfiguration(deps, ports));
 
-  // Stage 2: Daemon
-  checks.push(await checkDaemon(options, deps));
+  const [daemonCheck, discoveryResult, firmwareCheck, configurationChecks, simulatorCheck] =
+    await Promise.all([daemonTask, discoveryTask, firmwareTask, configurationTask, simulatorTask]);
 
-  // Stage 3: Serial & Board Discovery
-  const { checks: discoveryChecks, ports } = await checkDiscovery(options, deps);
-  checks.push(...discoveryChecks);
-
-  // Stage 4: Firmware Identity (non-actuating handshake)
-  checks.push(await checkFirmware(options, deps, ports));
-
-  // Stage 5: Configuration & Registry
-  checks.push(...checkConfiguration(deps, ports));
-
-  // Stage 6: Baseline Simulator Handshake
-  checks.push(await checkSimulator(deps));
+  const checks = orderedChecks([
+    ...environmentChecks,
+    daemonCheck,
+    ...discoveryResult.checks,
+    firmwareCheck,
+    ...configurationChecks,
+    simulatorCheck,
+  ]);
 
   // Calculate Summary
   const passed = checks.filter((check) => check.status === 'pass').length;
