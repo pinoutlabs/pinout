@@ -1,0 +1,35 @@
+benchmarks/watchdog-2026-09-09.json
+  s_1538c50f55299b::t_4c817f794175c7 1-596
+package.json
+  s_1538c50f55299b::t_5f229acff8c0bd 52-53
+scripts/benchmark-watchdog.ts
+  s_a8335836ef95b5::t_6d0e0cb214fc73 1-8,10-92,94-96,102-170
+  s_a8335836ef95b5::t_61e79348ccc7df 9,93,97-101
+docs/testing.md
+  s_1538c50f55299b::t_987049f3b7450e 75-76
+  s_1538c50f55299b::t_1f83c043cceb2a 66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6288bea6b044cd2ff00d847fb5a928af7564ea2a",
+  "prompts": {},
+  "sessions": {
+    "s_1538c50f55299b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f783fb326ffeZFyEUQZssLw96T",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    },
+    "s_a8335836ef95b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08752-dcb0-7cb1-8f65-498603c2a897",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
