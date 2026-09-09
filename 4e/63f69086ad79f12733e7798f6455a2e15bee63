@@ -1,0 +1,19 @@
+package.json
+  s_1ca86f4d7e6b37::t_8712e18ee913ea 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4e63f69086ad79f12733e7798f6455a2e15bee63",
+  "prompts": {},
+  "sessions": {
+    "s_1ca86f4d7e6b37": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08754-fa25-7a61-a4db-b322e9f0189e",
+        "model": "unknown"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
