@@ -5,6 +5,7 @@ fixtures/protocol/v1/README.md
 packages/core/tests/protocolVectors.test.ts
   s_a8335836ef95b5::t_8104fce7c9798d 4,6-7,40-94,96-102
   s_a8335836ef95b5::t_437349f60aca0f 103-106
+  s_852b057a54d99a::t_4649e00ed8b6ed 12-15
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -12,6 +13,14 @@ packages/core/tests/protocolVectors.test.ts
   "base_commit_sha": "dac568490ca479c8e5ecbfb46235c193f4f56bf0",
   "prompts": {},
   "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    },
     "s_a8335836ef95b5": {
       "agent_id": {
         "tool": "codex",
