@@ -64,10 +64,14 @@ See [docs/testing.md](docs/testing.md). Put tests under `packages/<name>/tests`.
 
 Do not mock away the protocol just to assert that a mock was called.
 
-Firmware compile (`pio run` in `firmware/esp32-bridge`) is optional locally. The
-selected CI run compiles the reference classic target and uploads its artifacts;
-the experimental C3 target is compiled only by the manual release-candidate
-workflow.
+Firmware compile is optional locally, but a green classic compile is required
+before firmware PRs merge. From `firmware/esp32-bridge` run `pio run -e esp32dev`
+(plain `pio run` also builds classic only via `default_envs`). The gated CI
+`firmware` job runs that same command compile-only — never `-t upload`, no
+secrets — once a maintainer applies `ci:run` or dispatches the workflow, and it
+uploads the `.bin`/`.elf` as artifacts. The experimental C3 target
+(`esp32-c3-supermini`) stays out of the default path and is compiled only by the
+manual release workflow.
 
 ## Hardware
 
