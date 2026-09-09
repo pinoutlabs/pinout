@@ -34,6 +34,7 @@ export function attachStreamSockets(
     maxPayload: 1024,
     perMessageDeflate: false,
   });
+  const subscriptions = new Map<WebSocket, () => void>();
   const reject = (socket: Duplex, status: string): void => {
     socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
   };
@@ -53,7 +54,11 @@ export function attachStreamSockets(
       sockets.handleUpgrade(request, socket, head, (ws) => {
         // Only one queued frame plus one send may be retained per connection.
         const subscription = streams.subscribe(streamId, { bufferSize: 1, policy: 'latest-only' });
-        const cleanup = (): void => subscription.close();
+        const cleanup = (): void => {
+          subscription.close();
+          subscriptions.delete(ws);
+        };
+        subscriptions.set(ws, cleanup);
         ws.on('close', cleanup);
         ws.on('error', cleanup);
         ws.on('message', () => ws.close(1008, 'This stream is read-only.'));
@@ -96,6 +101,9 @@ export function attachStreamSockets(
     }
   });
   return () => {
+    // Release subscribers synchronously; socket close events may arrive after
+    // the HTTP server's close callback, especially on Windows.
+    for (const cleanup of subscriptions.values()) cleanup();
     for (const socket of sockets.clients) socket.terminate();
     sockets.close();
   };
