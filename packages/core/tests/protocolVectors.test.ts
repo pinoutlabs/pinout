@@ -9,10 +9,8 @@ import { simulatedEsp32 } from '../src/drivers/esp32/simulatedTransport.js';
 const vectorPath = join(process.cwd(), 'fixtures', 'protocol', 'v1', 'messages.jsonl');
 
 describe('protocol v1 golden vectors', () => {
-  const lines = readFileSync(vectorPath, 'utf8')
-    .trim()
-    .split(/\r?\n/)
-    .filter((line) => !line.startsWith('{"fixture":'));
+  const records = readFileSync(vectorPath, 'utf8').trim().split(/\r?\n/);
+  const lines = records.filter((line) => !line.startsWith('{"fixture":'));
   it('decodes every shared wire vector', () => {
     for (const line of lines) expect(decodeLine(line).kind).toBe('message');
   });
@@ -69,8 +67,9 @@ describe('protocol v1 golden vectors', () => {
 
   it('rejects an unknown action before it can change simulated GPIO state', async () => {
     const fixture = records
-      .map((line) => JSON.parse(line) as Record<string, unknown>)
-      .find((record) => record.fixture === 'unknown-action') as MalformedFixture;
+      .map((line) => JSON.parse(line) as MalformedFixture)
+      .find((record) => record.fixture === 'unknown-action');
+    if (!fixture) throw new Error('missing unknown-action fixture');
     const transport = simulatedEsp32({ autoArm: true });
     await transport.open();
     const before = [...transport.state.levels.entries()];
