@@ -23,6 +23,34 @@ the duration expires. A stop cancels pending pulse expirations and leaves those 
 
 See [docs/protocol.md](../../docs/protocol.md) for the message format.
 
+## Protocol vector check
+
+The host and firmware share golden protocol vectors in
+`fixtures/protocol/v1/messages.jsonl`. When a message or action changes, use
+this sequence to keep the wire contract aligned:
+
+1. Update the canonical protocol schema and host parser/encoder.
+2. Update the JSONL vectors with the expected request, response, or event.
+3. Update the simulator and `src/main.cpp` firmware handler together.
+4. Run the host-side vector test from the repository root:
+
+   ```bash
+   npm test -- packages/core/tests/protocolVectors.test.ts
+   ```
+
+5. Compile the classic target without uploading it:
+
+   ```bash
+   cd firmware/esp32-bridge
+   pio run -e esp32dev
+   ```
+
+The vector test is host-only and does not require a board. A successful
+PlatformIO run is compile evidence; it does not flash or establish
+hardware-in-the-loop evidence. For physical verification, follow the
+[ESP32 Classic HIL procedure](../../scripts/hil/esp32-classic.md) and add a
+dated record under `hardware/records/`.
+
 ## Hardware & Reference Circuit
 
 Tested against classic ESP32 DevKit boards (WROOM / 30-pin, `firmware/boards/esp32-devkit-v1.json`). The onboard LED is usually **GPIO 2**.

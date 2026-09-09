@@ -4,6 +4,60 @@ Pinout devices expose **capabilities** — named actions with JSON Schema inputs
 
 The catalog below matches `@pinout/core` descriptors and the ESP32 bridge firmware. Simulator and hardware implement the same action names.
 
+## A read-only capability in the simulator
+
+Capability descriptors keep the input/output contract and safety metadata next
+to the name and description. This complete example defines a harmless sensor
+read, registers it with an in-process simulator, and invokes it:
+
+```ts
+import { PinoutRuntime, action, defineModule } from '@pinout/core';
+
+const lightRead = action({
+  id: 'light.read',
+  description: 'Read simulated illuminance in lux.',
+  input: { type: 'object', additionalProperties: false, properties: {} },
+  output: {
+    type: 'object',
+    additionalProperties: false,
+    properties: { lux: { type: 'number', minimum: 0 }, unit: { type: 'string', enum: ['lux'] } },
+    required: ['lux', 'unit'],
+  },
+  safety: {
+    physicalOutput: false,
+    reversible: true,
+    notes: 'Read-only simulated measurement.',
+  },
+});
+
+const lightModule = defineModule({
+  id: 'example/light-sensor',
+  version: '0.1.0',
+  device: { class: 'sensor.light', vendor: 'Example' },
+  capabilities: [lightRead],
+  createBackend: () => ({
+    kind: 'simulated' as const,
+    invoke: async (capability: string) => {
+      if (capability !== 'light.read') throw new Error(`Unknown capability: ${capability}`);
+      return { lux: 120, unit: 'lux' };
+    },
+    close: async () => undefined,
+    subscribe: () => () => undefined,
+  }),
+});
+
+const runtime = new PinoutRuntime();
+await runtime.registerModuleDevice(lightModule, { id: 'light-sim-01', simulated: true });
+console.log(await runtime.invoke('light-sim-01', 'light.read', {}));
+await runtime.close();
+```
+
+The `input` and `output` values are standard JSON Schema. `physicalOutput:
+false` marks the capability as read-only, while `simulated: true` makes the
+device provenance explicit. The reading is simulator output, not a physical
+measurement. See the [capability specification](spec/capabilities.md) and
+[module guide](build-a-module.md) for the shared contracts.
+
 ## System
 
 ### `sys.hello`

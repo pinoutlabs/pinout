@@ -47,6 +47,33 @@ async with AsyncPinout() as p:
         print(event)
 ```
 
+## Read a simulator snapshot
+
+Start a local demo daemon in another terminal (`node
+packages/daemon/dist/main.js --demo --token local-demo-token`) and export
+`PINOUT_TOKEN=local-demo-token`. The SDK's public read-only snapshot call is
+`Device.state()`; capability names come from `Device.capabilities()`.
+
+```python
+from pinout import Pinout
+from pinout.errors import UnsupportedCapability
+
+p = Pinout(owner="python-docs")
+device = p.device("esp32-01")
+snapshot = device.state()  # read-only; it does not actuate the simulator
+print("state:", snapshot)
+print("capabilities:", ", ".join(device.capabilities()))
+
+try:
+    device.invoke("missing.capability", {})
+except UnsupportedCapability as error:
+    print(error.code)  # UNSUPPORTED_CAPABILITY
+```
+
+The simulator makes this example runnable without hardware. A simulated
+snapshot is useful for exercising client logic, but it is not evidence that a
+physical device is safe or that an output changed.
+
 ## Safety
 
 ```python
