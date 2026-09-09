@@ -1,0 +1,19 @@
+packages/module-host/src/moduleHost.ts
+  s_852b057a54d99a::t_d902938f53d160 186-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "3a3a7abd912698aaaad8ceee287643bc4df5a71d",
+  "prompts": {},
+  "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
