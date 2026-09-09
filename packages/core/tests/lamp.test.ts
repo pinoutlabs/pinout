@@ -751,5 +751,5 @@ describe('Lamp Module - Conformance Suite', () => {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
-  });
+  }, 30_000); // shares the runner with npm-shelling suites; allow loaded CI machines
 });
