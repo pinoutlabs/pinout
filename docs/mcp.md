@@ -30,6 +30,45 @@ describe + N state. Tool results use compact JSON (`structuredContent` already
 holds the object). Capability invokes parse the MCP tool name and POST
 `/v1/devices/:id/invoke` without re-listing tools.
 
+## Tool and error shapes
+
+Daemon-backed MCP exposes the control-plane tools below alongside
+device-specific capability tools. The examples use the simulated `relay-mcp`
+device from the test transcript and contain no credentials or hardware
+assumptions.
+
+| Role | Tool and example | What to expect |
+| --- | --- | --- |
+| Read-only state | `pinout__read_state({deviceId:"relay-mcp"})` | A result with `deviceId`, `state`, and `stateEvidence`; it does not require a lease or change the device. |
+| Lease-gated actuation | First call `pinout__acquire_lease({deviceId:"relay-mcp",mode:"exclusive"})`, then `relay_mcp__relay_set({on:true,_pinout:{idempotencyKey:"relay-on-1",waitFor:"accepted"}})` | The lease call returns a lease. The capability call returns an operation handle. A missing or conflicting lease is reported as `SAFETY_LEASE_REQUIRED` or `LEASE_CONFLICT`. |
+| Operation inspection | `pinout__operation_status({operationId:"op_..."})` | A read-only operation snapshot, including status, progress, and (when complete) the result. Use the returned operation id; do not invent a replacement key when retrying. |
+
+Structured failures are returned with `isError: true`. Their text content is
+JSON with the stable `code`, human-readable `message`, and `retryable` fields;
+daemon-backed failures may also include `details` containing the underlying
+`category` (`VALIDATION`, `SAFETY`, `LEASE`, `OPERATION`, `TRANSPORT`, and so
+on). Branch on `code`, never on English prose. Common codes include
+`SAFETY_LEASE_REQUIRED` for a missing lease, `SAFETY_HALTED` when the daemon is
+halted, `UNSUPPORTED_CAPABILITY` for an unavailable device capability,
+`OPERATION_REQUIRES_RECONCILIATION` for an uncertain operation, and
+`DAEMON_UNAVAILABLE` when the daemon cannot be reached. A daemon-unavailable
+response leaves the MCP session open so the caller can retry discovery or
+status later.
+
+Embedded and daemon-backed modes have different control-plane behavior:
+
+- **Daemon-backed (default):** `pinout-mcp` talks to `PINOUT_DAEMON_URL` and
+  sends `PINOUT_TOKEN` when configured. Leases, dry runs, operations, halt
+  state, and the journal belong to the single `pinoutd` process.
+- **Embedded development:** set `PINOUT_MCP_EMBEDDED=1` and `PINOUT_MOCK=1`.
+  The runtime and simulated ESP32 live in the MCP process; read-only tools and
+  device capabilities work, while lease, dry-run, and operation-manager tools
+  return `CONTROL_PLANE_UNAVAILABLE` because no daemon manager is present.
+  This mode is for hardware-free development.
+
+See the [safety model](safety-model.md) and [security model](security-model.md)
+for lease, halt, authentication, and direct-access boundaries.
+
 ## Evidence-qualified state and the honesty rule
 
 Tools returning device state (`pinout__describe_device` and `pinout__read_state`) expose structured `stateEvidence` alongside legacy `operationalState`/`state` dictionaries. State evidence breaks down state into:
@@ -58,4 +97,3 @@ See [Physical Evidence State Contract](state-evidence.md) for full contract defi
 - **Process exit**: When the client closes stdin (EOF), `pinout-mcp` closes the server and runtime cleanly, exiting with status code 0 without hanging.
 - **Signal handling**: `SIGINT` and `SIGTERM` trigger a graceful shutdown of the MCP server and any active runtime, exiting with code 0.
 - **Daemon unreachability**: If `pinoutd` is unreachable at `PINOUT_DAEMON_URL`, the stdio transport remains open. Discovery succeeds with control-plane tools, and tool calls return a structured `DAEMON_UNAVAILABLE` error with diagnostic details rather than closing the connection unexpectedly.
-
