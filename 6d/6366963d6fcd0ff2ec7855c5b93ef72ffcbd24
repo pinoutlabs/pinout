@@ -1,0 +1,19 @@
+packages/daemon/tests/pythonContract.test.ts
+  s_852b057a54d99a::t_131dbb20412521 26-27,33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6d6366963d6fcd0ff2ec7855c5b93ef72ffcbd24",
+  "prompts": {},
+  "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
