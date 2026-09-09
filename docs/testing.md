@@ -58,6 +58,16 @@ Golden IR expectations and metrics (precision/recall, false safety constraints) 
 
 Prefer real protocol round-trips over mocking internal functions. Mock transports are fine when testing error propagation or MCP wiring.
 
+## Local benchmarks
+
+Benchmark runners record dated JSON reports under `benchmarks/`. Every result is host/simulator only (`SIMULATED`): no USB, GPIO, or physical exactly-once claim.
+
+```bash
+npm run bench # #27 host/simulator command overhead; p50/p95/p99
+```
+
+#27 (2026-09-09, host/simulator only): `benchmarks/host-simulator-2026-09-09.json` on darwin/27.0.0 arm64 Apple M1, Node v25.9.0, SHA 122a44e — runtime.invoke p50 0.007 ms p95 0.013 ms p99 0.024 ms.
+
 ### Heterogeneous demo
 
 ```bash
