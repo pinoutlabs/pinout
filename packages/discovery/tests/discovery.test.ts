@@ -15,6 +15,8 @@ import {
 } from '../src/plugins.js';
 import { createServer } from 'node:net';
 import type { AddressInfo } from 'node:net';
+import { ByteQueue } from '../../core/src/transports/byteQueue.js';
+import { connect, type Transport } from '@pinout/core';
 
 function candidate(overrides: Partial<DiscoveredCandidate>): DiscoveredCandidate {
   return {
@@ -84,7 +86,51 @@ describe('serial plugin', () => {
     expect(mystery.possibleIdentity[0]!.moduleId).toBe('unknown/serial');
     expect(mystery.confidence).toBeLessThanOrEqual(0.5);
   });
+
+  it('does not enroll an open port that emits boot noise and never answers sys.hello', async () => {
+    const transport = new UnsupportedSerialFixture();
+    const started = Date.now();
+    const run = await runDiscovery({
+      plugins: [
+        serialDiscoveryPlugin(async () => [
+          { path: '/dev/cu.unsupported', manufacturer: 'MysteryCorp' },
+        ]),
+      ],
+    });
+
+    await expect(connect({ transport, timeoutMs: 100 })).rejects.toMatchObject({ code: 'TIMEOUT' });
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(run.errors).toEqual([]);
+    expect(run.candidates).toHaveLength(1);
+    expect(run.candidates[0]!.possibleIdentity[0]!.moduleId).toBe('unknown/serial');
+    expect(run.candidates[0]!.confidence).toBeLessThanOrEqual(0.5);
+    expect(transport.writes).toHaveLength(1);
+    expect(JSON.parse(transport.writes[0]!)).toMatchObject({ action: 'sys.hello' });
+    expect(transport.closed).toBe(true);
+  });
 });
+
+/** An open serial endpoint is not a Pinout device until sys.hello confirms it. */
+class UnsupportedSerialFixture implements Transport {
+  readonly kind = 'unsupported-serial-fixture';
+  readonly readable = new ByteQueue();
+  readonly writes: string[] = [];
+  closed = false;
+
+  async open(): Promise<void> {
+    this.readable.push(new TextEncoder().encode('bootloader: unrelated device\n'));
+    this.readable.push(new TextEncoder().encode('ready? no\n'));
+  }
+
+  async close(): Promise<void> {
+    this.closed = true;
+    this.readable.close();
+  }
+
+  async write(data: Uint8Array): Promise<void> {
+    this.writes.push(new TextDecoder().decode(data));
+  }
+}
 
 describe('mDNS codec', () => {
   it('encodes a well-formed PTR query', () => {
