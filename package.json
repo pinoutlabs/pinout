@@ -51,7 +51,8 @@
     "demo:coffee": "npm run build --silent && tsx examples/coffee-machine.ts",
     "bench": "npm run build --silent && tsx scripts/benchmark.ts",
     "bench:mcp": "npm run build --silent && tsx scripts/benchmark-mcp.ts",
-    "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts"
+    "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts",
+    "bench:journal": "npm run build --silent && tsx scripts/benchmark-journal.ts"
   },
   "engines": {
     "node": ">=20"
