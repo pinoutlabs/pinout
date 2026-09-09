@@ -1,0 +1,19 @@
+packages/core/tests/protocolVectors.test.ts
+  s_32957f4eca552b::t_37720d9aaab3a3 70-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "ddc4ed7f9b153e53d354d50fa5ca993a4ac52f91",
+  "prompts": {},
+  "sessions": {
+    "s_32957f4eca552b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f783fb33bffefu79211m8bGV0V",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
