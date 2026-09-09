@@ -1,0 +1,31 @@
+benchmarks/host-simulator-2026-09-09.json
+  s_852b057a54d99a::t_36e0f8b6f04ba4 63-562,573
+benchmarks/journal-2026-09-09.json
+  s_852b057a54d99a::t_322c0ec771e444 6,38-40,48-50,63-65,73-75,88-90,98-100,105
+benchmarks/mcp-http-2026-09-09.json
+  s_852b057a54d99a::t_cf7a9b2d5d05be 40-47,56-63,72-79,88-95,104-111,120-127,131
+benchmarks/watchdog-2026-09-09.json
+  s_852b057a54d99a::t_3ef0e0fe31033b 32-77,80-125,128-173,182
+scripts/benchmark-journal.ts
+  s_852b057a54d99a::t_260495b72f57a5 77-80,96-98,108-110,146-147,169-172
+scripts/benchmark-mcp.ts
+  s_852b057a54d99a::t_837bdc4d10178e 114-117,212-215
+scripts/benchmark-watchdog.ts
+  s_852b057a54d99a::t_20c17d73f9eea9 13,122-125,160-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4e3148f7c152e9896aec05d9b3d8725a8c2e8912",
+  "prompts": {},
+  "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
