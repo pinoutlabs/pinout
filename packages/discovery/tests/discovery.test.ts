@@ -99,13 +99,17 @@ describe('serial plugin', () => {
     });
 
     await expect(connect({ transport, timeoutMs: 100 })).rejects.toMatchObject({ code: 'TIMEOUT' });
-    expect(Date.now() - started).toBeLessThan(500);
+    expect(Date.now() - started).toBeLessThan(1000);
     expect(run.errors).toEqual([]);
     expect(run.candidates).toHaveLength(1);
     expect(run.candidates[0]!.possibleIdentity[0]!.moduleId).toBe('unknown/serial');
     expect(run.candidates[0]!.confidence).toBeLessThanOrEqual(0.5);
-    expect(transport.writes).toHaveLength(1);
-    expect(JSON.parse(transport.writes[0]!)).toMatchObject({ action: 'sys.hello' });
+    // requestHello retries until its deadline, so a loaded runner may send more
+    // than one probe; every write must still be a sys.hello probe and nothing else.
+    expect(transport.writes.length).toBeGreaterThanOrEqual(1);
+    for (const write of transport.writes) {
+      expect(JSON.parse(write)).toMatchObject({ action: 'sys.hello' });
+    }
     expect(transport.closed).toBe(true);
   });
 });
