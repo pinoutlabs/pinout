@@ -2,7 +2,8 @@
 
 **Baseline Commit:** `64d69cc`  
 **Execution Scope:** Phases 1–5 implementation brief (`docs/PINOUT_REVIEW_AND_PLAN.md`)  
-**Evaluated Date:** 2026-09-05  
+**Evaluated Date:** 2026-09-05 (firmware compile row refreshed 2026-09-09)
+
 **Evidence Rules:**
 - `PASSED`: Verified in full test suites, static analysis, and runtime verification tools.
 - `PARTIAL`: Verified in software/simulation with honest limitations; physical verification or live operator trial pending.
@@ -29,7 +30,7 @@
 
 | Acceptance Item | Status | Evidence | Notes |
 | :--- | :--- | :--- | :--- |
-| ESP32 firmware build (`pio run`) | **NOT RUN** | `firmware/esp32-bridge/` | PlatformIO (`pio`) CLI is not installed in this environment; firmware compilation was not run in this session. |
+| ESP32 firmware build (`pio run -e esp32dev`) | **PASSED** | [2026-09-09 compile record](../hardware/records/2026-09-09-esp32-classic-compile.md), source `122a44e` | PlatformIO 6.2.0, GCC 8.4.0; exit 0; binary and ELF hashes recorded. Compile evidence only; no board was flashed or tested. |
 | Negotiated deadman watchdog (`watchdog.kick`) | **PASSED** | `packages/core/tests/watchdogArmingSafeState.test.ts`, `firmware/esp32-bridge/src/main.cpp`, commits `6c18845`, `98c109e`, `a8a123f` | Firmware and simulator trip to safe state when heartbeat deadline expires. |
 | Explicit & governed arming state machine | **PASSED** | `packages/core/tests/watchdogArmingSafeState.test.ts`, `packages/cli/tests/daemonCommands.test.ts`, commits `6c18845`, `db363ad`, `21268fb`, `2238e64` | Disarmed at boot/reconnect; actuation while disarmed/tripped is rejected; `pinout arm/disarm` and `sys.arm/sys.disarm` enforced; `autoArm` defaults to `false`. |
 | Bounded command validity (`validityMs`) | **PASSED** | `packages/core/tests/watchdogArmingSafeState.test.ts` (`rejects expired commands`), commits `6c18845`, `98c109e` | Expired commands exceeding `validityMs` TTL are rejected with `COMMAND_EXPIRED`. |
@@ -119,8 +120,8 @@
 | Phase | Description | Total Items | PASSED | PARTIAL | BLOCKED | NOT RUN |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Phase 1** | Repair Usable Agent Entrypoint | 7 | 7 | 0 | 0 | 0 |
-| **Phase 2** | Reliable ESP32 Reference Circuit | 18 | 8 | 0 | 9 | 1 |
+| **Phase 2** | Reliable ESP32 Reference Circuit | 18 | 9 | 0 | 9 | 0 |
 | **Phase 3** | Deliver the Actual Abstraction | 11 | 8 | 1 | 2 | 0 |
 | **Phase 4** | Prove Recovery and Portability | 11 | 9 | 0 | 2 | 0 |
 | **Phase 5** | Robotics Integration (Sidecar Boundary) | 10 | 8 | 0 | 2 | 0 |
-| **Total** | **Phases 1–5 Combined** | **57** | **40** | **1** | **15** | **1** |
+| **Total** | **Phases 1–5 Combined** | **57** | **41** | **1** | **15** | **0** |
