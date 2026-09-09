@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
+    "pretest": "npm run build --silent && tsc -p examples/external-module/weird-sensor/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
