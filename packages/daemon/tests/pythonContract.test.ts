@@ -23,11 +23,12 @@ describe('Python client to real pinoutd contract', () => {
           PINOUT_TEST_URL: `http://127.0.0.1:${daemon.port}`,
           PINOUT_TEST_TOKEN: 'python-contract-token',
         },
-        timeout: 15_000,
+        // Cold python + loaded Windows runners can stall; real failures exit fast.
+        timeout: 60_000,
       });
       expect(stderr).toBe('');
     } finally {
       await daemon.close();
     }
-  }, 20_000);
+  }, 90_000);
 });
