@@ -51,6 +51,13 @@ export function buildCandidateModule(outputPath: string): void {
   execFileSync('npm', ['install', '--ignore-scripts', '--no-package-lock'], {
     cwd: root,
     stdio: 'pipe',
+    // Windows installs npm as a .cmd shim, which requires the command shell.
+    // The command and arguments are fixed; the output directory stays in cwd.
+    shell: process.platform === 'win32',
   });
-  execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe' });
+  execFileSync('npm', ['run', 'build'], {
+    cwd: root,
+    stdio: 'pipe',
+    shell: process.platform === 'win32',
+  });
 }

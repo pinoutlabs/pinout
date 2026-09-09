@@ -7,7 +7,7 @@ import { decodeLine, encodeRequest, parseLine } from '../src/protocol.js';
 const vectorPath = join(process.cwd(), 'fixtures', 'protocol', 'v1', 'messages.jsonl');
 
 describe('protocol v1 golden vectors', () => {
-  const lines = readFileSync(vectorPath, 'utf8').trim().split('\n');
+  const lines = readFileSync(vectorPath, 'utf8').trim().split(/\r?\n/);
   it('decodes every shared wire vector', () => {
     for (const line of lines) expect(decodeLine(line).kind).toBe('message');
   });

@@ -183,7 +183,11 @@ export class ModuleProcess {
     this.rejectAllPending(new ModuleDeadError(this.id, 'host shutting down'));
 
     // Grace period, then SIGTERM, then SIGKILL.
-    this.send({ v: MODULE_IPC_VERSION, id: 'shutdown', kind: 'shutdown', payload: {} });
+    try {
+      this.send({ v: MODULE_IPC_VERSION, id: 'shutdown', kind: 'shutdown', payload: {} });
+    } catch {
+      // worker already gone (EPIPE on a reaped stdin); the kill chain below still applies
+    }
     await new Promise<void>((resolve) => {
       const killTimer = setTimeout(() => {
         try {

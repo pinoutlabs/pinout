@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   createEsp32LampBackend,
   createRuntimeFromConfig,
@@ -740,7 +741,7 @@ describe('Lamp Module - Conformance Suite', () => {
     const entrypointPath = join(tempDir, 'index.js');
     writeFileSync(
       entrypointPath,
-      `export { lampModule as default } from '${join(process.cwd(), 'packages/core/dist/modules/lampModule.js')}';\n`,
+      `export { lampModule as default } from ${JSON.stringify(pathToFileURL(join(process.cwd(), 'packages/core/dist/modules/lampModule.js')).href)};\n`,
       'utf8',
     );
 
