@@ -1,0 +1,19 @@
+package-lock.json
+  s_a8335836ef95b5::t_978f7d36e4e64f 963-966,5488-5495
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "386360ba3716617a5dc85de795a6a857c32e5aee",
+  "prompts": {},
+  "sessions": {
+    "s_a8335836ef95b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08752-dcb0-7cb1-8f65-498603c2a897",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
