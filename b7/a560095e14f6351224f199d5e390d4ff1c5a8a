@@ -1,0 +1,19 @@
+packages/core/tests/lamp.test.ts
+  s_852b057a54d99a::t_162ed88166e76c 754
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b7a560095e14f6351224f199d5e390d4ff1c5a8a",
+  "prompts": {},
+  "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
