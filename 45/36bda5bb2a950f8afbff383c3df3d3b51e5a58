@@ -1,0 +1,20 @@
+packages/generator/tests/generator.test.ts
+  s_852b057a54d99a::t_d833dbb0be1b37 84
+  s_852b057a54d99a::t_642c143dc79347 75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4536bda5bb2a950f8afbff383c3df3d3b51e5a58",
+  "prompts": {},
+  "sessions": {
+    "s_852b057a54d99a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f78428cf3ffeVYLNtvrEFNtVvB",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
