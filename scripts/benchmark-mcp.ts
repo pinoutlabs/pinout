@@ -111,7 +111,10 @@ async function main(): Promise<void> {
       if (!relayTool) throw new Error('MCP relay.set tool was not advertised.');
       // Warm the MCP tool cache and connection before timing steady-state calls.
       await session.client.listTools();
-      await session.client.callTool({ name: 'pinout__read_state', arguments: { deviceId: 'relay-bench' } });
+      await session.client.callTool({
+        name: 'pinout__read_state',
+        arguments: { deviceId: 'relay-bench' },
+      });
 
       for (let index = 0; index < samples; index += 1) {
         let started = performance.now();
@@ -206,7 +209,10 @@ async function main(): Promise<void> {
       },
     };
     mkdirSync(join(repoRoot, 'benchmarks'), { recursive: true });
-    writeFileSync(join(repoRoot, 'benchmarks', `mcp-http-${recordedAt.slice(0, 10)}.json`), JSON.stringify(report, null, 2));
+    writeFileSync(
+      join(repoRoot, 'benchmarks', `mcp-http-${recordedAt.slice(0, 10)}.json`),
+      JSON.stringify(report, null, 2),
+    );
     console.log(JSON.stringify(report, null, 2));
   } finally {
     await runningDaemon.close();

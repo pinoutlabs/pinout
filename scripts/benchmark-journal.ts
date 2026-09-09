@@ -74,7 +74,10 @@ async function fixture(count: number, journalPath: string): Promise<void> {
   }
 }
 
-async function measureRestart(journalPath: string, expectedCount: number): Promise<{ hydrateMs: number; listMs: number }> {
+async function measureRestart(
+  journalPath: string,
+  expectedCount: number,
+): Promise<{ hydrateMs: number; listMs: number }> {
   const runtime = new PinoutRuntime();
   await runtime.registerFromModule(relayModule.id, { id: 'relay-journal', simulated: true });
   const started = performance.now();
@@ -90,7 +93,9 @@ async function measureRestart(journalPath: string, expectedCount: number): Promi
     const payload = (await response.json()) as { operations?: unknown[] };
     const listMs = performance.now() - listStarted;
     if (!Array.isArray(payload.operations) || payload.operations.length !== expectedCount) {
-      throw new Error(`expected ${expectedCount} hydrated operations, got ${String(payload.operations?.length)}`);
+      throw new Error(
+        `expected ${expectedCount} hydrated operations, got ${String(payload.operations?.length)}`,
+      );
     }
     return { hydrateMs, listMs };
   } finally {
@@ -100,7 +105,9 @@ async function measureRestart(journalPath: string, expectedCount: number): Promi
 }
 
 async function main(): Promise<void> {
-  console.log(`Journal benchmark limits: FileJournalStorage; counts ${operationCounts.join(', ')}; ${restartSamples} restart/list samples per count; simulator only.`);
+  console.log(
+    `Journal benchmark limits: FileJournalStorage; counts ${operationCounts.join(', ')}; ${restartSamples} restart/list samples per count; simulator only.`,
+  );
   const reports: Record<string, unknown>[] = [];
   const tempRoot = await mkdtemp(join(tmpdir(), 'pinout-journal-benchmark-'));
   try {
@@ -136,7 +143,8 @@ async function main(): Promise<void> {
       operationCounts,
       restartSamples,
       fixture: 'completed relay.set operations through POST /v1/devices/:id/invoke on pinoutd',
-      restart: 'fresh DaemonContext and DaemonHttpServer against the same FileJournalStorage JSONL file',
+      restart:
+        'fresh DaemonContext and DaemonHttpServer against the same FileJournalStorage JSONL file',
       list: 'GET /v1/operations response fully parsed and operation count asserted',
     },
     limits: {
@@ -158,7 +166,10 @@ async function main(): Promise<void> {
     results: reports,
   };
   mkdirSync(join(repoRoot, 'benchmarks'), { recursive: true });
-  writeFileSync(join(repoRoot, 'benchmarks', `journal-${recordedAt.slice(0, 10)}.json`), JSON.stringify(report, null, 2));
+  writeFileSync(
+    join(repoRoot, 'benchmarks', `journal-${recordedAt.slice(0, 10)}.json`),
+    JSON.stringify(report, null, 2),
+  );
   console.log(JSON.stringify(report, null, 2));
 }
 

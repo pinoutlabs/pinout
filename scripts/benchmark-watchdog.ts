@@ -10,12 +10,7 @@ import { cpus, platform, release, arch } from 'node:os';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import {
-  connect,
-  ProtocolDeviceBackend,
-  simulatedEsp32,
-  type Transport,
-} from '@pinout/core';
+import { connect, ProtocolDeviceBackend, simulatedEsp32, type Transport } from '@pinout/core';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const timeoutMs = 200;
@@ -124,8 +119,10 @@ async function main(): Promise<void> {
     evidence: 'SIMULATED',
     method: {
       load: 'ProtocolDeviceBackend with eight concurrent gpio.read protocol requests against simulatedEsp32',
-      heartbeat: 'ProtocolDeviceBackend.arm({ timeoutMs, heartbeatIntervalMs }) actual host heartbeat',
-      cadence: 'inter-kick gaps >= interval/2; duplicate same-callback kick gap excluded from cadence error',
+      heartbeat:
+        'ProtocolDeviceBackend.arm({ timeoutMs, heartbeatIntervalMs }) actual host heartbeat',
+      cadence:
+        'inter-kick gaps >= interval/2; duplicate same-callback kick gap excluded from cadence error',
       durationMs: loadDurationMs,
     },
     limits: {
@@ -160,7 +157,10 @@ async function main(): Promise<void> {
     },
   };
   mkdirSync(join(repoRoot, 'benchmarks'), { recursive: true });
-  writeFileSync(join(repoRoot, 'benchmarks', `watchdog-${recordedAt.slice(0, 10)}.json`), JSON.stringify(report, null, 2));
+  writeFileSync(
+    join(repoRoot, 'benchmarks', `watchdog-${recordedAt.slice(0, 10)}.json`),
+    JSON.stringify(report, null, 2),
+  );
   console.log(JSON.stringify(report, null, 2));
 }
 
