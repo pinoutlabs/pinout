@@ -2,3 +2,8 @@
 {"v":1,"id":"req-1","ok":true,"result":{"pong":true}}
 {"v":1,"id":"req-2","ok":false,"error":{"code":"INVALID_PIN","message":"Pin is not valid."}}
 {"v":1,"event":"ready","payload":{"firmware":"esp32-bridge","version":"0.0.1-alpha.1","protocol":1,"capabilities":["sys.hello","sys.ping","gpio.write"]}}
+{"fixture":"invalid-json","input":"{not-json","expected":{"decode":"invalidJson","code":"INVALID_JSON"}}
+{"fixture":"missing-id","input":"{\"v\":1,\"ok\":true,\"result\":{}}","expected":{"decode":"invalidMessage","code":"INVALID_MESSAGE"}}
+{"fixture":"wrong-protocol-version","input":"{\"v\":99,\"id\":\"bad-version\",\"ok\":true,\"result\":{}}","expected":{"decode":"invalidMessage","code":"INVALID_MESSAGE"}}
+{"fixture":"oversized-payload-metadata","input":{"prefix":"{\"v\":1,\"id\":\"oversized\",\"action\":\"sys.ping\",\"payload\":{\"metadata\":\"","repeat":1100,"suffix":"\"}}"},"expected":{"decode":"message","code":"INVALID_MESSAGE"}}
+{"fixture":"unknown-action","input":"{\"v\":1,\"id\":\"unknown-action\",\"action\":\"gpio.eraseEverything\",\"payload\":{}}","expected":{"decode":"message","code":"UNKNOWN_ACTION"}}
