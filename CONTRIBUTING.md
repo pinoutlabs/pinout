@@ -75,6 +75,42 @@ See [firmware/esp32-bridge/README.md](firmware/esp32-bridge/README.md) and [docs
 
 If you change the protocol, update firmware, simulator, SDK, tests, and docs in the same change.
 
+### Hardware evidence
+
+The current physical campaign is tracked in [issue #13](https://github.com/pinoutlabs/pinout/issues/13).
+Start with the [ESP32 Classic HIL procedure](scripts/hil/esp32-classic.md),
+which defines the read-only discovery, manual flash, arming, output, sensor,
+watchdog, and reconnect checks.
+
+- Pinout tooling and CI never auto-flash. Flash only after an operator has
+  positively identified the board and explicitly started the upload.
+- Keep firmware/protocol ACKs in their own column from independent physical
+  observations such as a DMM, oscilloscope, logic analyzer, or sensor
+  readback. An ACK alone is not hardware evidence.
+- To file a hardware result, copy the record template from
+  [hardware/records/README.md](hardware/records/README.md) into a dated
+  `hardware/records/` file. Include board and adapter identity, OS/tool
+  versions, firmware SHA, exact commands, wiring, and raw protocol or journal
+  excerpts. Leave the result `PENDING` when the physical step was not run.
+
+### Firmware compile gate
+
+For a firmware change, run the classic ESP32 compile locally when PlatformIO
+is available:
+
+```bash
+cd firmware/esp32-bridge
+pio run -e esp32dev
+```
+
+This is compile-only and never uploads a board. Before merging a firmware PR,
+a maintainer must obtain the selected CI run by applying the `ci:run` label or
+dispatching the workflow manually. The gated firmware job runs the same
+`pio run -e esp32dev` command and publishes the `esp32-bridge-esp32dev`
+artifact (`firmware.bin` and `firmware.elf`). The experimental C3 target stays
+out of the default gate and is compiled only by the manual release-candidate
+workflow.
+
 ## Pull requests
 
 Target `main` and keep each PR focused. A maintainer reviews the proposal first;
