@@ -41,7 +41,8 @@ describe('cli', () => {
       devices: Array<{ identity: { firmware: string } }>;
     };
     expect(parsed.devices[0]?.identity.firmware).toBe('esp32-bridge');
-    expect(statSync(file).mode & 0o777).toBe(0o600);
+    // Windows reports writable mode bits, not POSIX owner/group permissions.
+    if (process.platform !== 'win32') expect(statSync(file).mode & 0o777).toBe(0o600);
   });
 
   it('prints version', async () => {
@@ -134,7 +135,10 @@ describe('cli', () => {
 
   it('passes doctor checks', async () => {
     const io = captureIo();
-    const code = await runCli(['node', 'pinout', 'doctor'], io);
+    const home = mkdtempSync(join(tmpdir(), 'pinout-doctor-'));
+    enrollmentHomes.push(home);
+    process.env.PINOUT_HOME = home;
+    const code = await runCli(['node', 'pinout', 'doctor', '--mock', '--no-daemon'], io);
     expect(code).toBe(0);
     expect(io.logs.join('\n')).toContain('mock');
   });
