@@ -402,7 +402,16 @@ export class ModuleProcess {
   }
 
   private send(message: ModuleIpcRequest): void {
-    this.child?.stdin?.write(encodeMessage(message));
+    const stdin = this.child?.stdin;
+    if (!stdin || stdin.destroyed) return;
+    try {
+      // Callback form: a worker that dies with input buffered reports EPIPE
+      // here instead of an uncaught stream error. The exit handler owns
+      // recovery; pending calls are rejected there or via invoke timeouts.
+      stdin.write(encodeMessage(message), () => {});
+    } catch {
+      // worker already gone; exit handler owns recovery
+    }
   }
 }
 
