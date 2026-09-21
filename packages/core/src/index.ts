@@ -213,6 +213,11 @@ export {
 export { DeviceInstance } from './runtime/deviceInstance.js';
 export { ProtocolDeviceBackend } from './runtime/protocolBackend.js';
 export {
+  createBackendEventBus,
+  type BackendEventBus,
+  type BackendEventHandler,
+} from './runtime/backendEvents.js';
+export {
   CompositeDeviceBackend,
   createCompositeBackend,
   createCompositeDevice,
