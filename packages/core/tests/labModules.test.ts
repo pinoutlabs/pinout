@@ -22,7 +22,7 @@ describe('Lab Automation Modules', () => {
   describe('Syringe Pump Module', () => {
     it('infuses and withdraws fluids accurately and respects volume limits', async () => {
       const module = getModule(syringePumpModuleId);
-      const backend = module.createSimulatedBackend({
+      const backend = module.createSimulatedBackend!({
         syringeCapacityMl: 20,
         initialVolumeMl: 10,
         defaultRateMlPerMin: 2,
@@ -46,9 +46,9 @@ describe('Lab Automation Modules', () => {
       });
 
       // Cannot infuse 10 mL when only 7 mL remains
-      await expect(
-        backend.invoke('syringe_pump.infuse', { volumeMl: 10 }),
-      ).rejects.toThrow(/exceeds available volume/);
+      await expect(backend.invoke('syringe_pump.infuse', { volumeMl: 10 })).rejects.toThrow(
+        /exceeds available volume/,
+      );
 
       // Withdraw 5 mL
       const withdrawRes = await backend.invoke('syringe_pump.withdraw', { volumeMl: 5 });
@@ -59,9 +59,9 @@ describe('Lab Automation Modules', () => {
 
       // Syringe capacity is 20 mL, remaining is 12 mL, so max withdraw is 8 mL.
       // Trying to withdraw 10 mL must fail.
-      await expect(
-        backend.invoke('syringe_pump.withdraw', { volumeMl: 10 }),
-      ).rejects.toThrow(/exceeds syringe remaining capacity/);
+      await expect(backend.invoke('syringe_pump.withdraw', { volumeMl: 10 })).rejects.toThrow(
+        /exceeds syringe remaining capacity/,
+      );
 
       // Set rate
       const rateRes = await backend.invoke('syringe_pump.set_rate', { rateMlPerMin: 5 });
@@ -83,15 +83,13 @@ describe('Lab Automation Modules', () => {
   describe('Centrifuge Module', () => {
     it('enforces safety interlocks for lid and rotor speed', async () => {
       const module = getModule(centrifugeModuleId);
-      const backend = module.createSimulatedBackend({
+      const backend = module.createSimulatedBackend!({
         initialRpm: 5000,
         initialLidOpen: true,
       });
 
       // Cannot start when lid is open
-      await expect(
-        backend.invoke('centrifuge.start', {}),
-      ).rejects.toThrow(/lid is open/);
+      await expect(backend.invoke('centrifuge.start', {})).rejects.toThrow(/lid is open/);
 
       // Close lid
       const closeRes = await backend.invoke('centrifuge.close_lid', {});
@@ -102,9 +100,7 @@ describe('Lab Automation Modules', () => {
       expect(startRes).toEqual({ running: true, targetRpm: 5000 });
 
       // Cannot open lid while spinning
-      await expect(
-        backend.invoke('centrifuge.open_lid', {}),
-      ).rejects.toThrow(/rotor is spinning/);
+      await expect(backend.invoke('centrifuge.open_lid', {})).rejects.toThrow(/rotor is spinning/);
 
       // Stop centrifuge
       const stopRes = await backend.invoke('centrifuge.stop', {});
@@ -119,9 +115,9 @@ describe('Lab Automation Modules', () => {
       expect(speedRes).toEqual({ targetRpm: 8000 });
 
       // Out of range speed
-      await expect(
-        backend.invoke('centrifuge.set_speed', { rpm: 25000 }),
-      ).rejects.toThrow(/exceeds maximum limit/);
+      await expect(backend.invoke('centrifuge.set_speed', { rpm: 25000 })).rejects.toThrow(
+        /exceeds maximum limit/,
+      );
 
       await backend.close();
     });
@@ -130,7 +126,7 @@ describe('Lab Automation Modules', () => {
   describe('Heater-Shaker Module', () => {
     it('regulates temperature and orbital shaker speed', async () => {
       const module = getModule(heaterShakerModuleId);
-      const backend = module.createSimulatedBackend({
+      const backend = module.createSimulatedBackend!({
         initialTemperatureC: 22,
         initialTargetRpm: 1200,
       });
@@ -147,9 +143,9 @@ describe('Lab Automation Modules', () => {
       });
 
       // Reject out of bounds temperature
-      await expect(
-        backend.invoke('temperature.set', { targetTemperatureC: 150 }),
-      ).rejects.toThrow(/between 4°C and 100°C/);
+      await expect(backend.invoke('temperature.set', { targetTemperatureC: 150 })).rejects.toThrow(
+        /between 4°C and 100°C/,
+      );
 
       // Set speed & start shaker
       await backend.invoke('shaker.set_speed', { rpm: 1500 });
@@ -174,15 +170,15 @@ describe('Lab Automation Modules', () => {
   describe('Pipette Module', () => {
     it('manages tips and liquid aspiration/dispensation with safety interlocks', async () => {
       const module = getModule(pipetteModuleId);
-      const backend = module.createSimulatedBackend({
+      const backend = module.createSimulatedBackend!({
         maxVolumeUl: 200,
         initialHasTip: false,
       });
 
       // Cannot aspirate without a tip
-      await expect(
-        backend.invoke('pipette.aspirate', { volumeUl: 50 }),
-      ).rejects.toThrow(/tip attached/);
+      await expect(backend.invoke('pipette.aspirate', { volumeUl: 50 })).rejects.toThrow(
+        /tip attached/,
+      );
 
       // Attach tip
       const attachRes = await backend.invoke('pipette.attach_tip', {});
@@ -196,9 +192,9 @@ describe('Lab Automation Modules', () => {
       });
 
       // Aspirate beyond capacity (100 + 150 > 200) throws error
-      await expect(
-        backend.invoke('pipette.aspirate', { volumeUl: 150 }),
-      ).rejects.toThrow(/exceeds remaining tip capacity/);
+      await expect(backend.invoke('pipette.aspirate', { volumeUl: 150 })).rejects.toThrow(
+        /exceeds remaining tip capacity/,
+      );
 
       // Dispense 40 µL
       const dispRes = await backend.invoke('pipette.dispense', { volumeUl: 40 });
@@ -208,9 +204,9 @@ describe('Lab Automation Modules', () => {
       });
 
       // Dispense more than present throws error
-      await expect(
-        backend.invoke('pipette.dispense', { volumeUl: 100 }),
-      ).rejects.toThrow(/exceeds liquid in tip/);
+      await expect(backend.invoke('pipette.dispense', { volumeUl: 100 })).rejects.toThrow(
+        /exceeds liquid in tip/,
+      );
 
       // Blowout empties tip
       const blowoutRes = await backend.invoke('pipette.blowout', {});
@@ -249,11 +245,9 @@ describe('Lab Automation Modules', () => {
       );
       expect(syringeResult.infusedMl).toBe(2);
 
-      const pipetteResult = await runtime.invoke(
-        defaultLabDeviceIds.pipette,
-        'pipette.aspirate',
-        { volumeUl: 50 },
-      );
+      const pipetteResult = await runtime.invoke(defaultLabDeviceIds.pipette, 'pipette.aspirate', {
+        volumeUl: 50,
+      });
       expect(pipetteResult.aspiratedUl).toBe(50);
     });
   });

@@ -19,10 +19,12 @@ export const centrifugeModule: PinoutModuleDefinition = {
   policies: [centrifugeSpeedPolicy],
   supportedTransportKinds: ['simulated'],
   createSimulatedBackend(options = {}): DeviceBackend {
-    return createSimulatedCentrifugeBackend(options as {
-      initialRpm?: number;
-      initialLidOpen?: boolean;
-      initialTemperatureC?: number;
-    });
+    return createSimulatedCentrifugeBackend(
+      options as {
+        initialRpm?: number;
+        initialLidOpen?: boolean;
+        initialTemperatureC?: number;
+      },
+    );
   },
 };

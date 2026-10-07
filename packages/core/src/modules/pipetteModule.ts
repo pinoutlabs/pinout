@@ -19,11 +19,13 @@ export const pipetteModule: PinoutModuleDefinition = {
   policies: [pipetteVolumePolicy],
   supportedTransportKinds: ['simulated'],
   createSimulatedBackend(options = {}): DeviceBackend {
-    return createSimulatedPipetteBackend(options as {
-      maxVolumeUl?: number;
-      initialHasTip?: boolean;
-      initialVolumeUl?: number;
-      defaultFlowRateUlPerSec?: number;
-    });
+    return createSimulatedPipetteBackend(
+      options as {
+        maxVolumeUl?: number;
+        initialHasTip?: boolean;
+        initialVolumeUl?: number;
+        defaultFlowRateUlPerSec?: number;
+      },
+    );
   },
 };

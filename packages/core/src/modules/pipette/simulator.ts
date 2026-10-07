@@ -97,7 +97,8 @@ class SimulatedPipetteBackend implements DeviceBackend {
             `Requested aspirate volume ${volumeUl} µL exceeds remaining tip capacity ${availableSpace} µL.`,
           );
         }
-        this.state.currentVolumeUl = Math.round((this.state.currentVolumeUl + volumeUl) * 100) / 100;
+        this.state.currentVolumeUl =
+          Math.round((this.state.currentVolumeUl + volumeUl) * 100) / 100;
         this.state.status = 'ready';
         this.emit('pipette.aspirated', {
           aspiratedUl: volumeUl,
@@ -123,7 +124,8 @@ class SimulatedPipetteBackend implements DeviceBackend {
             `Requested dispense volume ${volumeUl} µL exceeds liquid in tip ${this.state.currentVolumeUl} µL.`,
           );
         }
-        this.state.currentVolumeUl = Math.round((this.state.currentVolumeUl - volumeUl) * 100) / 100;
+        this.state.currentVolumeUl =
+          Math.round((this.state.currentVolumeUl - volumeUl) * 100) / 100;
         this.state.status = 'ready';
         this.emit('pipette.dispensed', {
           dispensedUl: volumeUl,

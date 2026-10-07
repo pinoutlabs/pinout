@@ -19,10 +19,12 @@ export const syringePumpModule: PinoutModuleDefinition = {
   policies: [syringePumpRatePolicy],
   supportedTransportKinds: ['simulated'],
   createSimulatedBackend(options = {}): DeviceBackend {
-    return createSimulatedSyringePumpBackend(options as {
-      syringeCapacityMl?: number;
-      initialVolumeMl?: number;
-      defaultRateMlPerMin?: number;
-    });
+    return createSimulatedSyringePumpBackend(
+      options as {
+        syringeCapacityMl?: number;
+        initialVolumeMl?: number;
+        defaultRateMlPerMin?: number;
+      },
+    );
   },
 };

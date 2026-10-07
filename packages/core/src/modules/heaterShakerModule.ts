@@ -20,10 +20,12 @@ export const heaterShakerModule: PinoutModuleDefinition = {
   policies: [heaterShakerTempPolicy, heaterShakerSpeedPolicy],
   supportedTransportKinds: ['simulated'],
   createSimulatedBackend(options = {}): DeviceBackend {
-    return createSimulatedHeaterShakerBackend(options as {
-      initialTemperatureC?: number;
-      initialTargetTempC?: number;
-      initialTargetRpm?: number;
-    });
+    return createSimulatedHeaterShakerBackend(
+      options as {
+        initialTemperatureC?: number;
+        initialTargetTempC?: number;
+        initialTargetRpm?: number;
+      },
+    );
   },
 };

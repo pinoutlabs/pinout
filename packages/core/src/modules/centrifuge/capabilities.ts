@@ -68,7 +68,8 @@ export const centrifugeStopCapability: CapabilityDescriptor = {
 
 export const centrifugeOpenLidCapability: CapabilityDescriptor = {
   name: 'centrifuge.open_lid',
-  description: 'Open the centrifuge lid. Hardware safety interlock prohibits opening while rotor is spinning.',
+  description:
+    'Open the centrifuge lid. Hardware safety interlock prohibits opening while rotor is spinning.',
   inputSchema: { type: 'object', additionalProperties: false, properties: {} },
   outputSchema: {
     type: 'object',

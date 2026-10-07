@@ -2,10 +2,10 @@ import {
   DeviceError,
   LeaseManager,
   PinoutError,
-  PinoutRuntime,
   PinoutStructuredError,
   type AcquireLeaseOptions,
   type LeaseScopeInput,
+  type PinoutRuntime,
 } from '@pinout/core';
 import {
   OahlDeviceNotFoundError,
@@ -90,7 +90,8 @@ export class OahlBridge {
         deviceClass: d.deviceClass,
         vendor: d.vendor,
         model: d.model,
-        status: (d.lifecycle === 'ready' ? 'ready' : 'busy') as 'ready' | 'busy' | 'faulted' | 'offline',
+        status: (d.lifecycle === 'ready' ? 'ready' : 'busy') as
+          'ready' | 'busy' | 'faulted' | 'offline',
         available: isAvailable,
         capabilities,
       };
@@ -225,12 +226,7 @@ export class OahlBridge {
     }
 
     // Verify lease covers this device & capability
-    const check = this.leaseManager.permits(
-      lease.owner,
-      req.deviceId,
-      req.action,
-      lease.mode,
-    );
+    const check = this.leaseManager.permits(lease.owner, req.deviceId, req.action, lease.mode);
     if (!check.permitted) {
       throw new OahlReservationConflictError(req.deviceId, check.conflict?.owner);
     }
@@ -251,9 +247,7 @@ export class OahlBridge {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code =
-        err instanceof PinoutError || err instanceof DeviceError
-          ? err.code
-          : 'EXECUTION_FAILED';
+        err instanceof PinoutError || err instanceof DeviceError ? err.code : 'EXECUTION_FAILED';
 
       return {
         executionId,

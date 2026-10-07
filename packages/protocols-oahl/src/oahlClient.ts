@@ -70,7 +70,8 @@ export class OahlClient {
     const json = (await res.json()) as Record<string, unknown>;
 
     if (!res.ok) {
-      const errObj = json.error as { code?: string; message?: string; details?: unknown } | undefined;
+      const errObj = json.error as
+        { code?: string; message?: string; details?: unknown } | undefined;
       const code = errObj?.code ?? 'REQUEST_FAILED';
       const msg = errObj?.message ?? `OAHL request failed with status ${res.status}`;
       throw new OahlError(code, msg, res.status, errObj?.details);

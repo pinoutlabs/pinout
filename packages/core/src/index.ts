@@ -338,25 +338,13 @@ export { createSimulatedEncoderBackend } from './modules/encoder/simulator.js';
 export { createSimulatedLimitSwitchBackend } from './modules/limitSwitch/simulator.js';
 export { createSimulatedForceBackend } from './modules/force/simulator.js';
 export { createSimulatedMobileBaseBackend } from './modules/mobileBase/simulator.js';
-export {
-  syringePumpModule,
-  syringePumpModuleId,
-} from './modules/syringePumpModule.js';
+export { syringePumpModule, syringePumpModuleId } from './modules/syringePumpModule.js';
 export { createSimulatedSyringePumpBackend } from './modules/syringePump/simulator.js';
-export {
-  centrifugeModule,
-  centrifugeModuleId,
-} from './modules/centrifugeModule.js';
+export { centrifugeModule, centrifugeModuleId } from './modules/centrifugeModule.js';
 export { createSimulatedCentrifugeBackend } from './modules/centrifuge/simulator.js';
-export {
-  heaterShakerModule,
-  heaterShakerModuleId,
-} from './modules/heaterShakerModule.js';
+export { heaterShakerModule, heaterShakerModuleId } from './modules/heaterShakerModule.js';
 export { createSimulatedHeaterShakerBackend } from './modules/heaterShaker/simulator.js';
-export {
-  pipetteModule,
-  pipetteModuleId,
-} from './modules/pipetteModule.js';
+export { pipetteModule, pipetteModuleId } from './modules/pipetteModule.js';
 export { createSimulatedPipetteBackend } from './modules/pipette/simulator.js';
 export { evaluatePolicies } from './policy/engine.js';
 export { SafetyEngine, mergeModuleAndDeploymentRules } from './policy/safety.js';

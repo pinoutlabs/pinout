@@ -1,14 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  createLabWorkbench,
-  defaultLabDeviceIds,
-} from '@pinout/core';
-import {
-  OahlBridge,
-  OahlClient,
-  OahlError,
-  OahlHttpServer,
-} from '../src/index.js';
+import { createLabWorkbench, defaultLabDeviceIds } from '@pinout/core';
+import { OahlBridge, OahlClient, OahlError, OahlHttpServer } from '../src/index.js';
 
 describe('OAHL (Open Agent Hardware Layer) Protocol Link', () => {
   let bridge: OahlBridge;
@@ -113,7 +105,7 @@ describe('OAHL (Open Agent Hardware Layer) Protocol Link', () => {
       // 1. Discover via client SDK
       const discovery = await client.discover({ deviceClass: 'lab.centrifuge' });
       expect(discovery.devices.length).toBe(1);
-      const centrifuge = discovery.devices[0];
+      const centrifuge = discovery.devices[0]!;
       expect(centrifuge.id).toBe(defaultLabDeviceIds.centrifuge);
       expect(centrifuge.available).toBe(true);
 

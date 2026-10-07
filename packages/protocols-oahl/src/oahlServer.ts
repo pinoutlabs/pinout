@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { OahlBridge } from './oahlBridge.js';
+import type { OahlBridge } from './oahlBridge.js';
 import { OahlError } from './errors.js';
 import type {
   OahlDiscoverFilter,
@@ -130,7 +130,9 @@ export class OahlHttpServer {
       return;
     }
 
-    this.sendJson(res, 404, { error: { code: 'NOT_FOUND', message: `Route ${method} ${pathname} not found.` } });
+    this.sendJson(res, 404, {
+      error: { code: 'NOT_FOUND', message: `Route ${method} ${pathname} not found.` },
+    });
   }
 
   private async readJsonBody(req: IncomingMessage): Promise<unknown> {

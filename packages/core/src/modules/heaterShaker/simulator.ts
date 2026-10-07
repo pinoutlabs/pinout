@@ -105,7 +105,10 @@ class SimulatedHeaterShakerBackend implements DeviceBackend {
 
       case 'shaker.start': {
         if (this.state.targetRpm <= 0) {
-          throw new DeviceError('INVALID_TARGET_SPEED', 'Target RPM must be greater than zero to start.');
+          throw new DeviceError(
+            'INVALID_TARGET_SPEED',
+            'Target RPM must be greater than zero to start.',
+          );
         }
         this.state.running = true;
         this.state.currentRpm = this.state.targetRpm;

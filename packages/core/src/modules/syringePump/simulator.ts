@@ -30,11 +30,13 @@ class SimulatedSyringePumpBackend implements DeviceBackend {
   private listeners = new Set<(event: string, payload: Record<string, unknown>) => void>();
   private closed = false;
 
-  constructor(options: {
-    syringeCapacityMl?: number;
-    initialVolumeMl?: number;
-    defaultRateMlPerMin?: number;
-  } = {}) {
+  constructor(
+    options: {
+      syringeCapacityMl?: number;
+      initialVolumeMl?: number;
+      defaultRateMlPerMin?: number;
+    } = {},
+  ) {
     const capacity = options.syringeCapacityMl ?? 50;
     const initialVolume = options.initialVolumeMl ?? 50;
     this.state = {
@@ -82,8 +84,10 @@ class SimulatedSyringePumpBackend implements DeviceBackend {
             `Requested infuse volume ${volumeMl} mL exceeds available volume ${this.state.remainingVolumeMl} mL.`,
           );
         }
-        this.state.remainingVolumeMl = Math.round((this.state.remainingVolumeMl - volumeMl) * 1000) / 1000;
-        this.state.totalInfusedMl = Math.round((this.state.totalInfusedMl + volumeMl) * 1000) / 1000;
+        this.state.remainingVolumeMl =
+          Math.round((this.state.remainingVolumeMl - volumeMl) * 1000) / 1000;
+        this.state.totalInfusedMl =
+          Math.round((this.state.totalInfusedMl + volumeMl) * 1000) / 1000;
         this.state.direction = 'idle';
         this.state.running = false;
         this.state.status = 'ready';
@@ -109,7 +113,8 @@ class SimulatedSyringePumpBackend implements DeviceBackend {
             `Requested withdraw volume ${volumeMl} mL exceeds syringe remaining capacity ${maxCanWithdraw} mL.`,
           );
         }
-        this.state.remainingVolumeMl = Math.round((this.state.remainingVolumeMl + volumeMl) * 1000) / 1000;
+        this.state.remainingVolumeMl =
+          Math.round((this.state.remainingVolumeMl + volumeMl) * 1000) / 1000;
         this.state.direction = 'idle';
         this.state.running = false;
         this.state.status = 'ready';
