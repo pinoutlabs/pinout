@@ -13,6 +13,10 @@ import { stepperModule } from '../modules/stepperModule.js';
 import { powerSupplyModule, pumpModule, relayModule, valveModule } from './semanticModules.js';
 import { coffeeMachineModule } from '../modules/coffeeMachineModule.js';
 import { lampModule } from '../modules/lampModule.js';
+import { syringePumpModule } from '../modules/syringePumpModule.js';
+import { centrifugeModule } from '../modules/centrifugeModule.js';
+import { heaterShakerModule } from '../modules/heaterShakerModule.js';
+import { pipetteModule } from '../modules/pipetteModule.js';
 import type { PinoutModuleDefinition } from '../runtime/types.js';
 import { ModuleNotFoundError } from '../module/errors.js';
 import { loadInstalledModule, readModulesIndex } from '../home/moduleStore.js';
@@ -38,6 +42,10 @@ const builtinModules = new Map<string, PinoutModuleDefinition>([
   [powerSupplyModule.id, powerSupplyModule],
   [coffeeMachineModule.id, coffeeMachineModule],
   [lampModule.id, lampModule],
+  [syringePumpModule.id, syringePumpModule],
+  [centrifugeModule.id, centrifugeModule],
+  [heaterShakerModule.id, heaterShakerModule],
+  [pipetteModule.id, pipetteModule],
 ]);
 
 const runtimeModules = new Map<string, PinoutModuleDefinition>();
