@@ -1,0 +1,18 @@
+.github/workflows/ci.yml
+  h_b8c068798e4e71 118,120-121
+docs/testing.md
+  h_b8c068798e4e71 99,101-103,107,110-114
+docs/three-board-demo.md
+  h_b8c068798e4e71 31-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75ea9c4a7a484cbb9a70be5474d950a2192de939",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
