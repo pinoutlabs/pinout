@@ -183,7 +183,11 @@ export class ModuleProcess {
     this.rejectAllPending(new ModuleDeadError(this.id, 'host shutting down'));
 
     // Grace period, then SIGTERM, then SIGKILL.
-    this.send({ v: MODULE_IPC_VERSION, id: 'shutdown', kind: 'shutdown', payload: {} });
+    try {
+      this.send({ v: MODULE_IPC_VERSION, id: 'shutdown', kind: 'shutdown', payload: {} });
+    } catch {
+      // worker already gone (EPIPE on a reaped stdin); the kill chain below still applies
+    }
     await new Promise<void>((resolve) => {
       const killTimer = setTimeout(() => {
         try {
@@ -398,7 +402,16 @@ export class ModuleProcess {
   }
 
   private send(message: ModuleIpcRequest): void {
-    this.child?.stdin?.write(encodeMessage(message));
+    const stdin = this.child?.stdin;
+    if (!stdin || stdin.destroyed) return;
+    try {
+      // Callback form: a worker that dies with input buffered reports EPIPE
+      // here instead of an uncaught stream error. The exit handler owns
+      // recovery; pending calls are rejected there or via invoke timeouts.
+      stdin.write(encodeMessage(message), () => {});
+    } catch {
+      // worker already gone; exit handler owns recovery
+    }
   }
 }
 

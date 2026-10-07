@@ -4,7 +4,9 @@ import type { ArmPoseFeedback, ArmPoseGoal, RosFeedback } from '../src/types.js'
 
 describe('FakeRosActionServer', () => {
   it('accepts goals and emits feedback before resolving succeeded', async () => {
-    const server = new FakeRosActionServer({ motionDelayMs: 20, feedbackIntervalMs: 4 });
+    // Wide motion window vs feedback interval: ~20 expected ticks so even a
+    // heavily loaded runner emits several feedbacks before completion.
+    const server = new FakeRosActionServer({ motionDelayMs: 200, feedbackIntervalMs: 10 });
     const goal: ArmPoseGoal = {
       target: {
         frame: 'base_link',

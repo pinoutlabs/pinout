@@ -58,6 +58,25 @@ Golden IR expectations and metrics (precision/recall, false safety constraints) 
 
 Prefer real protocol round-trips over mocking internal functions. Mock transports are fine when testing error propagation or MCP wiring.
 
+## Local benchmarks
+
+Benchmark runners record dated JSON reports under `benchmarks/`. Every result is host/simulator only (`SIMULATED`): no USB, GPIO, or physical exactly-once claim.
+
+```bash
+npm run bench          # #27 host/simulator command overhead; p50/p95/p99
+npm run bench:mcp      # #28 MCP stdio vs daemon HTTP; N=30, in-process/simulator only
+npm run bench:watchdog # #29 watchdog kick jitter under protocol load; simulator only
+npm run bench:journal  # #30 journal hydrate after large logs; FileJournalStorage, simulator only
+```
+
+#27 (2026-09-09, host/simulator only): `benchmarks/host-simulator-2026-09-09.json` on darwin/27.0.0 arm64 Apple M1, Node v25.9.0, SHA 122a44e — runtime.invoke p50 0.007 ms p95 0.013 ms p99 0.024 ms.
+
+#28 (2026-09-09, in-process/simulator only): `benchmarks/mcp-http-2026-09-09.json` N=30, limit declared before run invoke p99 < 50 ms (generous contributor-laptop ceiling; typical in-process invoke ~1-2 ms, not USB) — mcpInitialize p50 227.655 ms p99 303.867 ms, mcpListTools p50 3.794 ms p99 8.473 ms, mcpInvoke p50 1.566 ms p99 5.796 ms pass, mcpReadState p50 0.728 ms p99 1.837 ms, httpInvoke p50 0.469 ms p99 3.822 ms.
+
+#29 (2026-09-09, simulator only): `benchmarks/watchdog-2026-09-09.json` timeout 200 ms interval 25 ms, 8x gpio.read load — kick interval error p50 2.101 ms p95 4.281 ms p99 6.321 ms, max interval 41.361 ms margin 158.639 ms, host heartbeat stays inside timeout: yes.
+
+#30 (2026-09-09, simulator only, FileJournalStorage, no exactly-once physical claim): `benchmarks/journal-2026-09-09.json` N=100/1000/5000, 10 restarts each — hydrate p50 1.772/14.684/71.913 ms p95 2.182/20.321/78.791 ms, list p50 0.852/2.881/9.995 ms p95 1.881/6.834/16.552 ms.
+
 ### Heterogeneous demo
 
 ```bash

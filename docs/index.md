@@ -24,6 +24,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 
 - [CLI reference](cli.md), [Python quickstart](../sdk/python/README.md), and [troubleshooting](troubleshooting.md).
 - [MCP integration](mcp.md) and [coffee machine example](coffee-machine.md).
+- [Contributing](../CONTRIBUTING.md) — simulator, firmware, and HIL contribution paths.
 - [Releasing](releasing.md) — dry-run release engineering and the alpha gate.
 - [Maintainer guide](maintainers.md) — review, triage, and the intentionally gated CI workflow.
 

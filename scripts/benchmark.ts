@@ -7,9 +7,11 @@
  * marketing claims and not certified performance. Results are written to
  * benchmarks/results/benchmarks.json (gitignored) and printed.
  */
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
+import { arch, cpus, platform, release } from 'node:os';
 import {
   BoundedIdempotencyStore,
   Journal,
@@ -29,17 +31,39 @@ interface BenchResult {
   totalMs: number;
   meanMicros: number;
   opsPerSecond: number;
+  p50Ms?: number;
+  p95Ms?: number;
+  p99Ms?: number;
+  samplesMs?: number[];
 }
 
 const results: BenchResult[] = [];
 
-function record(name: string, iterations: number, totalMs: number): void {
+function percentile(samples: number[], percentileValue: number): number {
+  const sorted = [...samples].sort((a, b) => a - b);
+  const rank = (percentileValue / 100) * (sorted.length - 1);
+  const lower = Math.floor(rank);
+  const upper = Math.ceil(rank);
+  const low = sorted[lower] ?? 0;
+  const high = sorted[upper] ?? low;
+  return low + (high - low) * (rank - lower);
+}
+
+function record(name: string, iterations: number, totalMs: number, samplesMs?: number[]): void {
   results.push({
     name,
     iterations,
     totalMs,
     meanMicros: (totalMs * 1000) / iterations,
     opsPerSecond: (iterations / totalMs) * 1000,
+    ...(samplesMs && samplesMs.length > 0
+      ? {
+          p50Ms: percentile(samplesMs, 50),
+          p95Ms: percentile(samplesMs, 95),
+          p99Ms: percentile(samplesMs, 99),
+          samplesMs,
+        }
+      : {}),
   });
 }
 
@@ -57,6 +81,29 @@ async function benchAsync(
   const started = performance.now();
   for (let i = 0; i < iterations; i += 1) await fn(i);
   record(name, iterations, performance.now() - started);
+}
+
+async function benchAsyncWithSamples(
+  name: string,
+  iterations: number,
+  fn: (index: number) => Promise<void>,
+): Promise<void> {
+  const samplesMs: number[] = [];
+  const started = performance.now();
+  for (let i = 0; i < iterations; i += 1) {
+    const sampleStarted = performance.now();
+    await fn(i);
+    samplesMs.push(performance.now() - sampleStarted);
+  }
+  record(name, iterations, performance.now() - started, samplesMs);
+}
+
+function gitSha(): string {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
 }
 
 async function main(): Promise<void> {
@@ -122,7 +169,7 @@ async function main(): Promise<void> {
   const runtime = new PinoutRuntime();
   registerModule(relayModule);
   await runtime.registerFromModule(relayModule.id, { id: 'relay-bench', simulated: true });
-  await benchAsync('runtime.invoke round-trip (simulated relay)', 2_000, async () => {
+  await benchAsyncWithSamples('runtime.invoke round-trip (simulated relay)', 2_000, async () => {
     await runtime.invoke('relay-bench', 'relay.set', { on: true });
   });
 
@@ -143,18 +190,42 @@ async function main(): Promise<void> {
       `${result.name.padEnd(46)} ${String(result.iterations).padStart(7)} it  ` +
         `${result.meanMicros.toFixed(2).padStart(9)} µs/op  ${Math.round(result.opsPerSecond).toLocaleString('en-US').padStart(12)} ops/s`,
     );
+    if (result.p50Ms !== undefined) {
+      console.log(
+        `${''.padEnd(46)} p50 ${result.p50Ms.toFixed(3)} ms  p95 ${result.p95Ms?.toFixed(3)} ms  p99 ${result.p99Ms?.toFixed(3)} ms`,
+      );
+    }
   }
 
   mkdirSync(join(process.cwd(), 'benchmarks', 'results'), { recursive: true });
+  const recordedAt = new Date().toISOString();
+  const report = {
+    benchmark: 'host-simulator-command-overhead',
+    evidence: 'SIMULATED',
+    limits: {
+      runtimeInvokeP99Ms: '< 50 ms (issue #27 contributor laptop limit)',
+    },
+    recordedAt,
+    gitSha: gitSha(),
+    machine: {
+      platform: platform(),
+      release: release(),
+      arch: arch(),
+      cpu: cpus()[0]?.model ?? 'unknown',
+      logicalCpus: cpus().length,
+    },
+    node: process.version,
+    results,
+  };
+  writeFileSync(
+    join(process.cwd(), 'benchmarks', `host-simulator-${recordedAt.slice(0, 10)}.json`),
+    JSON.stringify(report, null, 2),
+  );
   writeFileSync(
     join(process.cwd(), 'benchmarks', 'results', 'benchmarks.json'),
-    JSON.stringify(
-      { recordedAt: new Date().toISOString(), node: process.version, results },
-      null,
-      2,
-    ),
+    JSON.stringify(report, null, 2),
   );
-  console.log('\nRecorded to benchmarks/results/benchmarks.json');
+  console.log(`\nRecorded to benchmarks/host-simulator-${recordedAt.slice(0, 10)}.json`);
   process.exit(0);
 }
 

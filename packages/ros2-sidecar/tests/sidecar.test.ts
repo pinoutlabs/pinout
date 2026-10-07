@@ -1,5 +1,5 @@
 import { AbortedError, PinoutRuntime, StopUnconfirmedError, StreamBus } from '@pinout/core';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FakeRosActionServer } from '../src/fakeRosActionServer.js';
 import {
   createRos2SidecarBackend,
@@ -9,8 +9,11 @@ import {
   ros2SidecarModule,
 } from '../src/index.js';
 
+afterEach(() => vi.useRealTimers());
+
 describe('Ros2Sidecar Integration and Lifecycle', () => {
   it('executes happy path with feedback, streamBus fanout, and controller-confirmed evidence', async () => {
+    vi.useFakeTimers();
     const streamBus = new StreamBus();
     const transport = new FakeRosActionServer({ motionDelayMs: 25, feedbackIntervalMs: 5 });
     const backend = createRos2SidecarBackend({ transport, streamBus, deviceId: 'arm-sim-01' });
@@ -26,13 +29,15 @@ describe('Ros2Sidecar Integration and Lifecycle', () => {
     const streamHandle = streamBus.subscribe(backend.feedbackStreamId);
     const streamFramesPromise = streamHandle.sample(3);
 
-    const result = await backend.invoke('arm.move_to_pose', {
+    const resultPromise = backend.invoke('arm.move_to_pose', {
       target: {
         frame: 'base_link',
         position: { x: 0.35, y: -0.2, z: 0.45 },
       },
       transformAt: Date.now(),
     });
+    await vi.advanceTimersByTimeAsync(30);
+    const result = await resultPromise;
 
     expect(result.success).toBe(true);
     expect(result.position).toEqual({ x: 0.35, y: -0.2, z: 0.45 });

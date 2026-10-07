@@ -72,7 +72,7 @@ describe('module generation', () => {
     } finally {
       rmSync(output, { recursive: true, force: true });
     }
-  }, 30_000); // Includes a real compiler subprocess; allow slower CI machines.
+  }, 120_000); // Shells out to real npm install + tsc; allow slowest CI machines.
 
   it('refuses overwrite without flag', async () => {
     const output = mkdtempSync(join(tmpdir(), 'pinout-gen-dup-'));
@@ -81,7 +81,7 @@ describe('module generation', () => {
       generateCandidateModule({ sourcePath: heatboxPath, outputPath: output }),
     ).rejects.toThrow(/already exists/);
     rmSync(output, { recursive: true, force: true });
-  }, 30_000);
+  }, 120_000); // shells npm twice; allow slowest CI machines
 });
 
 describe('plan output', () => {

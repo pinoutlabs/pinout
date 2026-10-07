@@ -102,6 +102,55 @@ npm run pinout -- doctor --no-daemon
 npm run pinout -- doctor --json
 ```
 
+## Simulator walkthrough
+
+This short walkthrough stays local and uses the built-in simulated ESP32. It
+does not open a serial port or verify a physical output. Build once, then use
+two terminals.
+
+Terminal A (leave the daemon running):
+
+```bash
+npm run build
+node packages/daemon/dist/main.js --demo --token local-demo-token
+```
+
+Terminal B:
+
+```bash
+export PINOUT_TOKEN=local-demo-token
+export PINOUT_OWNER=cli-docs
+
+# Read-only discovery of serial/USB candidates.
+npm run pinout -- discover --no-mdns
+
+# Inspect the simulator's advertised capabilities through the direct CLI runtime.
+npm run pinout -- --json runtime capabilities esp32-01
+
+# Preview a daemon-routed actuation. The daemon validates policy but does not execute it.
+curl -sS -X POST http://127.0.0.1:8787/v1/devices/esp32-01/invoke \
+  -H "Authorization: Bearer $PINOUT_TOKEN" \
+  -H 'Content-Type: application/json' \
+  --data '{"capability":"gpio.write","args":{"pin":2,"value":true},"owner":"cli-docs","dryRun":true}'
+
+# Invoke a read-only capability against the local simulator through the CLI.
+npm run pinout -- --json invoke esp32-01 gpio.read --payload '{"pin":2}'
+
+# Halt the daemon, inspect its shared safety state, then restore it.
+npm run pinout -- halt "walkthrough complete"
+npm run pinout -- --json daemon status
+npm run pinout -- resume
+```
+
+The discovery command reports candidate ports, `runtime capabilities` lists
+capability names and whether they have physical output, and the dry-run
+response includes `dryRun: true` and `policy.allowed: true` without creating an
+operation. The daemon status response shows its safety state and device count.
+The CLI invocation above is a direct, in-process simulator command; daemon
+governance, leases, and the HTTP dry-run route are described in the [daemon
+guide](daemon.md). Read the [safety model](safety-model.md) before adapting
+the sequence for hardware.
+
 ### Diagnostic doctor (`pinout doctor`)
 
 `pinout doctor` executes a multi-stage, non-actuating diagnostic:

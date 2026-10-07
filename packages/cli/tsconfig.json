@@ -6,5 +6,10 @@
     "outDir": "dist"
   },
   "include": ["src"],
-  "references": [{ "path": "../core" }, { "path": "../generator" }, { "path": "../discovery" }]
+  "references": [
+    { "path": "../core" },
+    { "path": "../generator" },
+    { "path": "../discovery" },
+    { "path": "../module-host" }
+  ]
 }

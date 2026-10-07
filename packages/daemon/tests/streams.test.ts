@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { PinoutRuntime } from '@pinout/core';
 import { startDaemon, type RunningDaemon } from '../src/start.js';
@@ -55,5 +55,34 @@ describe('daemon WebSocket data plane', () => {
     daemon = undefined;
     await closed;
     expect(bus.stats('sensor')?.subscribers).toBe(0);
+  });
+
+  it('closes a stalled consumer after the send deadline and keeps the daemon usable', async () => {
+    daemon = await startDaemon(new PinoutRuntime(), { port: 0 });
+    const bus = daemon.context.streams;
+    bus.register({ id: 'slow', deviceId: 'slow', name: 'telemetry' });
+    const ws = new WebSocket(`ws://127.0.0.1:${daemon.port}/v1/streams/slow/frames`);
+    await once(ws, 'open');
+
+    const originalSend = WebSocket.prototype.send;
+    // The client remains connected but never drains the server's send. This
+    // makes the server-side deadline deterministic without external sockets.
+    WebSocket.prototype.send = (() => undefined) as WebSocket['send'];
+
+    vi.useFakeTimers();
+    try {
+      const closed = once(ws, 'close');
+      bus.publish('slow', { value: 1 });
+      await vi.advanceTimersByTimeAsync(5000);
+      const [code] = (await closed) as [number, unknown];
+      expect(code).toBe(1006);
+      expect(bus.stats('slow')?.subscribers).toBe(0);
+    } finally {
+      WebSocket.prototype.send = originalSend;
+      vi.useRealTimers();
+    }
+
+    const health = await fetch(`http://127.0.0.1:${daemon.port}/v1/health`);
+    expect(health.status).toBe(200);
   });
 });

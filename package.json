@@ -5,7 +5,7 @@
   "description": "Hardware abstraction layer for programmable devices \u2014 SDK, CLI, firmware, and MCP adapter.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
+    "pretest": "npm run build --silent && tsc -p examples/external-module/weird-sensor/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -49,6 +50,9 @@
     "demo:generate-device": "npm run build --silent && tsx examples/generate-device.ts",
     "demo:coffee": "npm run build --silent && tsx examples/coffee-machine.ts",
     "bench": "npm run build --silent && tsx scripts/benchmark.ts",
+    "bench:mcp": "npm run build --silent && tsx scripts/benchmark-mcp.ts",
+    "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts",
+    "bench:journal": "npm run build --silent && tsx scripts/benchmark-journal.ts",
     "hardware:smoke": "npm run build --silent && node scripts/hardware-smoke.mjs",
     "test:firmware:uno": "node scripts/test-uno-firmware.mjs"
   },
