@@ -1,0 +1,64 @@
+packages/core/src/index.ts
+  h_b8c068798e4e71 233-237,341-360
+packages/core/src/modules/centrifuge/capabilities.ts
+  h_b8c068798e4e71 1-152
+packages/core/src/modules/centrifuge/simulator.ts
+  h_b8c068798e4e71 1-171
+packages/core/src/modules/centrifugeModule.ts
+  h_b8c068798e4e71 1-28
+packages/core/src/modules/heaterShaker/capabilities.ts
+  h_b8c068798e4e71 1-174
+packages/core/src/modules/heaterShaker/simulator.ts
+  h_b8c068798e4e71 1-171
+packages/core/src/modules/heaterShakerModule.ts
+  h_b8c068798e4e71 1-29
+packages/core/src/modules/pipette/capabilities.ts
+  h_b8c068798e4e71 1-172
+packages/core/src/modules/pipette/simulator.ts
+  h_b8c068798e4e71 1-180
+packages/core/src/modules/pipetteModule.ts
+  h_b8c068798e4e71 1-29
+packages/core/src/modules/registry.ts
+  h_b8c068798e4e71 16-19,45-48
+packages/core/src/modules/syringePump/capabilities.ts
+  h_b8c068798e4e71 1-171
+packages/core/src/modules/syringePump/simulator.ts
+  h_b8c068798e4e71 1-182
+packages/core/src/modules/syringePumpModule.ts
+  h_b8c068798e4e71 1-28
+packages/core/src/runtime/createLabWorkbench.ts
+  h_b8c068798e4e71 1-74
+packages/core/tests/labModules.test.ts
+  h_b8c068798e4e71 1-260
+packages/protocols-oahl/package.json
+  h_b8c068798e4e71 1-26
+packages/protocols-oahl/src/errors.ts
+  h_b8c068798e4e71 1-80
+packages/protocols-oahl/src/index.ts
+  h_b8c068798e4e71 1-33
+packages/protocols-oahl/src/oahlBridge.ts
+  h_b8c068798e4e71 1-305
+packages/protocols-oahl/src/oahlClient.ts
+  h_b8c068798e4e71 1-81
+packages/protocols-oahl/src/oahlServer.ts
+  h_b8c068798e4e71 1-176
+packages/protocols-oahl/src/types.ts
+  h_b8c068798e4e71 1-118
+packages/protocols-oahl/tests/oahl.test.ts
+  h_b8c068798e4e71 1-181
+packages/protocols-oahl/tsconfig.json
+  h_b8c068798e4e71 1-10
+tsconfig.json
+  h_b8c068798e4e71 39-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ba0277741bfd27d2586a561bebdb0fc018114b06",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
