@@ -115,9 +115,10 @@ jobs:
           python-version: '3.11'
       - name: Install PlatformIO
         run: pip install platformio
-      - name: Compile ESP32 firmware (compile-only)
+      - name: Compile ESP32 firmware (classic only, compile-only)
         working-directory: firmware/esp32-bridge
-        run: pio run -e esp32dev -e esp32-c3-supermini
+        # C3 stays opt-in; release-candidate workflow compiles it explicitly.
+        run: pio run -e esp32dev
       - name: Compile Uno firmware
         run: pio run -d firmware/uno-bridge
       - uses: actions/setup-node@v4

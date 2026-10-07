@@ -28,6 +28,8 @@ python3 -m venv .venv
 .venv/bin/pio run -d firmware/esp32-bridge -e esp32dev -e esp32-c3-supermini
 ```
 
+C3 compile here is manual/demo-only, not the CI default gate (CI compiles classic `esp32dev` only; C3 via release-candidate workflow).
+
 Identify your physical board and serial port (`npm run pinout -- ports`). Close serial monitors before uploading or starting Pinout. Explicitly upload **only the matching target**, replacing `PORT`:
 
 ```bash

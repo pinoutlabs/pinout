@@ -96,14 +96,21 @@ CI runs against `simulatedEsp32()` only. To verify on a board:
 
 Hardware tests are manual; do not gate CI on attached devices.
 
-## Firmware compile (optional)
+## Firmware compile (classic gate, no flash)
 
-CI includes a PlatformIO compile job when the toolchain is available. Locally:
+Local `pio run` is optional. The gated CI job (`ci:run` label, `main` push, or
+manual `workflow_dispatch`) compiles the reference classic target and uploads
+its artifacts; never with `-t upload`:
 
 ```bash
 cd firmware/esp32-bridge
-pio run
+pio run -e esp32dev
 ```
+
+CI publishes `esp32-bridge-esp32dev` (`firmware.bin` + `firmware.elf`). The
+experimental C3 target (`esp32-c3-supermini`) stays out of the default gate and
+is compiled only by the manual release-candidate workflow
+(`.github/workflows/release-alpha.yml` via `workflow_dispatch`).
 
 If PlatformIO is not installed, skip this step — Node tests and the simulator remain sufficient for SDK changes. Install via [platformio.org](https://platformio.org/) or `pip install platformio`.
 
