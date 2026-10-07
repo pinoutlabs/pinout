@@ -95,6 +95,10 @@ Agents acting over MCP must report available verification honestly:
 
 See [Physical Evidence State Contract](state-evidence.md) for full contract definitions.
 
+### Live-lamp transcript template (#24)
+
+File redacted tool transcripts under `hardware/records/YYYY-MM-DD-mcp-transcript.md`: agent task, `lamp.arm` / `lamp.on` / `lamp.status` calls used, `pinout__read_state.stateEvidence` JSON (`commanded` vs `acknowledged` vs `observed`), hardware evidence link, and confirmation that no GPIO numbers were the agent's primary interface. ACK is not illumination unless readback was configured.
+
 ## Lifecycle
 
 - **Session duration**: The stdio server stays connected across multiple sequential requests on the same session.

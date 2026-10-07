@@ -10,6 +10,19 @@ Pinout aims for a fresh operator or second tester to repeat setup in **under 15 
 
 > **Time Yourself:** Please measure and record your setup duration from the completion of physical wiring to your first successful status verification and actuation. Record your findings and notes in your test log.
 
+Copy this block into `hardware/records/YYYY-MM-DD-setup-trial.md` (do not overwrite another tester's file). Honest >15 min is a valid outcome.
+
+```markdown
+- Start (wiring + firmware done):
+- End (first status + actuation):
+- Elapsed:
+- `pinout doctor` FAIL/WARN hits + how resolved:
+- Times you had to ask a maintainer:
+- Under 15 min? (yes/no, no judgment):
+```
+
+`pinout doctor` is non-actuating (only `sys.hello` during discovery).
+
 ---
 
 ## Prerequisites
