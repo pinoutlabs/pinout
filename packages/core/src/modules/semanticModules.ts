@@ -1,5 +1,6 @@
 import { DeviceError } from '../errors.js';
 import type { CapabilityDescriptor } from '../types.js';
+import { createBackendEventBus } from '../runtime/backendEvents.js';
 import type { DeviceBackend, PinoutModuleDefinition } from '../runtime/types.js';
 
 const emptyInput = { type: 'object' as const, additionalProperties: false, properties: {} };
@@ -216,7 +217,7 @@ const powerSupplyCapabilities: CapabilityDescriptor[] = [
 class SemanticBackend implements DeviceBackend {
   readonly kind = 'simulated' as const;
   private closed = false;
-  private readonly listeners = new Set<(event: string, payload: Record<string, unknown>) => void>();
+  private readonly eventBus = createBackendEventBus();
   private state: Record<string, unknown>;
   constructor(
     private readonly family: 'relay' | 'valve' | 'pump' | 'power',
@@ -236,15 +237,35 @@ class SemanticBackend implements DeviceBackend {
               };
   }
   subscribe(handler: (event: string, payload: Record<string, unknown>) => void): () => void {
-    this.listeners.add(handler);
-    return () => this.listeners.delete(handler);
+    return this.eventBus.subscribe(handler);
   }
   async close(): Promise<void> {
     this.closed = true;
-    this.listeners.clear();
+    this.eventBus.clear();
   }
   getOperationalState(): Record<string, unknown> {
     return { status: this.status(), ...this.state };
+  }
+  async safeState(): Promise<Record<string, unknown>> {
+    if (this.closed) throw new DeviceError('DISCONNECTED', `${this.family} is closed.`);
+    if (this.family === 'relay') {
+      this.state.on = false;
+      this.emit('relay.changed', { on: false });
+      return { applied: true, on: false };
+    }
+    if (this.family === 'valve') {
+      this.state.opening = 0;
+      this.emit('valve.changed', { opening: 0 });
+      return { applied: true, opening: 0 };
+    }
+    if (this.family === 'pump') {
+      this.state.speed = 0;
+      this.emit('pump.changed', { speed: 0 });
+      return { applied: true, speed: 0 };
+    }
+    this.state.enabled = false;
+    this.emit('power.changed', { ...this.state });
+    return { applied: true, enabled: false };
   }
   async invoke(action: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     if (this.closed) throw new DeviceError('DISCONNECTED', `${this.family} is closed.`);
@@ -293,7 +314,7 @@ class SemanticBackend implements DeviceBackend {
     return 'ready';
   }
   private emit(event: string, payload: Record<string, unknown>): void {
-    for (const listener of this.listeners) listener(event, payload);
+    this.eventBus.emit(event, payload);
   }
 }
 
