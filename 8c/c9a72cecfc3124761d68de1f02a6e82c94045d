@@ -1,0 +1,30 @@
+docs/mcp.md
+  h_b8c068798e4e71 98-101
+docs/ros2-sidecar.md
+  h_b8c068798e4e71 178-192
+docs/setup.md
+  h_b8c068798e4e71 13-25
+hardware/records/2026-10-07-esp32-classic-compile-pending.md
+  h_b8c068798e4e71 1-19
+hardware/records/README.md
+  h_b8c068798e4e71 14-18
+packages/ros2-sidecar/src/index.ts
+  h_b8c068798e4e71 11-12
+packages/ros2-sidecar/src/rclnodejsTransport.ts
+  h_b8c068798e4e71 1-148
+scripts/hil/crash-window-b-lamp.md
+  h_b8c068798e4e71 1-24
+scripts/hil/modbus-lamp.md
+  h_b8c068798e4e71 1-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8cc9a72cecfc3124761d68de1f02a6e82c94045d",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
