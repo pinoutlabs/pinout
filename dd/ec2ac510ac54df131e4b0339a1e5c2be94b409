@@ -1,0 +1,42 @@
+.github/ISSUE_TEMPLATE/config.yml
+  h_b8c068798e4e71 4
+README.md
+  h_b8c068798e4e71 13,504
+SUPPORT.md
+  h_b8c068798e4e71 5
+packages/cli/package.json
+  h_b8c068798e4e71 34
+packages/core/package.json
+  h_b8c068798e4e71 30
+packages/daemon/package.json
+  h_b8c068798e4e71 7
+packages/discovery/package.json
+  h_b8c068798e4e71 7
+packages/generator/package.json
+  h_b8c068798e4e71 29
+packages/mcp/package.json
+  h_b8c068798e4e71 29
+packages/module-host/package.json
+  h_b8c068798e4e71 7
+packages/protocols-grbl/package.json
+  h_b8c068798e4e71 7
+packages/protocols-modbus/package.json
+  h_b8c068798e4e71 7
+packages/protocols-mqtt/package.json
+  h_b8c068798e4e71 7
+packages/protocols-scpi/package.json
+  h_b8c068798e4e71 26
+packages/ros2-sidecar/package.json
+  h_b8c068798e4e71 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ddec2ac510ac54df131e4b0339a1e5c2be94b409",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
