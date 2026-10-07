@@ -1,0 +1,78 @@
+CONTRIBUTING.md
+  h_b8c068798e4e71 78-113
+benchmarks/host-simulator-2026-09-09.json
+  h_b8c068798e4e71 1-573
+benchmarks/journal-2026-09-09.json
+  h_b8c068798e4e71 1-105
+benchmarks/mcp-http-2026-09-09.json
+  h_b8c068798e4e71 1-131
+benchmarks/watchdog-2026-09-09.json
+  h_b8c068798e4e71 1-182
+docs/capabilities.md
+  h_b8c068798e4e71 7-60
+docs/cli.md
+  h_b8c068798e4e71 105-153
+docs/index.md
+  h_b8c068798e4e71 27
+docs/mcp.md
+  h_b8c068798e4e71 37-75
+docs/testing.md
+  h_b8c068798e4e71 61-79
+firmware/esp32-bridge/README.md
+  h_b8c068798e4e71 28-55
+fixtures/protocol/v1/README.md
+  h_b8c068798e4e71 3-13
+fixtures/protocol/v1/messages.jsonl
+  h_b8c068798e4e71 5-9
+package-lock.json
+  h_b8c068798e4e71 963-966,5488-5495
+package.json
+  h_b8c068798e4e71 8,18,53-55
+packages/cli/tests/cli.test.ts
+  h_b8c068798e4e71 44-45,138-141
+packages/cli/tsconfig.json
+  h_b8c068798e4e71 9-14
+packages/core/tests/lamp.test.ts
+  h_b8c068798e4e71 5,744,754
+packages/core/tests/protocolVectors.test.ts
+  h_b8c068798e4e71 4,6-7,12-13,38-93,95-105
+packages/daemon/src/streamSocket.ts
+  h_b8c068798e4e71 37,57-61,104-106
+packages/daemon/tests/pythonContract.test.ts
+  h_b8c068798e4e71 26-27,33
+packages/daemon/tests/streams.test.ts
+  h_b8c068798e4e71 2,59-87
+packages/discovery/tests/discovery.test.ts
+  h_b8c068798e4e71 18-19,89-114,117-138
+packages/generator/src/emit/buildModule.ts
+  h_b8c068798e4e71 54-61
+packages/generator/tests/generator.test.ts
+  h_b8c068798e4e71 75,84
+packages/module-host/src/moduleHost.ts
+  h_b8c068798e4e71 186-190,405-414
+packages/ros2-sidecar/tests/sidecar.test.ts
+  h_b8c068798e4e71 2,12-13,16,32,39-40
+packages/ros2-sidecar/tests/transport.test.ts
+  h_b8c068798e4e71 7-9
+scripts/benchmark-journal.ts
+  h_b8c068798e4e71 1-179
+scripts/benchmark-mcp.ts
+  h_b8c068798e4e71 1-225
+scripts/benchmark-watchdog.ts
+  h_b8c068798e4e71 1-170
+scripts/benchmark.ts
+  h_b8c068798e4e71 10,14,34-37,42-52,59-66,86-108,172,193-197,201-223,226,228
+sdk/python/README.md
+  h_b8c068798e4e71 50-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7b89a64ad240b67d5d7088f7e9e4f50a32f74d6f",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
