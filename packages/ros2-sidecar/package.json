@@ -4,7 +4,7 @@
   "description": "Narrow ROS 2 sidecar mapping robot actions to Pinout operations, feedback streams, and controller-confirmed evidence. Software/simulator only.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",

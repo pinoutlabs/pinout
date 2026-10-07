@@ -4,7 +4,7 @@
   "description": "Zero-dependency MQTT 3.1.1 client and declarative topic→capability mapping for Pinout.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",

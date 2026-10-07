@@ -10,7 +10,7 @@
 
 <br />
 
-[![CI](https://github.com/IMisbahk/pinout/actions/workflows/ci.yml/badge.svg)](https://github.com/IMisbahk/pinout/actions/workflows/ci.yml)
+[![CI](https://github.com/pinoutlabs/pinout/actions/workflows/ci.yml/badge.svg)](https://github.com/pinoutlabs/pinout/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)
 ![Hardware](https://img.shields.io/badge/hardware-ESP32%20%2B%20simulators-black)
 ![MCP](https://img.shields.io/badge/MCP-compatible-purple)
@@ -501,7 +501,7 @@ It is not Pinout's internal hardware model.
 Node 20+ is required.
 
 ```bash
-git clone https://github.com/IMisbahk/pinout.git
+git clone https://github.com/pinoutlabs/pinout.git
 cd pinout
 npm install
 npm test

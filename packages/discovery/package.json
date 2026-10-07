@@ -4,7 +4,7 @@
   "description": "Device discovery for Pinout — serial, USB, mDNS, and opt-in bounded network probing. Discovery never actuates hardware.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",
