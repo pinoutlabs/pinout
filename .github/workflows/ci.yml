@@ -115,10 +115,10 @@ jobs:
           python-version: '3.11'
       - name: Install PlatformIO
         run: pip install platformio
-      - name: Compile ESP32 firmware (classic only, compile-only)
+      - name: Compile ESP32 firmware (classic + S2/S3, compile-only)
         working-directory: firmware/esp32-bridge
-        # C3 stays opt-in; release-candidate workflow compiles it explicitly.
-        run: pio run -e esp32dev
+        # C3 and C6 stay opt-in; the release-candidate workflow compiles C3 explicitly.
+        run: pio run -e esp32dev -e esp32s2-devkit -e esp32s3-devkit
       - name: Compile Uno firmware
         run: pio run -d firmware/uno-bridge
       - uses: actions/setup-node@v4
@@ -133,4 +133,8 @@ jobs:
           path: |
             firmware/esp32-bridge/.pio/build/esp32dev/firmware.bin
             firmware/esp32-bridge/.pio/build/esp32dev/firmware.elf
+            firmware/esp32-bridge/.pio/build/esp32s2-devkit/firmware.bin
+            firmware/esp32-bridge/.pio/build/esp32s2-devkit/firmware.elf
+            firmware/esp32-bridge/.pio/build/esp32s3-devkit/firmware.bin
+            firmware/esp32-bridge/.pio/build/esp32s3-devkit/firmware.elf
           if-no-files-found: error
