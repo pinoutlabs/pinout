@@ -1,0 +1,20 @@
+firmware/boards/esp32-c6-devkitc-1.json
+  h_b8c068798e4e71 1-24
+firmware/boards/esp32-s2-devkitc-1.json
+  h_b8c068798e4e71 1-29
+firmware/boards/esp32-s3-devkitc-1.json
+  h_b8c068798e4e71 7,11-14,20-21,23-27
+packages/core/src/boards/builtin.ts
+  h_b8c068798e4e71 135-271,274-284,300-308
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "50f8df8955b0def53fab7d1a2e38777109acd13e",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
