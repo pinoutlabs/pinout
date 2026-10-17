@@ -1,0 +1,16 @@
+packages/registry/INTEGRATION_NOTES.md
+  h_b8c068798e4e71 1-145
+packages/registry/README.md
+  h_b8c068798e4e71 1-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4194991528befcfaf304c087c5d2e52a746e08f7",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
