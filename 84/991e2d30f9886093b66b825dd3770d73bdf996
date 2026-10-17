@@ -1,0 +1,20 @@
+packages/libgpiod/src/backend.ts
+  h_b8c068798e4e71 1-1034
+packages/libgpiod/src/discovery.ts
+  h_b8c068798e4e71 1-207
+packages/libgpiod/src/index.ts
+  h_b8c068798e4e71 1-109
+packages/libgpiod/src/module.ts
+  h_b8c068798e4e71 1-380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "84991e2d30f9886093b66b825dd3770d73bdf996",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
