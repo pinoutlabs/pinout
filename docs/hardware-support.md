@@ -19,7 +19,7 @@ For the alpha release, the classic ESP32 DevKit (`esp32-devkit-v1` / ESP-WROOM-3
 
 Uno R3 and ESP32-C3 SuperMini are now compile-tested with board-aware host validation and static MCP integration; physical HIL remains pending. See [the three-board guide](three-board-demo.md).
 
-ESP32-S2/S3/C6, Raspberry Pi, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
+ESP32-S2-DevKitC-1, ESP32-S3-DevKitC-1, and ESP32-C6-DevKitC-1 now have opt-in experimental firmware environments (`esp32s2-devkit`, `esp32s3-devkit`, `esp32c6-devkit`) and validated pin maps under `firmware/boards/`. They have not been compiled or hardware-tested yet; the S2 env builds with the ESP32-S2-Saola-1 PlatformIO board definition but flashes the DevKitC-1 pin table. Raspberry Pi, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
 
 ## Modbus Lamp Backend (SIMULATED)
 
@@ -30,6 +30,19 @@ The second physical backend for the semantic `lamp` contract is implemented over
 - **Documentation:** See [`docs/lamp-modbus.md`](lamp-modbus.md) for coil actuation, discrete input observation, and watchdog safety details.
 
 SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT (`pinout/mqtt-bridge`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
+
+## Linux SBC GPIO (`pinout/linux-gpio`)
+
+Linux boards with `/dev/gpiochip*` are supported through the libgpiod v2
+command-line tools (`@pinout/libgpiod`):
+
+- **Catalog Status:** `IMPLEMENTED` (scripted-runner unit tests; libgpiod v2
+  tool output parsers fixture-tested).
+- **Physical Verification:** **PENDING** — requires a dated operator-observed
+  record under `hardware/records/` (and a `gpio-sim`-based integration run
+  would be welcome before that).
+- **Prerequisites:** libgpiod v2 tools on `PATH`; `--hold-period` (set-once
+  writes) needs libgpiod ≥ 2.2.
 
 ## Flashing Policy: Never Auto-Flash Unidentified Hardware
 
