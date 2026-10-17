@@ -38,19 +38,35 @@
     },
     {
       "category": "embedded",
-      "target": "ESP32-S2 / S3 / C6",
-      "integration": "planned family descriptors; current pin maps cover classic ESP32 only",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "Do not assume identical pin maps across variants."
+      "target": "ESP32-S2-DevKitC-1",
+      "integration": "firmware/esp32-bridge env esp32s2-devkit + @pinout/core esp32-s2 board descriptor",
+      "status": "EXPERIMENTAL",
+      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
+      "notes": "Opt-in. PlatformIO 6.5.0 ships no DevKitC-1 definition, so the env builds with the ESP32-S2-Saola-1 definition (same S2 module family, 4 MB flash); the firmware pin table is the DevKitC-1 descriptor. UART0 on GPIO 43/44. Expected compile-clean by inspection; compile and HIL pending. Not certified."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-S3-DevKitC-1",
+      "integration": "firmware/esp32-bridge env esp32s3-devkit + @pinout/core esp32-s3 board descriptor",
+      "status": "EXPERIMENTAL",
+      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
+      "notes": "Opt-in. Same Arduino-ESP32 2.x core line as the classic esp32dev env. UART0 through the USB-to-UART bridge port. GPIO 26-32 (flash) and 33-37 (octal-PSRAM modules) stay reserved. Expected compile-clean by inspection; compile and HIL pending. The onboard addressable RGB LED (GPIO 38 v1.1 / 48 initial) is deliberately not exposed. Not certified."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-C6-DevKitC-1",
+      "integration": "firmware/esp32-bridge env esp32c6-devkit + @pinout/core esp32-c6 board descriptor",
+      "status": "EXPERIMENTAL",
+      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
+      "notes": "Opt-in. Requires the community pioarduino platform (Arduino-ESP32 3.x, pinned by release URL; first build needs network access). LEDC calls go through the src/boards/ledc_compat.h shim, the least-verified code in this workstream. Protocol transport is UART0 on GPIO 16/17 via the board's USB Type-C to UART port. Expected compile-clean by inspection; compile and HIL pending. Not certified."
     },
     {
       "category": "embedded",
       "target": "MicroPython / CircuitPython boards (generic)",
       "integration": "firmware/micropython-bridge",
       "status": "EXPERIMENTAL",
-      "testedHow": "host-side protocol validation (node validate.js) in software mode",
-      "notes": "No hardware verification. Runtime capability detection guards machine.* usage."
+      "testedHow": "host-side three-part protocol matrix via `node validate.js` (no npm install): software mode, reserved-pin config, and fake-`machine` hardware-mode peripheral-call assertions",
+      "notes": "No hardware verification. Runtime capability detection guards machine.* usage; unsupported capabilities fail with structured codes instead of fabricated values. Requires the MicroPython machine module; CircuitPython is not supported."
     },
     {
       "category": "embedded",
