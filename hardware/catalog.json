@@ -71,10 +71,10 @@
     {
       "category": "embedded",
       "target": "Linux SBC GPIO (libgpiod)",
-      "integration": "planned",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "libgpiod-first design; sysfs only as documented fallback."
+      "integration": "@pinout/libgpiod (module pinout/linux-gpio)",
+      "status": "IMPLEMENTED",
+      "testedHow": "unit tests against a scripted command runner for argv construction, output parsing, evidence, and safe state; not verified against real hardware",
+      "notes": "libgpiod v2 CLI only (never sysfs); Linux-only; not HARDWARE_VERIFIED."
     },
     {
       "category": "protocol",
@@ -219,6 +219,14 @@
       "status": "IMPLEMENTED",
       "testedHow": "tamper detection, trusted-publisher flows, CLI tests",
       "notes": "UNSIGNED modules work in development; never displayed as verified."
+    },
+    {
+      "category": "platform",
+      "target": "Module registry (offline-first, signed indexes)",
+      "integration": "@pinout/registry + CLI `module pack|publish|search|info|install|verify|conformance`",
+      "status": "IMPLEMENTED",
+      "testedHow": "offline unit tests: index validation, content/manifest hashing, Ed25519 verification (byte-parity with module-host), atomic install, L0-L5 conformance reports",
+      "notes": "file:// and local-directory registries are the tested path; HTTPS fetching exists behind an injectable fetcher with no live service; unsigned modules never display as verified."
     },
     {
       "category": "platform",
