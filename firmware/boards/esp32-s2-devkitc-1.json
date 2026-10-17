@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1",
+  "boardId": "esp32-s2-devkitc-1",
+  "family": "esp32-s2",
+  "mcu": "ESP32-S2",
+  "gpioPins": [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 33, 34, 35, 36, 37, 38, 39,
+    40, 41, 42, 46
+  ],
+  "adcPins": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "pwmPins": [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 33, 34, 35, 36, 37, 38, 39,
+    40, 41, 42
+  ],
+  "reservedPins": [0, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 43, 44, 45],
+  "inputOnlyPins": [46],
+  "uartPins": [{ "id": 0, "tx": 43, "rx": 44 }],
+  "i2cDefaults": { "sda": 8, "scl": 9 },
+  "spiDefaults": { "sck": 12, "miso": 13, "mosi": 11, "cs": 10 },
+  "voltage": { "logic": 3.3 },
+  "firmwareTarget": "esp32s2-devkit",
+  "warnings": [
+    "GPIO 26-32 are wired to SPI flash: never drive them.",
+    "GPIO 0, 45, 46 are boot straps; GPIO 46 is input-only and is never driven.",
+    "GPIO 19/20 are USB OTG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.",
+    "The bridge transports protocol v1 over UART0 at 115200 baud."
+  ],
+  "support": "EXPERIMENTAL"
+}

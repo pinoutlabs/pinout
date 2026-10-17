@@ -132,7 +132,155 @@ export const builtinBoards: BoardDescriptor[] = [
     ],
     support: 'COMPILE_TESTED',
   },
+  // ESP32-S2-DevKitC-1 pin map per the Espressif DevKitC-1 user guide and the
+  // ESP32-S2 datasheet (GPIO 46 is input-only; 26-32 flash; 22-25 unexposed).
+  {
+    schemaVersion: '1',
+    boardId: 'esp32-s2-devkitc-1',
+    family: 'esp32-s2',
+    mcu: 'ESP32-S2',
+    gpioPins: [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 33, 34, 35, 36, 37, 38, 39,
+      40, 41, 42, 46,
+    ],
+    adcPins: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    pwmPins: [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 33, 34, 35, 36, 37, 38, 39,
+      40, 41, 42,
+    ],
+    reservedPins: [0, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 43, 44, 45],
+    inputOnlyPins: [46],
+    uartPins: [
+      {
+        id: 0,
+        tx: 43,
+        rx: 44,
+      },
+    ],
+    i2cDefaults: {
+      sda: 8,
+      scl: 9,
+    },
+    spiDefaults: {
+      sck: 12,
+      miso: 13,
+      mosi: 11,
+      cs: 10,
+    },
+    voltage: {
+      logic: 3.3,
+    },
+    firmwareTarget: 'esp32s2-devkit',
+    warnings: [
+      'GPIO 26-32 are wired to SPI flash: never drive them.',
+      'GPIO 0, 45, 46 are boot straps; GPIO 46 is input-only and is never driven.',
+      'GPIO 19/20 are USB OTG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.',
+      'The bridge transports protocol v1 over UART0 at 115200 baud.',
+    ],
+    support: 'EXPERIMENTAL',
+  },
+  // ESP32-S3-DevKitC-1 pin map per the Espressif DevKitC-1 user guide and the
+  // ESP32-S3 datasheet (26-37 flash/PSRAM; 33-37 reserved for octal modules).
+  {
+    schemaVersion: '1',
+    boardId: 'esp32-s3-devkitc-1',
+    family: 'esp32-s3',
+    mcu: 'ESP32-S3',
+    gpioPins: [
+      1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
+    ],
+    adcPins: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    pwmPins: [
+      1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
+    ],
+    reservedPins: [
+      0, 3, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 43, 44, 45, 46,
+    ],
+    inputOnlyPins: [],
+    uartPins: [
+      {
+        id: 0,
+        tx: 43,
+        rx: 44,
+      },
+    ],
+    i2cDefaults: {
+      sda: 8,
+      scl: 9,
+    },
+    spiDefaults: {
+      sck: 12,
+      miso: 13,
+      mosi: 11,
+      cs: 10,
+    },
+    voltage: {
+      logic: 3.3,
+    },
+    firmwareTarget: 'esp32s3-devkit',
+    warnings: [
+      'GPIO 26-32 are wired to SPI flash: never drive them.',
+      'GPIO 33-37 are internal flash/PSRAM pins on octal-PSRAM modules and stay reserved.',
+      'GPIO 0/3/45/46 are boot straps; 19/20 USB-JTAG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.',
+      'The onboard addressable RGB LED is GPIO 38 (v1.1) or GPIO 48 (initial revision).',
+      'The bridge transports protocol v1 over UART0 at 115200 baud.',
+    ],
+    support: 'EXPERIMENTAL',
+  },
+  // ESP32-C6-DevKitC-1 (v1.2) pin map per the Espressif DevKitC-1 user guide
+  // and the ESP32-C6 datasheet (ADC1 on 0-6 only; 24-30 flash; GPIO 4 MTMS).
+  {
+    schemaVersion: '1',
+    boardId: 'esp32-c6-devkitc-1',
+    family: 'esp32-c6',
+    mcu: 'ESP32-C6',
+    gpioPins: [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 18, 19, 20, 21, 22, 23],
+    adcPins: [0, 1, 2, 3, 4, 5, 6],
+    pwmPins: [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 18, 19, 20, 21, 22, 23],
+    reservedPins: [8, 9, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 30],
+    inputOnlyPins: [],
+    uartPins: [
+      {
+        id: 0,
+        tx: 16,
+        rx: 17,
+      },
+    ],
+    i2cDefaults: {
+      sda: 6,
+      scl: 7,
+    },
+    spiDefaults: {
+      sck: 10,
+      miso: 2,
+      mosi: 3,
+      cs: 11,
+    },
+    voltage: {
+      logic: 3.3,
+    },
+    firmwareTarget: 'esp32c6-devkit',
+    warnings: [
+      'GPIO 24-30 are wired to SPI flash: never drive them.',
+      'GPIO 8/9/15 are boot straps; GPIO 8 also drives the onboard RGB LED.',
+      'GPIO 12/13 are USB-Serial/JTAG and 16/17 UART0; GPIO 14 is not led out and is unavailable.',
+      'GPIO 4 (MTMS) is sampled at reset: usable, but do not drive it low during boot.',
+      'ADC1 covers GPIO 0-6 only; ESP32-C6 has no ADC2.',
+    ],
+    support: 'EXPERIMENTAL',
+  },
 ];
+
+// LEDC channel counts: classic ESP32 16, S2/S3 8, C3/C6 6 (Espressif datasheets).
+const pwmChannelLimits: Partial<
+  Record<BoardDescriptor['family'], { label: string; max: number }>
+> = {
+  esp32: { label: 'ESP32', max: 16 },
+  'esp32-s2': { label: 'ESP32-S2', max: 8 },
+  'esp32-s3': { label: 'ESP32-S3', max: 8 },
+  'esp32-c3': { label: 'ESP32-C3', max: 6 },
+  'esp32-c6': { label: 'ESP32-C6', max: 6 },
+};
 
 export function boardForInfo(info: {
   boardId?: string;
@@ -149,8 +297,15 @@ export function validateBoardAction(
   action: string,
   payload: Record<string, unknown>,
 ): void {
-  if (board.family === 'esp32-c3' && typeof payload.channel === 'number' && payload.channel > 5)
-    throw new ValidationError('ESP32-C3 supports PWM channels 0–5.');
+  const channelLimit = pwmChannelLimits[board.family];
+  if (
+    channelLimit !== undefined &&
+    typeof payload.channel === 'number' &&
+    payload.channel > channelLimit.max - 1
+  )
+    throw new ValidationError(
+      `${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`,
+    );
   const read =
     ['gpio.read', 'gpio.watch', 'gpio.unwatch', 'gpio.analogRead'].includes(action) ||
     (action === 'gpio.mode' && payload.mode === 'input');

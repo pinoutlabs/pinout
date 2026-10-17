@@ -4,25 +4,27 @@
   "family": "esp32-s3",
   "mcu": "ESP32-S3",
   "gpioPins": [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 35, 36, 37, 38,
-    39, 40, 41, 42, 45, 46, 47, 48
+    1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48
   ],
   "adcPins": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   "pwmPins": [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48
+    1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48
   ],
-  "reservedPins": [26, 27, 28, 29, 30, 31, 32, 33, 43, 44, 22, 23, 24, 25],
+  "reservedPins": [
+    0, 3, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 43, 44, 45, 46
+  ],
   "inputOnlyPins": [],
   "uartPins": [{ "id": 0, "tx": 43, "rx": 44 }],
   "i2cDefaults": { "sda": 8, "scl": 9 },
   "spiDefaults": { "sck": 12, "miso": 13, "mosi": 11, "cs": 10 },
-  "voltage": { "logic": 3.3, "adcMax": 3.3 },
-  "usb": { "vendorId": "303a", "productId": "1001" },
-  "firmwareTarget": "esp32-s3-devkitc-1",
+  "voltage": { "logic": 3.3 },
+  "firmwareTarget": "esp32s3-devkit",
   "warnings": [
-    "Pins 26-32 are wired to SPI flash on WROOM modules: never drive them.",
-    "Pins 43/44 are UART0 USB-serial.",
-    "Pins 45/46 are strap pins; do not drive at boot."
+    "GPIO 26-32 are wired to SPI flash: never drive them.",
+    "GPIO 33-37 are internal flash/PSRAM pins on octal-PSRAM modules and stay reserved.",
+    "GPIO 0/3/45/46 are boot straps; 19/20 USB-JTAG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.",
+    "The onboard addressable RGB LED is GPIO 38 (v1.1) or GPIO 48 (initial revision).",
+    "The bridge transports protocol v1 over UART0 at 115200 baud."
   ],
   "support": "EXPERIMENTAL"
 }
