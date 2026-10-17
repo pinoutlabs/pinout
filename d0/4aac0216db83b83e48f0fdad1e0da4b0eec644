@@ -1,0 +1,14 @@
+tsconfig.json
+  h_b8c068798e4e71 42-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d04aac0216db83b83e48f0fdad1e0da4b0eec644",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
