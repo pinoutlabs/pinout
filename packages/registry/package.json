@@ -1,0 +1,35 @@
+{
+  "name": "@pinout/registry",
+  "version": "0.0.1-alpha.1",
+  "description": "Offline-first Pinout module registry: index format, packing, verification, and installation for module directories.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "prepack": "npm run build"
+  },
+  "license": "Apache-2.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
+  },
+  "dependencies": {
+    "@pinout/core": "0.0.1-alpha.1",
+    "@pinout/module-host": "0.0.1-alpha.1"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
