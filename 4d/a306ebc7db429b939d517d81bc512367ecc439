@@ -1,0 +1,16 @@
+packages/libgpiod/INTEGRATION_NOTES.md
+  h_b8c068798e4e71 1-222
+packages/libgpiod/README.md
+  h_b8c068798e4e71 1-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4da306ebc7db429b939d517d81bc512367ecc439",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
