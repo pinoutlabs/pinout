@@ -6,6 +6,36 @@ It does not implement a full board support package. It accepts structured comman
 
 Classic ESP32 and C3 SuperMini builds advertise distinct `boardId` values. See the [three-board guide](../../docs/three-board-demo.md) for the current daemon/MCP workflow; physical testing remains pending. C3 I2C defaults are GPIO 4/5, and GPIO 2/8/9 are reserved.
 
+## Build variants
+
+Each PlatformIO environment compiles a distinct `boardId` from a compile-time
+board header in `src/boards/`. Exactly one `PINOUT_ESP32_*` flag may be set;
+the selector rejects conflicting or unknown configurations with `#error`
+instead of silently falling back.
+
+| Environment        | Board header         | `boardId`             | Core / platform                  | Status |
+| ------------------ | -------------------- | --------------------- | -------------------------------- | ------ |
+| `esp32dev`         | `board_esp32.h`      | `esp32-devkit-v1`     | `espressif32@6.5.0` (Arduino 2.x) | alpha baseline; compile-tested |
+| `esp32-c3-supermini` | `board_esp32c3.h`  | `esp32-c3-supermini`  | `espressif32@6.5.0` (Arduino 2.x) | EXPERIMENTAL, opt-in |
+| `esp32s2-devkit`   | `board_esp32s2.h`    | `esp32-s2-devkitc-1`  | `espressif32@6.5.0` (Arduino 2.x), Saola-1 board definition¹ | EXPERIMENTAL, opt-in |
+| `esp32s3-devkit`   | `board_esp32s3.h`    | `esp32-s3-devkitc-1`  | `espressif32@6.5.0` (Arduino 2.x) | EXPERIMENTAL, opt-in |
+| `esp32c6-devkit`   | `board_esp32c6.h`    | `esp32-c6-devkitc-1`  | pioarduino `55.03.312-1` (Arduino 3.x) | EXPERIMENTAL, opt-in |
+
+¹ PlatformIO 6.5.0 ships no ESP32-S2-DevKitC-1 board definition, so the
+environment builds with the ESP32-S2-Saola-1 definition (same ESP32-S2 module
+family, 4 MB flash, and UART0 on GPIO 43/44). Flash the DevKitC-1 hardware;
+the firmware's validated pin table is still the DevKitC-1 descriptor in
+`firmware/boards/esp32-s2-devkitc-1.json`.
+
+The S2, S3, and C6 profiles are expected compile-clean by inspection only.
+Compilation and hardware-in-the-loop testing are still pending; do not treat
+these environments as verified. All four non-classic environments keep UART0
+as the protocol transport: S2/S3 expose it through their USB-to-UART bridge
+port, and the C6 through its "USB Type-C to UART" port. Only the C3 SuperMini
+build uses native USB (`PINOUT_NATIVE_USB_SERIAL`). The C6 requires the
+community pioarduino platform (Arduino-ESP32 3.x), which the environment pins
+by URL so first builds need network access.
+
 ## What it supports
 
 - `sys.hello`, `sys.ping`, `sys.info`
@@ -46,6 +76,11 @@ this sequence to keep the wire contract aligned:
    cd firmware/esp32-bridge
    pio run -e esp32dev
    ```
+
+   For the experimental S2/S3 profiles, the same check is
+   `pio run -e esp32s2-devkit -e esp32s3-devkit`. The C6 environment is
+   opt-in (`pio run -e esp32c6-devkit`) because it downloads the community
+   pioarduino platform.
 
 The vector test is host-only and does not require a board. A successful
 PlatformIO run is compile evidence; it does not flash or establish

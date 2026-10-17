@@ -1,5 +1,7 @@
 #include <Arduino.h>
-#if defined(PINOUT_ESP32_C3)
+#include "boards/board.h"
+#include "boards/ledc_compat.h"
+#if PINOUT_NATIVE_USB_SERIAL
 // Arduino-ESP32 2.x exposes the native USB CDC stream from HWCDC.h when
 // ARDUINO_USB_MODE=1; Arduino.h alone does not declare the global Serial.
 #include <HWCDC.h>
@@ -52,7 +54,7 @@ const char* tripReason = nullptr;
 unsigned long watchdogTimeoutMs = 1000;
 unsigned long watchdogDeadline = 0;
 bool watchdogEnabled = true;
-PinSafeConfig pinSafeConfigs[40];
+PinSafeConfig pinSafeConfigs[board::maxGpioPin + 1];
 
 struct WatchState {
   int pin = -1;
@@ -71,32 +73,20 @@ WatchState watches[8];
 size_t watchCount = 0;
 PulseState pulses[8];
 
-#if defined(PINOUT_ESP32_C3)
-int i2cSda = 4;
-int i2cScl = 5;
-#else
-int i2cSda = 21;
-int i2cScl = 22;
-#endif
+int i2cSda = board::i2cSda;
+int i2cScl = board::i2cScl;
 uint32_t i2cFrequency = 100000;
 bool i2cStarted = false;
 
-#if defined(PINOUT_ESP32_C3)
-int spiSck = 4;
-int spiMiso = 5;
-int spiMosi = 6;
-int spiCs = 7;
-#else
-int spiSck = 18;
-int spiMiso = 19;
-int spiMosi = 23;
-int spiCs = 5;
-#endif
+int spiSck = board::spiSck;
+int spiMiso = board::spiMiso;
+int spiMosi = board::spiMosi;
+int spiCs = board::spiCs;
 uint32_t spiFrequency = 1000000;
 bool spiStarted = false;
-bool activeOutputs[40] = {};
-int activePwmPins[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
-                         -1, -1, -1, -1, -1, -1, -1, -1};
+bool activeOutputs[board::maxGpioPin + 1] = {};
+// Channel -> attached pin; every slot is initialized to -1 in setup().
+int activePwmPins[board::pwmChannels];
 
 void cancelPulseForPin(int pin) {
   for (size_t i = 0; i < 8; i++) {
@@ -106,32 +96,17 @@ void cancelPulseForPin(int pin) {
   }
 }
 
-#if defined(PINOUT_ESP32_C3)
-bool isFlashPin(int pin) { return pin >= 11 && pin <= 17; }
-bool isInputOnlyPin(int) { return false; }
-bool isUart0Pin(int pin) { return pin == 20 || pin == 21; }
-bool isStrapPin(int pin) { return pin == 2 || pin == 8 || pin == 9; }
-bool isAdcPin(int pin) { return pin >= 0 && pin <= 4; }
-bool isUsbPin(int pin) { return pin == 18 || pin == 19; }
-#else
-bool isFlashPin(int pin) { return pin >= 6 && pin <= 11; }
-bool isInputOnlyPin(int pin) { return pin >= 34 && pin <= 39; }
-bool isUart0Pin(int pin) { return pin == 1 || pin == 3; }
-bool isStrapPin(int pin) { return pin == 12; }
-bool isAdcPin(int pin) { return pin >= 32 && pin <= 39; }
-bool isUsbPin(int) { return false; }
-#endif
-
-int maxGpioPin() {
-#if defined(PINOUT_ESP32_C3)
-  return 21;
-#else
-  return 39;
-#endif
-}
+using board::isAdcPin;
+using board::isFlashPin;
+using board::isInputOnlyPin;
+using board::isReservedPin;
+using board::isStrapPin;
+using board::isUart0Pin;
+using board::isUsbPin;
 
 bool isReadablePin(int pin) {
-  return pin >= 0 && pin <= maxGpioPin() && !isFlashPin(pin) && !isUart0Pin(pin) && !isStrapPin(pin) && !isUsbPin(pin);
+  return pin >= 0 && pin <= board::maxGpioPin && !isFlashPin(pin) && !isUart0Pin(pin) &&
+         !isStrapPin(pin) && !isUsbPin(pin) && !isReservedPin(pin);
 }
 
 bool isWritablePin(int pin) {
@@ -196,11 +171,7 @@ void emitGpioChanged(int pin, bool value) {
 }
 
 void fillIdentity(JsonObject payload) {
-  #if defined(PINOUT_ESP32_C3)
-  payload["boardId"] = "esp32-c3-supermini";
-#else
-  payload["boardId"] = "esp32-devkit-v1";
-#endif
+  payload["boardId"] = board::boardId;
   payload["firmware"] = firmwareName;
   payload["version"] = firmwareVersion;
   payload["protocol"] = protocolVersion;
@@ -255,7 +226,7 @@ void touchWatchdog() {
 }
 
 void applySafeState(JsonArray* stoppedPins = nullptr) {
-  for (int pin = 0; pin <= maxGpioPin(); pin++) {
+  for (int pin = 0; pin <= board::maxGpioPin; pin++) {
     if (activeOutputs[pin] || pinSafeConfigs[pin].configured) {
       const SafeLevel level = pinSafeConfigs[pin].safeLevel;
       if (level == SAFE_LEVEL_HIGH) {
@@ -278,10 +249,10 @@ void applySafeState(JsonArray* stoppedPins = nullptr) {
       }
     }
   }
-  for (int channel = 0; channel < 16; channel++) {
-    ledcWrite(channel, 0);
+  for (int channel = 0; channel < board::pwmChannels; channel++) {
+    pinoutLedcWrite(channel, 0);
     if (activePwmPins[channel] >= 0) {
-      ledcDetachPin(activePwmPins[channel]);
+      pinoutLedcDetachPin(activePwmPins[channel]);
       activePwmPins[channel] = -1;
     }
   }
@@ -690,25 +661,20 @@ void handleGpioPwm(const char* id, const JsonVariantConst& payload) {
   const int channel = payload["channel"].as<int>();
   const float duty = payload["duty"].as<float>();
   const int frequency = payload["frequency"].as<int>();
-  if (!isWritablePin(pin) || channel < 0 || channel >=
-#if defined(PINOUT_ESP32_C3)
-      6
-#else
-      16
-#endif
-      || duty < 0 || duty > 1 || frequency <= 0) {
+  if (!isWritablePin(pin) || channel < 0 || channel >= board::pwmChannels || duty < 0 || duty > 1 ||
+      frequency <= 0) {
     sendError(id, "INVALID_PIN", "Invalid PWM pin or parameters.");
     return;
   }
-  ledcSetup(channel, frequency, 8);
+  pinoutLedcSetup(channel, frequency, 8);
   cancelPulseForPin(pin);
   activeOutputs[pin] = true;
   if (activePwmPins[channel] >= 0 && activePwmPins[channel] != pin) {
-    ledcDetachPin(activePwmPins[channel]);
+    pinoutLedcDetachPin(activePwmPins[channel]);
   }
-  ledcAttachPin(pin, channel);
+  pinoutLedcAttachPin(pin, channel);
   activePwmPins[channel] = pin;
-  ledcWrite(channel, static_cast<uint32_t>(duty * 255));
+  pinoutLedcWrite(channel, static_cast<uint32_t>(duty * 255));
   JsonDocument result;
   result["pin"] = pin;
   result["channel"] = channel;
@@ -1018,17 +984,20 @@ void handleGpioServo(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PAYLOAD", "Servo angle must be between 0 and 180.");
     return;
   }
-  const int channel = 8 + (pin % 8);
+  // Servo channels sit above the motor/plain-PWM window so a servo does not
+  // collide with the default gpio.pwm channel of the same pin.
+  const int channel =
+      board::servoChannelBase + (pin % (board::pwmChannels - board::servoChannelBase));
   cancelPulseForPin(pin);
-  ledcSetup(channel, 50, 16);
+  pinoutLedcSetup(channel, 50, 16);
   activeOutputs[pin] = true;
   if (activePwmPins[channel] >= 0 && activePwmPins[channel] != pin) {
-    ledcDetachPin(activePwmPins[channel]);
+    pinoutLedcDetachPin(activePwmPins[channel]);
   }
-  ledcAttachPin(pin, channel);
+  pinoutLedcAttachPin(pin, channel);
   activePwmPins[channel] = pin;
   const uint32_t pulseUs = 1000 + static_cast<uint32_t>((angle / 180.0f) * 1000.0f);
-  ledcWrite(channel, pulseUs * 65535UL / 20000UL);
+  pinoutLedcWrite(channel, pulseUs * 65535UL / 20000UL);
   JsonDocument result;
   result["pin"] = pin;
   result["angle"] = angle;
@@ -1063,20 +1032,20 @@ void handleGpioMotor(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PAYLOAD", "Motor speed must be between -1 and 1 when a direction pin is set.");
     return;
   }
-  const int channel = pwmPin % 8;
+  const int channel = pwmPin % board::motorChannels;
   const float duty = speed < 0 ? -speed : speed;
   cancelPulseForPin(pwmPin);
   if (dirPin >= 0) {
     cancelPulseForPin(dirPin);
   }
-  ledcSetup(channel, 1000, 8);
+  pinoutLedcSetup(channel, 1000, 8);
   activeOutputs[pwmPin] = true;
   if (activePwmPins[channel] >= 0 && activePwmPins[channel] != pwmPin) {
-    ledcDetachPin(activePwmPins[channel]);
+    pinoutLedcDetachPin(activePwmPins[channel]);
   }
-  ledcAttachPin(pwmPin, channel);
+  pinoutLedcAttachPin(pwmPin, channel);
   activePwmPins[channel] = pwmPin;
-  ledcWrite(channel, static_cast<uint32_t>(duty * 255));
+  pinoutLedcWrite(channel, static_cast<uint32_t>(duty * 255));
   if (dirPin >= 0) {
     pinMode(dirPin, OUTPUT);
     activeOutputs[dirPin] = true;
@@ -1262,13 +1231,16 @@ void handleLine(char* line) {
 }
 
 void setup() {
+  for (int channel = 0; channel < board::pwmChannels; channel++) {
+    activePwmPins[channel] = -1;
+  }
   Serial.setRxBufferSize(2048);
   Serial.begin(baudRate);
   bootMillis = millis();
-  // Native USB Serial/JTAG boards (such as the ESP32-C3 SuperMini) can boot
-  // before macOS has opened the USB endpoint. Wait briefly so `ready` is not
-  // lost before the host begins the Pinout handshake. Hardware UARTs report
-  // ready immediately and are unaffected.
+  // Native USB Serial/JTAG boards (PINOUT_NATIVE_USB_SERIAL=1) can boot before
+  // the host has opened the USB endpoint. Wait briefly so `ready` is not lost
+  // before the Pinout handshake. Hardware UART transports report ready
+  // immediately and are unaffected.
   const unsigned long usbHostWaitDeadline = millis() + 3000;
   while (!Serial && millis() < usbHostWaitDeadline) {
     delay(10);
