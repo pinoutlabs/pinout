@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@pinout/core": "0.0.1-alpha.1",
+    "@pinout/registry": "0.0.1-alpha.1",
     "commander": "^12.1.0",
     "@pinout/daemon": "0.0.1-alpha.1",
     "@pinout/discovery": "0.0.1-alpha.1"

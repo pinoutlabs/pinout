@@ -10,6 +10,7 @@
     { "path": "../core" },
     { "path": "../generator" },
     { "path": "../discovery" },
-    { "path": "../module-host" }
+    { "path": "../module-host" },
+    { "path": "../registry" }
   ]
 }

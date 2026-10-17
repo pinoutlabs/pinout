@@ -37,6 +37,7 @@ import { runDoctor } from './doctor.js';
 import { registerDaemonCommands } from './daemonCommands.js';
 import { registerRecordCommands } from './recordCommands.js';
 import { registerModuleIntegrityCommands } from './moduleIntegrityCommands.js';
+import { registerRegistryCommands } from './registryCommands.js';
 import { createOutput, type CliOutput } from './output.js';
 import { esp32PinGroups } from './pinsTable.js';
 import { readScriptFile, readScriptSteps, runScript } from './runScript.js';
@@ -178,6 +179,7 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
   registerModuleIntegrityCommands(findExistingCommand(program, 'module'), () =>
     outputFor(program, io),
   );
+  registerRegistryCommands(findExistingCommand(program, 'module'), () => outputFor(program, io));
 
   program
     .command('doctor')

@@ -52,17 +52,52 @@ export function registerModuleCommands(
 
   modules
     .command('install')
-    .description('Install a module into the local Pinout registry (~/.pinout).')
-    .argument('<path>', 'path to built module directory')
+    .description(
+      'Install a module. Without --registry: copy a built module directory into the local Pinout registry (~/.pinout). With --registry: install name[@version] from a registry index.',
+    )
+    .argument('<path>', 'path to built module directory, or name[@version] with --registry')
+    .option('--registry <source>', 'registry directory, index file, or https URL')
+    .option('--out <dir>', 'install directory for registry installs (default <PINOUT_HOME>/registry-modules)')
+    .option('--require-signature', 'refuse unsigned or unverifiable registry entries')
+    .option(
+      '--allow-publisher <spec>',
+      'trusted publisher key: id=path/to/public.pem or path/to/public.pem (repeatable)',
+      (value: string, previous: string[] = []) => [...previous, value],
+    )
     .option('--force', 'replace an existing installation')
     .option('--allow-candidate', 'install a generated candidate after reviewing it')
     .option('--downgrade', 'allow replacing an installed module with a lower version')
     .action(
       async (
         modulePath: string,
-        options: { force?: boolean; allowCandidate?: boolean; downgrade?: boolean },
+        options: {
+          force?: boolean;
+          allowCandidate?: boolean;
+          downgrade?: boolean;
+          registry?: string;
+          out?: string;
+          requireSignature?: boolean;
+          allowPublisher?: string[];
+        },
       ) => {
         const output = outputFor(program, io);
+        if (options.registry !== undefined) {
+          const { runRegistryInstallCommand } = await import('./registryCommands.js');
+          await runRegistryInstallCommand(
+            modulePath,
+            {
+              registry: options.registry,
+              force: options.force === true,
+              ...(options.out !== undefined ? { out: options.out } : {}),
+              ...(options.requireSignature === true ? { requireSignature: true } : {}),
+              ...(options.allowPublisher !== undefined
+                ? { allowPublisher: options.allowPublisher }
+                : {}),
+            },
+            output,
+          );
+          return;
+        }
         const installOptions: {
           force?: boolean;
           home?: string;
