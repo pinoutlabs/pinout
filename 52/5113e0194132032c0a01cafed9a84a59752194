@@ -1,0 +1,30 @@
+packages/registry/tests/client.test.ts
+  h_b8c068798e4e71 1-233
+packages/registry/tests/conformance.test.ts
+  h_b8c068798e4e71 1-256
+packages/registry/tests/content.test.ts
+  h_b8c068798e4e71 1-137
+packages/registry/tests/helpers.ts
+  h_b8c068798e4e71 1-145
+packages/registry/tests/indexFormat.test.ts
+  h_b8c068798e4e71 1-179
+packages/registry/tests/install.test.ts
+  h_b8c068798e4e71 1-404
+packages/registry/tests/publish.test.ts
+  h_b8c068798e4e71 1-224
+packages/registry/tests/semver.test.ts
+  h_b8c068798e4e71 1-75
+packages/registry/tests/verify.test.ts
+  h_b8c068798e4e71 1-223
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "525113e0194132032c0a01cafed9a84a59752194",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
