@@ -1,0 +1,20 @@
+packages/libgpiod/tests/backend.test.ts
+  h_b8c068798e4e71 1-567
+packages/libgpiod/tests/discovery.test.ts
+  h_b8c068798e4e71 1-146
+packages/libgpiod/tests/fakeRunner.ts
+  h_b8c068798e4e71 1-263
+packages/libgpiod/tests/tools.test.ts
+  h_b8c068798e4e71 1-442
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b3a663695ce50199d69a099e2a1cdc76c8144cc8",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
