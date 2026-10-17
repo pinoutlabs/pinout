@@ -1,0 +1,18 @@
+docs/hardware-support.md
+  h_b8c068798e4e71 22,34-46
+docs/three-board-demo.md
+  h_b8c068798e4e71 31-33
+hardware/records/2026-10-17-esp32-family-variants-preparation.md
+  h_b8c068798e4e71 1-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f357024af2f655aa98e6541e0cbc1fea5097fc99",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
