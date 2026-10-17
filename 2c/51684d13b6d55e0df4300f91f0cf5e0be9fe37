@@ -1,0 +1,16 @@
+packages/registry/src/conformance.ts
+  h_b8c068798e4e71 1-388
+packages/registry/src/index.ts
+  h_b8c068798e4e71 1-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2c51684d13b6d55e0df4300f91f0cf5e0be9fe37",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
