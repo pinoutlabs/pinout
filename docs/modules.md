@@ -96,6 +96,18 @@ Manifest: `pinout.module.json`. Install locally with `pinout module install ./pa
 
 Built-in and installed modules share the same registry interface (`listAvailableModules`, `ensureModuleLoaded`).
 
+## Module registry (offline-first)
+
+Modules can be distributed through a registry: a strictly validated JSON index
+plus content-hash (and optional Ed25519) verification. Local directories are
+first-class registries — no server is required — and HTTPS indexes are
+supported through the same client. Pack, publish, search, install, verify, and
+produce machine-readable L0–L5 conformance reports with
+`pinout module pack|publish|search|info|install|verify|conformance`.
+
+See [registry.md](registry.md) for the index format and trust model, and
+[`packages/registry/README.md`](../packages/registry/README.md) for the API.
+
 ## Registering devices
 
 ### Programmatic

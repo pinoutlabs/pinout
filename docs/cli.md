@@ -66,6 +66,7 @@ These commands run in-process for local module authoring, testing, and single-de
 | `exec <action>` | Invoke action on directly connected device (`--payload '{...}'`) |
 | `invoke <deviceId> <capability>` | Invoke capability on local runtime device |
 | `module create\|test\|install\|list\|inspect\|uninstall` | External module workflow |
+| `module pack\|publish\|search\|info\|install\|verify\|conformance` | Offline-first module registry: pack/publish with content hashes and optional Ed25519 signatures, verified installs, L0–L5 conformance reports ([registry guide](registry.md)) |
 | `device add\|remove\|list\|inspect` | Persistent device registry (~/.pinout/devices.json) |
 | `runtime start` | Bootstrap runtime from `~/.pinout/devices.json` |
 | `runtime inspect [deviceId]` | Inspect identity, health, backend mode, state, and capabilities |
@@ -90,6 +91,10 @@ npm run pinout -- hello --mock
 npm run pinout -- exec gpio.write --payload '{"pin":2,"value":true}' --mock
 npm run pinout -- module test ./examples/external-module/weird-sensor
 npm run pinout -- module install ./examples/external-module/weird-sensor
+npm run pinout -- module pack ./examples/external-module/weird-sensor --out ./weird-sensor.entry.json
+npm run pinout -- module publish ./examples/external-module/weird-sensor --registry ./registry
+npm run pinout -- module search thermometer --registry ./registry
+npm run pinout -- module install weird-sensor/thermometer --registry ./registry --require-signature
 npm run pinout -- device add sensor-01 --module weird-sensor/thermometer --simulated
 npm run pinout -- devices
 npm run pinout -- invoke sensor-01 temperature.read --payload '{}'

@@ -15,6 +15,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Modules, Protocols & Robotics
 
 - [Modules](modules.md) and [build a module](build-a-module.md).
+- [Module registry](registry.md) — offline-first distribution with content hashes and optional Ed25519 publisher signatures.
 - [Lamp module](lamp.md) — commissioned semantic lamp actuator with explicit arming and evidence model.
 - [Modbus lamp backend](lamp-modbus.md) — coil actuation and discrete input readback over Modbus TCP/RTU.
 - [ROS 2 sidecar](ros2-sidecar.md) — narrow robot manipulation action bridge, transport abstraction, and simulator.
