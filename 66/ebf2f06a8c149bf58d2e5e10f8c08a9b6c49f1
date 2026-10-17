@@ -1,0 +1,24 @@
+packages/cli/package.json
+  h_b8c068798e4e71 38
+packages/cli/src/moduleIntegrityCommands.ts
+  h_b8c068798e4e71 64,71-108,111-121,123-136,138-142
+packages/cli/src/pinoutHomeCommands.ts
+  h_b8c068798e4e71 55-66,73-81,84-100
+packages/cli/src/registryCommands.ts
+  h_b8c068798e4e71 1-552
+packages/cli/src/runCli.ts
+  h_b8c068798e4e71 40,182
+packages/cli/tsconfig.json
+  h_b8c068798e4e71 13-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "66ebf2f06a8c149bf58d2e5e10f8c08a9b6c49f1",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
