@@ -1,0 +1,26 @@
+packages/libgpiod/package.json
+  h_b8c068798e4e71 1-26
+packages/libgpiod/src/errors.ts
+  h_b8c068798e4e71 1-141
+packages/libgpiod/src/parser.ts
+  h_b8c068798e4e71 1-398
+packages/libgpiod/src/platform.ts
+  h_b8c068798e4e71 1-20
+packages/libgpiod/src/runner.ts
+  h_b8c068798e4e71 1-203
+packages/libgpiod/src/tools.ts
+  h_b8c068798e4e71 1-662
+packages/libgpiod/tsconfig.json
+  h_b8c068798e4e71 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f22c0e2a0af91feb79b98e21ee04cab5856b5e2a",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
