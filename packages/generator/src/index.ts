@@ -45,3 +45,12 @@ export type {
   RepairResult,
   RepairOptions,
 } from './pipeline/repair.js';
+export {
+  validateGeneratedModuleLayout,
+  GENERATED_MODULE_REQUIRED_ENTRIES,
+  REGISTRY_PACK_EXCLUDED_DIRECTORIES,
+} from './registryCompat.js';
+export type {
+  GeneratedModuleLayoutReport,
+  GeneratedModuleManifestSummary,
+} from './registryCompat.js';
