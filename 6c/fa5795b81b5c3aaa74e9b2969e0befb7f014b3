@@ -1,0 +1,14 @@
+packages/core/tests/esp32FamilyBoards.test.ts
+  h_b8c068798e4e71 1-185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6cfa5795b81b5c3aaa74e9b2969e0befb7f014b3",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
