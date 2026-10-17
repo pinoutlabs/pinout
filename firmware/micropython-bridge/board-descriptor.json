@@ -6,7 +6,7 @@
   "firmware": {
     "entry": "main.py",
     "config": "config.py",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "protocol": 1
   },
   "transport": {
@@ -14,6 +14,7 @@
     "baudRate": 115200
   },
   "capabilities": [
+    "sys.hello",
     "sys.ping",
     "sys.info",
     "gpio.mode",
@@ -21,9 +22,10 @@
     "gpio.write",
     "gpio.toggle",
     "gpio.watch",
-    "adc.read",
     "pwm.configure",
     "pwm.write",
+    "gpio.servo",
+    "adc.read",
     "i2c.scan",
     "i2c.read",
     "i2c.write",
@@ -34,5 +36,5 @@
     "note": "Board-agnostic: per-board reservations are set in config.py at deployment time. The bridge never assumes a pin map it was not given."
   },
   "support": "EXPERIMENTAL",
-  "notes": "Runtime capability detection guards machine.* usage; unsupported peripherals return protocol failures rather than fabricating values. Not hardware-verified."
+  "notes": "Describes the full hardware build; sys.hello/sys.info advertise only the runtime-supported subset (software mode omits adc.read and the buses). Unsupported requests fail with structured codes (INVALID_PIN, INVALID_PAYLOAD, UNSUPPORTED_CAPABILITY, BUS_ERROR, WATCH_TABLE_FULL, UNSUPPORTED_ACTION, ACTION_FAILED) instead of fabricated values. Requires the MicroPython `machine` module; CircuitPython is not supported. Not hardware-verified."
 }
