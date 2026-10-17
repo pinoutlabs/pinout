@@ -39,6 +39,12 @@
     },
     {
       "path": "packages/protocols-oahl"
+    },
+    {
+      "path": "packages/libgpiod"
+    },
+    {
+      "path": "packages/registry"
     }
   ]
 }
