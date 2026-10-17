@@ -1,0 +1,18 @@
+packages/registry/src/install.ts
+  h_b8c068798e4e71 1-357
+packages/registry/src/publish.ts
+  h_b8c068798e4e71 1-187
+packages/registry/src/verify.ts
+  h_b8c068798e4e71 1-301
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1d99c1538306d15aa2390fc5d7c61ded8a4647e4",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
