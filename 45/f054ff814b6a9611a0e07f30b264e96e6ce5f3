@@ -1,0 +1,14 @@
+hardware/catalog.json
+  h_b8c068798e4e71 74-77,223-230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "45f054ff814b6a9611a0e07f30b264e96e6ce5f3",
+  "prompts": {},
+  "humans": {
+    "h_b8c068798e4e71": {
+      "author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
