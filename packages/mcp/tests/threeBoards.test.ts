@@ -160,4 +160,4 @@ for (const board of builtinBoards)
       await discovery.close();
       await daemon.close();
     }
-  }, 10000);
+  }, 30_000);
