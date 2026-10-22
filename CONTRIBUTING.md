@@ -67,7 +67,8 @@ Do not mock away the protocol just to assert that a mock was called.
 Firmware compile (`pio run` in `firmware/esp32-bridge`) is optional locally. The
 selected CI run compiles the reference classic target and uploads its artifacts;
 the experimental C3 target is compiled only by the manual release-candidate
-workflow.
+workflow. See [Firmware compile gate](#firmware-compile-gate) below for the
+classic `esp32dev` command and merge requirements.
 
 ## Hardware
 
