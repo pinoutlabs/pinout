@@ -1,5 +1,9 @@
 # MCP quickstart
 
+The default tool catalog is now static. Use `pinout__invoke({deviceId, capability, args})` after listing/describing devices; no per-board MCP configuration is needed. Follow the [three-board demo](three-board-demo.md) for Uno, ESP32, and C3 setup. The default local connection automatically reads the daemon token file; custom URLs require `PINOUT_TOKEN`.
+
+The per-device tool examples below document compatibility mode (`PINOUT_MCP_DYNAMIC_TOOLS=1`).
+
 `pinout-mcp` connects to the local `pinoutd` authority at
 `PINOUT_DAEMON_URL` (default `http://127.0.0.1:8787`) and uses
 `PINOUT_TOKEN`. Set `PINOUT_OWNER` to a stable agent principal. Embedded mode
@@ -90,6 +94,10 @@ Agents acting over MCP must report available verification honestly:
 3. Agents should inspect `observed` and its `freshnessMs`/`stale` attributes rather than asserting physical reality based merely on successful command dispatches.
 
 See [Physical Evidence State Contract](state-evidence.md) for full contract definitions.
+
+### Live-lamp transcript template (#24)
+
+File redacted tool transcripts under `hardware/records/YYYY-MM-DD-mcp-transcript.md`: agent task, `lamp.arm` / `lamp.on` / `lamp.status` calls used, `pinout__read_state.stateEvidence` JSON (`commanded` vs `acknowledged` vs `observed`), hardware evidence link, and confirmation that no GPIO numbers were the agent's primary interface. ACK is not illumination unless readback was configured.
 
 ## Lifecycle
 

@@ -22,7 +22,23 @@
     },
     {
       "category": "embedded",
-      "target": "ESP32-S2 / S3 / C3 / C6",
+      "target": "ESP32-C3 SuperMini (native USB)",
+      "integration": "firmware/esp32-bridge, esp32-c3-supermini target + board-aware runtime + static MCP",
+      "status": "COMPILE_TESTED",
+      "testedHow": "2026-09-08: PlatformIO build and three-board MCP/daemon protocol integration tests; Uno source harness where applicable.",
+      "notes": "Physical HIL pending. See docs/three-board-demo.md. Uno supports GPIO/ADC only; do not infer other AVR or C3 board variants."
+    },
+    {
+      "category": "embedded",
+      "target": "Arduino Uno R3 (ATmega328P)",
+      "integration": "firmware/uno-bridge + board-aware runtime + static MCP",
+      "status": "COMPILE_TESTED",
+      "testedHow": "2026-09-08: PlatformIO build and three-board MCP/daemon protocol integration tests; Uno source harness where applicable.",
+      "notes": "Physical HIL pending. See docs/three-board-demo.md. Uno supports GPIO/ADC only; do not infer other AVR or C3 board variants."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-S2 / S3 / C6",
       "integration": "planned family descriptors; current pin maps cover classic ESP32 only",
       "status": "PLANNED",
       "testedHow": "none",
@@ -46,7 +62,7 @@
     },
     {
       "category": "embedded",
-      "target": "Arduino Uno / Nano / Mega",
+      "target": "Arduino Nano / Mega",
       "integration": "protocol/firmata (planned)",
       "status": "PLANNED",
       "testedHow": "none",

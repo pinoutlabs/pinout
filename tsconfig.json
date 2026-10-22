@@ -36,6 +36,9 @@
     },
     {
       "path": "packages/ros2-sidecar"
+    },
+    {
+      "path": "packages/protocols-oahl"
     }
   ]
 }

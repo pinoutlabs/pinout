@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { resolvePinoutHome } from '@pinout/core';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -25,9 +28,22 @@ export async function runStdioServer(): Promise<void> {
 }
 
 async function runDaemonServer(): Promise<void> {
+  let token = process.env.PINOUT_TOKEN;
+  if (!token && !process.env.PINOUT_DAEMON_URL) {
+    try {
+      token = (
+        JSON.parse(await readFile(join(resolvePinoutHome(), 'pinoutd.json'), 'utf8')) as {
+          token?: string;
+        }
+      ).token;
+    } catch {
+      /* Daemon may not have started yet. */
+    }
+  }
   const server = createDaemonMcpServer({
+    dynamicTools: process.env.PINOUT_MCP_DYNAMIC_TOOLS === '1',
     ...(process.env.PINOUT_DAEMON_URL ? { baseUrl: process.env.PINOUT_DAEMON_URL } : {}),
-    ...(process.env.PINOUT_TOKEN ? { token: process.env.PINOUT_TOKEN } : {}),
+    ...(token ? { token } : {}),
     owner: process.env.PINOUT_OWNER ?? 'mcp-stdio',
   });
   await runStdioSession(server);

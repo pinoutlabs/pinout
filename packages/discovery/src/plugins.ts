@@ -41,7 +41,7 @@ const SERIAL_RULES: SerialIdentityRule[] = [
   },
   {
     test: /arduino/i,
-    moduleId: 'protocol/firmata',
+    moduleId: 'pinout/board',
     vendor: 'Arduino',
     deviceClass: 'microcontroller',
     confidence: 0.35,
@@ -153,7 +153,7 @@ const USB_RULES: Array<{
   },
   {
     vid: '2341',
-    moduleId: 'protocol/firmata',
+    moduleId: 'pinout/board',
     vendor: 'Arduino',
     confidence: 0.45,
     detail: 'Arduino vendor ID',

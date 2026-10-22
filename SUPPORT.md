@@ -2,7 +2,7 @@
 
 ## Questions and help
 
-- Open a GitHub Discussion or issue at https://github.com/IMisbahk/pinout/issues
+- Open a GitHub Discussion or issue at https://github.com/pinoutlabs/pinout/issues
 - Search existing issues before opening a new one.
 
 ## Bug reports

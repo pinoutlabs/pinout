@@ -8,16 +8,36 @@
   "pwmPins": [3, 5, 6, 9, 10, 11],
   "reservedPins": [0, 1],
   "inputOnlyPins": [],
-  "uartPins": [{ "id": 0, "tx": 1, "rx": 0 }],
-  "i2cDefaults": { "sda": 18, "scl": 19 },
-  "spiDefaults": { "sck": 13, "miso": 12, "mosi": 11, "cs": 10 },
-  "voltage": { "logic": 5, "adcMax": 5 },
-  "usb": { "vendorId": "2341", "productId": "0043" },
+  "uartPins": [
+    {
+      "id": 0,
+      "tx": 1,
+      "rx": 0
+    }
+  ],
+  "i2cDefaults": {
+    "sda": 18,
+    "scl": 19
+  },
+  "spiDefaults": {
+    "sck": 13,
+    "miso": 12,
+    "mosi": 11,
+    "cs": 10
+  },
+  "voltage": {
+    "logic": 5,
+    "adcMax": 5
+  },
+  "usb": {
+    "vendorId": "2341",
+    "productId": "0043"
+  },
   "firmwareTarget": "uno",
   "warnings": [
     "Pins 0/1 are the USB-serial UART: avoid driving them while connected.",
     "Pins 14-19 map to analog pins A0-A5.",
     "5 V logic: never connect 3.3 V-only peripherals without level shifting."
   ],
-  "support": "PLANNED"
+  "support": "COMPILE_TESTED"
 }

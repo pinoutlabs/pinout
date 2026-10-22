@@ -65,7 +65,7 @@ export function registerEnrollCommand(
         }
         const definition = {
           id: options.id,
-          module: 'pinout/esp32',
+          module: device.info.boardId ? 'pinout/board' : 'pinout/esp32',
           backend: options.mock
             ? ({ type: 'protocol', transport: { type: 'simulated-esp32' as const } } as const)
             : ({

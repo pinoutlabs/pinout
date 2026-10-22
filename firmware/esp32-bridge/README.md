@@ -4,6 +4,8 @@ Minimal firmware that speaks Pinout protocol v1 over USB serial (UART0 at 115200
 
 It does not implement a full board support package. It accepts structured commands, validates them, executes GPIO read/write, and returns JSON responses.
 
+Classic ESP32 and C3 SuperMini builds advertise distinct `boardId` values. See the [three-board guide](../../docs/three-board-demo.md) for the current daemon/MCP workflow; physical testing remains pending. C3 I2C defaults are GPIO 4/5, and GPIO 2/8/9 are reserved.
+
 ## What it supports
 
 - `sys.hello`, `sys.ping`, `sys.info`
@@ -16,7 +18,7 @@ It does not implement a full board support package. It accepts structured comman
 
 `gpio.batchWrite` validates all entries before changing any output (1–16 writes), making
 multi-pin updates predictable. `gpio.stopAll` is a best-effort software stop: it drives every
-output activated by the bridge low and clears PWM channels. It is not a certified safety
+output activated by the bridge to its configured safe level (default low) and clears PWM channels. It is not a certified safety
 function, and it does not restore the previous state. Pulses are scheduled without blocking
 the serial loop; their response is sent immediately and the previous pin level is restored when
 the duration expires. A stop cancels pending pulse expirations and leaves those pins low.
@@ -53,7 +55,7 @@ dated record under `hardware/records/`.
 
 ## Hardware & Reference Circuit
 
-Tested against classic ESP32 DevKit boards (WROOM / 30-pin, `firmware/boards/esp32-devkit-v1.json`). The onboard LED is usually **GPIO 2**.
+Compile-tested for classic ESP32 DevKit boards (WROOM / 30-pin, `firmware/boards/esp32-devkit-v1.json`). The onboard LED is usually **GPIO 2**.
 
 For the documented low-voltage reference circuit fixture and wiring specifications, see [`hardware/reference/esp32-classic-led-sensor.md`](../../hardware/reference/esp32-classic-led-sensor.md). For the hardware-in-the-loop (HIL) physical verification procedure, see [`scripts/hil/esp32-classic.md`](../../scripts/hil/esp32-classic.md).
 

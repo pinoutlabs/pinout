@@ -1,3 +1,5 @@
+import { boardCapabilities } from './boards/capabilities.js';
+import { boardForInfo, validateBoardAction } from './boards/builtin.js';
 import { UnsupportedCapabilityError, ValidationError } from './errors.js';
 import { describeCapability, describeCapabilities, toAgentTools } from './capabilities.js';
 import { validateInputSchema, validateOutputSchema } from './schema.js';
@@ -37,7 +39,7 @@ export class Device {
     readonly info: DeviceInfo,
     private readonly session: Session,
   ) {
-    this.capabilities = describeCapabilities(info.capabilities);
+    this.capabilities = boardCapabilities(info, describeCapabilities(info.capabilities));
     this.gpio = new Gpio(this);
     this.removeEventListener = session.addEventListener((event) => {
       if (event.event === 'ready') {
@@ -100,9 +102,19 @@ export class Device {
     if (!this.supports(action)) {
       throw new UnsupportedCapabilityError(action);
     }
-    const descriptor = describeCapability(action);
+    const descriptor =
+      this.capabilities.find((c) => c.name === action) ?? describeCapability(action);
     const checked = validateInputSchema(descriptor.inputSchema, payload);
-    const normalized = validateAction(this.info.firmware, action, checked);
+    const board = boardForInfo(this.info);
+    if (board) validateBoardAction(board, action, checked);
+    if (board?.family === 'esp32-c3' && action === 'gpio.pwm' && checked.channel === undefined)
+      checked.channel = Number(checked.pin) % 6;
+    const normalized = validateAction(
+      this.info.firmware,
+      action,
+      checked,
+      Boolean(this.info.boardId),
+    );
     const result = await this.session.request(action, normalized, options);
     return validateOutputSchema(descriptor.outputSchema, result);
   }
@@ -242,6 +254,7 @@ function validateAction(
   firmware: string,
   action: string,
   payload: Record<string, unknown>,
+  boardAware = false,
 ): Record<string, unknown> {
   if (action === 'sys.hello' || action === 'sys.ping' || action === 'sys.info') {
     assertEmptyPayload(payload, action);
@@ -278,7 +291,7 @@ function validateAction(
   switch (action) {
     case 'gpio.configSafeState': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32ModePin(pin);
+      if (!boardAware) assertEsp32ModePin(pin);
       const safeLevel =
         payload.safeLevel === undefined ? 'low' : assertSafeLevel(payload.safeLevel);
       const polarity =
@@ -287,7 +300,7 @@ function validateAction(
     }
     case 'gpio.mode': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32ModePin(pin);
+      if (!boardAware) assertEsp32ModePin(pin);
       const result: Record<string, unknown> = {
         pin,
         mode: assertGpioMode(payload.mode),
@@ -302,7 +315,7 @@ function validateAction(
     }
     case 'gpio.write': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32WritePin(pin);
+      if (!boardAware) assertEsp32WritePin(pin);
       const result: Record<string, unknown> = { pin, value: assertGpioValue(payload.value) };
       if (payload.validityMs !== undefined) {
         result.validityMs = assertPositiveInt(payload.validityMs, 'validityMs');
@@ -324,7 +337,7 @@ function validateAction(
           }
           const item = entry as Record<string, unknown>;
           const pin = assertGpioPin(item.pin);
-          assertEsp32WritePin(pin);
+          if (!boardAware) assertEsp32WritePin(pin);
           return { pin, value: assertGpioValue(item.value) };
         }),
       };
@@ -340,13 +353,13 @@ function validateAction(
     case 'gpio.watch':
     case 'gpio.unwatch': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32ReadPin(pin);
+      if (!boardAware) assertEsp32ReadPin(pin);
       return { pin };
     }
     case 'gpio.toggle':
     case 'gpio.pulse': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32WritePin(pin);
+      if (!boardAware) assertEsp32WritePin(pin);
       if (action === 'gpio.toggle') {
         const result: Record<string, unknown> = { pin };
         if (payload.validityMs !== undefined) {
@@ -366,7 +379,7 @@ function validateAction(
     }
     case 'gpio.pwm': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32PwmPin(pin);
+      if (!boardAware) assertEsp32PwmPin(pin);
       const result: Record<string, unknown> = {
         channel: payload.channel === undefined ? pin % 8 : assertChannel(payload.channel),
         pin,
@@ -383,19 +396,19 @@ function validateAction(
     }
     case 'gpio.analogRead': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32AnalogPin(pin);
+      if (!boardAware) assertEsp32AnalogPin(pin);
       return { pin };
     }
     case 'i2c.begin': {
       const next: Record<string, unknown> = {};
       if (payload.sda !== undefined) {
         const sda = assertGpioPin(payload.sda);
-        assertEsp32BusPin(sda, 'I2C SDA');
+        if (!boardAware) assertEsp32BusPin(sda, 'I2C SDA');
         next.sda = sda;
       }
       if (payload.scl !== undefined) {
         const scl = assertGpioPin(payload.scl);
-        assertEsp32BusPin(scl, 'I2C SCL');
+        if (!boardAware) assertEsp32BusPin(scl, 'I2C SCL');
         next.scl = scl;
       }
       if (payload.frequency !== undefined) {
@@ -425,22 +438,22 @@ function validateAction(
       const next: Record<string, unknown> = {};
       if (payload.sck !== undefined) {
         const sck = assertGpioPin(payload.sck);
-        assertEsp32BusPin(sck, 'SPI SCK');
+        if (!boardAware) assertEsp32BusPin(sck, 'SPI SCK');
         next.sck = sck;
       }
       if (payload.miso !== undefined) {
         const miso = assertGpioPin(payload.miso);
-        assertEsp32ReadPin(miso);
+        if (!boardAware) assertEsp32ReadPin(miso);
         next.miso = miso;
       }
       if (payload.mosi !== undefined) {
         const mosi = assertGpioPin(payload.mosi);
-        assertEsp32BusPin(mosi, 'SPI MOSI');
+        if (!boardAware) assertEsp32BusPin(mosi, 'SPI MOSI');
         next.mosi = mosi;
       }
       if (payload.chipSelect !== undefined) {
         const chipSelect = assertGpioPin(payload.chipSelect);
-        assertEsp32BusPin(chipSelect, 'SPI chip-select');
+        if (!boardAware) assertEsp32BusPin(chipSelect, 'SPI chip-select');
         next.chipSelect = chipSelect;
       }
       if (payload.frequency !== undefined) {
@@ -452,7 +465,7 @@ function validateAction(
       const next: Record<string, unknown> = { data: assertBusBytes(payload.data, 'data') };
       if (payload.chipSelect !== undefined) {
         const chipSelect = assertGpioPin(payload.chipSelect);
-        assertEsp32BusPin(chipSelect, 'SPI chip-select');
+        if (!boardAware) assertEsp32BusPin(chipSelect, 'SPI chip-select');
         next.chipSelect = chipSelect;
       }
       if (payload.validityMs !== undefined) {
@@ -462,7 +475,7 @@ function validateAction(
     }
     case 'gpio.servo': {
       const pin = assertGpioPin(payload.pin);
-      assertEsp32PwmPin(pin);
+      if (!boardAware) assertEsp32PwmPin(pin);
       const result: Record<string, unknown> = { pin, angle: assertServoAngle(payload.angle) };
       if (payload.validityMs !== undefined) {
         result.validityMs = assertPositiveInt(payload.validityMs, 'validityMs');
@@ -471,11 +484,11 @@ function validateAction(
     }
     case 'gpio.motor': {
       const pwmPin = assertGpioPin(payload.pwmPin);
-      assertEsp32PwmPin(pwmPin);
+      if (!boardAware) assertEsp32PwmPin(pwmPin);
       const next: Record<string, unknown> = { pwmPin };
       if (payload.dirPin !== undefined) {
         const dirPin = assertGpioPin(payload.dirPin);
-        assertEsp32WritePin(dirPin);
+        if (!boardAware) assertEsp32WritePin(dirPin);
         next.dirPin = dirPin;
       }
       next.speed = assertMotorSpeed(payload.speed, payload.dirPin !== undefined);

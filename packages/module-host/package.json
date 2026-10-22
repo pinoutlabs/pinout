@@ -4,7 +4,7 @@
   "description": "Out-of-process module hosting for Pinout — crash isolation, heartbeats, bounded restarts, and NDJSON IPC for Node and Python module workers.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",

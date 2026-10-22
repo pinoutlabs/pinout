@@ -16,6 +16,8 @@ export interface DaemonMcpServerOptions {
   token?: string;
   owner?: string;
   fetch?: typeof globalThis.fetch;
+  /** Compatibility only: expose per-device tool names. Default catalog is static. */
+  dynamicTools?: boolean;
 }
 
 interface DaemonDeviceSummary {
@@ -45,12 +47,12 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     let runtimeToolsList: RuntimeAgentTool[] = [];
     try {
-      runtimeToolsList = await client.runtimeTools();
+      if (options.dynamicTools) runtimeToolsList = await client.runtimeTools();
     } catch {
       runtimeToolsList = [];
     }
     return {
-      tools: [...controlPlaneTools(), ...runtimeToolsList.map(toMcpTool)],
+      tools: [...controlPlaneTools(), staticInvokeTool, ...runtimeToolsList.map(toMcpTool)],
     };
   });
 
@@ -58,6 +60,23 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
     const args = (request.params.arguments ?? {}) as Record<string, unknown>;
     try {
       switch (request.params.name) {
+        case 'pinout__invoke': {
+          if (!args.args || typeof args.args !== 'object' || Array.isArray(args.args))
+            throw structured('VALIDATION_ERROR', 'args must be an object.');
+          client.invalidateToolsCache();
+          return success(
+            await client.call('POST', `/v1/devices/${segment(required(args, 'deviceId'))}/invoke`, {
+              capability: required(args, 'capability'),
+              args: args.args,
+              owner: client.ownerFor(args),
+              waitFor: args.waitFor === 'accepted' ? 'accepted' : 'result',
+              ...(typeof args.idempotencyKey === 'string'
+                ? { idempotencyKey: args.idempotencyKey }
+                : {}),
+              ...(typeof args.timeoutMs === 'number' ? { timeoutMs: args.timeoutMs } : {}),
+            }),
+          );
+        }
         case 'pinout__list_devices':
           return success(await client.call('GET', '/v1/devices'));
         case 'pinout__snapshot':
@@ -293,6 +312,7 @@ class DaemonClient {
       response = await this.fetchFn(`${this.baseUrl}${path}`, {
         method,
         headers,
+        signal: AbortSignal.timeout(30_000),
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
     } catch (networkError) {
@@ -443,3 +463,22 @@ function segment(value: string): string {
 function structured(code: string, message: string, details?: Record<string, unknown>) {
   return { code, message, retryable: false, ...(details ? { metadata: details } : {}) };
 }
+
+const staticInvokeTool = {
+  name: 'pinout__invoke',
+  description:
+    'Invoke a supported capability on a currently connected device. First list and describe devices for capability schemas and board pin maps. Pins are numeric: Uno A0-A5 = 14-19. Acquire a lease, explicitly sys.arm before output, then gpio.write. Never guess wiring. Acknowledgment/readback is not proof an LED physically illuminated. Unsupported capabilities and pins are rejected by the runtime.',
+  inputSchema: {
+    type: 'object' as const,
+    additionalProperties: false,
+    required: ['deviceId', 'capability', 'args'],
+    properties: {
+      deviceId: { type: 'string' },
+      capability: { type: 'string' },
+      args: { type: 'object', additionalProperties: true },
+      idempotencyKey: { type: 'string' },
+      timeoutMs: { type: 'integer', minimum: 1 },
+      waitFor: { type: 'string', enum: ['result', 'accepted'] },
+    },
+  },
+};

@@ -218,7 +218,14 @@ export function parseDeviceInfo(payload: Record<string, unknown>): DeviceInfo {
     throw new ProtocolError('Device identity is missing a capabilities string array.');
   }
 
-  return { firmware, version, protocol, capabilities, features };
+  return {
+    firmware,
+    version,
+    protocol,
+    capabilities,
+    features,
+    ...(typeof payload.boardId === 'string' ? { boardId: payload.boardId } : {}),
+  };
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

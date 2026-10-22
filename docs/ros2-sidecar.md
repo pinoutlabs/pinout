@@ -175,6 +175,21 @@ export class RclnodejsActionTransport
 }
 ```
 
+### Adapter spec (no new workspace dependency)
+
+Do not add `rclnodejs` to `packages/ros2-sidecar/package.json`. Ship the adapter as an optional peer (dynamic `await import('rclnodejs')` behind `init()`, or constructor-injected action client). `Ros2SidecarConfig.transport` already supports injection, so no `sidecar.ts` change is needed.
+
+| Choice | Recommendation |
+| :--- | :--- |
+| Action type | `control_msgs/action/FollowJointTrajectory` on Gazebo (standard); custom `MoveToPose` only if your controller already advertises it. Record the exact package + action + topic in your evidence record. |
+| Goal fields | `target_frame`, `target_pose.position/ orientation (default w:1)`, `velocity_scaling`; honor `options.timeoutMs` (the fake ignores it, real adapter must not). |
+| Feedback | Keep `Map<goalId, Set<cb>>`; wrap native feedback into `RosFeedback {sequence++, at, feedback}` with `frame, controllerTimestamp`. |
+| Result | Map native `GoalStatus` to `SUCCEEDED/CANCELED/ABORTED`; native disconnect throws `DeviceError(DISCONNECTED)` so sidecar emits `requires_reconciliation`. |
+| Cancel | Preserve `stopConfirmed` semantics (`sidecar.stopMotion()` + `Arm.stop` depend on it); map `UNKNOWN_GOAL_ID/GOAL_TERMINATED/REJECTED`. |
+| Liveness | Poll `isActionServerAvailable()` + DDS discovery; `notifyStatus(alive, reason)`; `close()` cancels subs, destroys node, shuts down rclnodejs. |
+| High-rate | Joint/camera streams stay on `StreamBus`, never MCP. Reuse frame allowlist + `TRANSFORM_STALE` checks. |
+| Simulator run | Docker Gazebo/Isaac + sourced ROS (`Humble/Iron`, `ROS_DOMAIN_ID`); declare limits first, then record success rate + command overhead on that simulator. See `packages/ros2-sidecar/src/rclnodejsTransport.ts` skeleton. |
+
 ---
 
 ## 4. Benchmark Results and Pre-Declared Task Limits

@@ -2,10 +2,10 @@
   "name": "pinout",
   "version": "0.0.1-alpha.1",
   "private": true,
-  "description": "Hardware abstraction layer for programmable devices — SDK, CLI, firmware, and MCP adapter.",
+  "description": "Hardware abstraction layer for programmable devices \u2014 SDK, CLI, firmware, and MCP adapter.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -52,7 +52,9 @@
     "bench": "npm run build --silent && tsx scripts/benchmark.ts",
     "bench:mcp": "npm run build --silent && tsx scripts/benchmark-mcp.ts",
     "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts",
-    "bench:journal": "npm run build --silent && tsx scripts/benchmark-journal.ts"
+    "bench:journal": "npm run build --silent && tsx scripts/benchmark-journal.ts",
+    "hardware:smoke": "npm run build --silent && node scripts/hardware-smoke.mjs",
+    "test:firmware:uno": "node scripts/test-uno-firmware.mjs"
   },
   "engines": {
     "node": ">=20"

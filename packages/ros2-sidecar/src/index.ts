@@ -8,6 +8,8 @@ export {
 } from './capabilities.js';
 export { FakeRosActionServer } from './fakeRosActionServer.js';
 export type { FakeRosActionServerOptions } from './fakeRosActionServer.js';
+export { RclnodejsActionTransport } from './rclnodejsTransport.js';
+export type { RclnodejsTransportOptions } from './rclnodejsTransport.js';
 export {
   createRos2SidecarBackend,
   defaultAllowedFrames,

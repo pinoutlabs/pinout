@@ -3,7 +3,6 @@ import { connect } from '../connect.js';
 import { simulatedEsp32 } from '../drivers/esp32/simulatedTransport.js';
 import { createLogger } from '../logger.js';
 import {
-  assertEsp32WritePin,
   assertGpioPin,
   assertPolarity,
   assertSafeLevel,
@@ -54,7 +53,7 @@ export const esp32Module: PinoutModuleDefinition = {
         }
         const item = entry as Record<string, unknown>;
         const pin = assertGpioPin(item.pin);
-        assertEsp32WritePin(pin);
+
         const safeLevel: GpioSafeLevel =
           item.safeLevel === undefined ? 'low' : assertSafeLevel(item.safeLevel);
         const polarity: GpioPolarity =
@@ -70,27 +69,41 @@ export const esp32Module: PinoutModuleDefinition = {
         'autoArm is enabled on ESP32 protocol backend; this is for demo/testing only and bypasses explicit arming safety.',
       );
     }
-    const backend = new ProtocolDeviceBackend(device, {
-      outputs: validatedOutputs.length > 0 ? validatedOutputs : undefined,
-      requireWatchdog:
-        typeof options.requireWatchdog === 'boolean' ? options.requireWatchdog : undefined,
-      autoHeartbeat: typeof options.autoHeartbeat === 'boolean' ? options.autoHeartbeat : undefined,
-      heartbeatIntervalMs:
-        typeof options.heartbeatIntervalMs === 'number' ? options.heartbeatIntervalMs : undefined,
-      watchdogTimeoutMs:
-        typeof options.watchdogTimeoutMs === 'number' ? options.watchdogTimeoutMs : undefined,
-      autoArm,
-    });
+    try {
+      const backend = new ProtocolDeviceBackend(device, {
+        outputs: validatedOutputs.length > 0 ? validatedOutputs : undefined,
+        requireWatchdog:
+          typeof options.requireWatchdog === 'boolean' ? options.requireWatchdog : undefined,
+        autoHeartbeat:
+          typeof options.autoHeartbeat === 'boolean' ? options.autoHeartbeat : undefined,
+        heartbeatIntervalMs:
+          typeof options.heartbeatIntervalMs === 'number' ? options.heartbeatIntervalMs : undefined,
+        watchdogTimeoutMs:
+          typeof options.watchdogTimeoutMs === 'number' ? options.watchdogTimeoutMs : undefined,
+        autoArm,
+      });
 
-    await backend.initializeOutputs();
-    if (autoArm) {
-      await backend.arm();
+      await backend.initializeOutputs();
+      if (autoArm) {
+        await backend.arm();
+      }
+
+      return backend;
+    } catch (error) {
+      await device.close().catch(() => undefined);
+      throw error;
     }
-
-    return backend;
   },
 };
 
 export function createEsp32SimulatedTransport(options: { autoArm?: boolean } = {}): Transport {
   return simulatedEsp32(options);
 }
+
+/** Shared bridge module; actual board and capabilities come from the handshake. */
+export const boardModule: PinoutModuleDefinition = {
+  ...esp32Module,
+  id: 'pinout/board',
+  vendor: 'Pinout',
+  model: 'USB microcontroller bridge',
+};

@@ -71,7 +71,7 @@ describe('ModuleHost: happy path', () => {
 });
 
 describe('ModuleHost: crash isolation', () => {
-  it('a worker exiting mid-invoke rejects the pending call and the host survives', async () => {
+  it('worker crashes exhaust the bounded restart budget and the host survives', async () => {
     const processHandle = host.spawn({
       id: 'crashy',
       runtime: 'node',
@@ -83,9 +83,8 @@ describe('ModuleHost: crash isolation', () => {
     const pong = await processHandle.invoke('ping');
     expect(pong.pong).toBe(true);
 
-    // The fixture dies on its own ~150ms after start.
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    expect(['restarting', 'ready', 'dead']).toContain(processHandle.state());
+    // Observe the terminal state rather than sample a restart during process startup.
+    await expect.poll(() => processHandle.state(), { timeout: 4000 }).toBe('dead');
     await processHandle.shutdown();
   });
 

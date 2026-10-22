@@ -20,6 +20,7 @@ constexpr size_t maxBusPayloadBytes = 32;
 
 char lineBuffer[lineMax];
 size_t lineLength = 0;
+bool lineOverflow = false;
 unsigned long bootMillis = 0;
 
 enum DeviceState {
@@ -71,8 +72,8 @@ size_t watchCount = 0;
 PulseState pulses[8];
 
 #if defined(PINOUT_ESP32_C3)
-int i2cSda = 8;
-int i2cScl = 9;
+int i2cSda = 4;
+int i2cScl = 5;
 #else
 int i2cSda = 21;
 int i2cScl = 22;
@@ -109,7 +110,7 @@ void cancelPulseForPin(int pin) {
 bool isFlashPin(int pin) { return pin >= 11 && pin <= 17; }
 bool isInputOnlyPin(int) { return false; }
 bool isUart0Pin(int pin) { return pin == 20 || pin == 21; }
-bool isStrapPin(int pin) { return pin == 2; }
+bool isStrapPin(int pin) { return pin == 2 || pin == 8 || pin == 9; }
 bool isAdcPin(int pin) { return pin >= 0 && pin <= 4; }
 bool isUsbPin(int pin) { return pin == 18 || pin == 19; }
 #else
@@ -195,6 +196,11 @@ void emitGpioChanged(int pin, bool value) {
 }
 
 void fillIdentity(JsonObject payload) {
+  #if defined(PINOUT_ESP32_C3)
+  payload["boardId"] = "esp32-c3-supermini";
+#else
+  payload["boardId"] = "esp32-devkit-v1";
+#endif
   payload["firmware"] = firmwareName;
   payload["version"] = firmwareVersion;
   payload["protocol"] = protocolVersion;
@@ -381,9 +387,11 @@ void handleWatchdogKick(const char* id, const JsonVariantConst& payload) {
       return;
     }
   }
-  if (deviceState == STATE_ARMED) {
-    touchWatchdog();
+  if (deviceState != STATE_ARMED) {
+    sendError(id, deviceState == STATE_TRIPPED ? "WATCHDOG_TRIPPED" : "NOT_ARMED", "Explicitly arm before heartbeat.");
+    return;
   }
+  touchWatchdog();
   JsonDocument result;
   result["kicked"] = true;
   result["timeoutMs"] = watchdogTimeoutMs;
@@ -475,9 +483,17 @@ void handleGpioMode(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PIN", "Pin is not a valid ESP32 GPIO for this mode.");
     return;
   }
-  cancelPulseForPin(pin);
-  applyPinMode(pin, mode);
-  activeOutputs[pin] = strcmp(mode, "output") == 0;
+  if (strcmp(mode,"input") && strcmp(mode,"output") && strcmp(mode,"pullup") && strcmp(mode,"pulldown")) {
+    sendError(id,"INVALID_PAYLOAD","Unknown GPIO mode."); return;
+  }
+  if (payload["safeLevel"].is<const char*>()) {
+    const char* level=payload["safeLevel"];
+    if (strcmp(level,"low") && strcmp(level,"high") && strcmp(level,"high-z") && strcmp(level,"hold")) { sendError(id,"INVALID_PAYLOAD","Invalid safe level."); return; }
+  }
+  if (payload["polarity"].is<const char*>()) {
+    const char* pol=payload["polarity"];
+    if (strcmp(pol,"active-high") && strcmp(pol,"active-low")) { sendError(id,"INVALID_PAYLOAD","Invalid polarity."); return; }
+  }
 
   if (payload["safeLevel"].is<const char*>()) {
     const char* lvl = payload["safeLevel"].as<const char*>();
@@ -504,6 +520,10 @@ void handleGpioMode(const char* id, const JsonVariantConst& payload) {
 
   JsonDocument result;
   result["pin"] = pin;
+  cancelPulseForPin(pin);
+  if (strcmp(mode,"output") == 0) digitalWrite(pin, pinSafeConfigs[pin].safeLevel == SAFE_LEVEL_HIGH ? HIGH : LOW);
+  applyPinMode(pin, mode);
+  activeOutputs[pin] = strcmp(mode,"input") != 0;
   result["mode"] = mode;
   sendSuccess(id, result);
 }
@@ -519,10 +539,10 @@ void handleGpioWrite(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PIN", "Pin is not a valid ESP32 output GPIO.");
     return;
   }
+  digitalWrite(pin, value ? HIGH : LOW);
   pinMode(pin, OUTPUT);
   cancelPulseForPin(pin);
   activeOutputs[pin] = true;
-  digitalWrite(pin, value ? HIGH : LOW);
   JsonDocument result;
   result["pin"] = pin;
   result["value"] = value;
@@ -670,7 +690,13 @@ void handleGpioPwm(const char* id, const JsonVariantConst& payload) {
   const int channel = payload["channel"].as<int>();
   const float duty = payload["duty"].as<float>();
   const int frequency = payload["frequency"].as<int>();
-  if (!isWritablePin(pin) || channel < 0 || channel > 15 || duty < 0 || duty > 1 || frequency <= 0) {
+  if (!isWritablePin(pin) || channel < 0 || channel >=
+#if defined(PINOUT_ESP32_C3)
+      6
+#else
+      16
+#endif
+      || duty < 0 || duty > 1 || frequency <= 0) {
     sendError(id, "INVALID_PIN", "Invalid PWM pin or parameters.");
     return;
   }
@@ -1121,6 +1147,7 @@ void handleRequest(JsonDocument& document) {
     return;
   }
   if (strcmp(action, "gpio.mode") == 0) {
+    if (!checkActuationPrerequisites(id, payload)) return;
     handleGpioMode(id, payload);
     return;
   }
@@ -1257,15 +1284,19 @@ void loop() {
   pollWatches();
   pollPulses();
   while (Serial.available() > 0) {
+    checkWatchdog();
     const char next = static_cast<char>(Serial.read());
     if (next == '\n') {
       lineBuffer[lineLength] = '\0';
       lineLength = 0;
-      handleLine(lineBuffer);
+      if (!lineOverflow) handleLine(lineBuffer);
+      lineOverflow = false;
       checkWatchdog();
       continue;
     }
+    if (lineOverflow) continue;
     if (lineLength >= lineMax - 1) {
+      lineOverflow = true;
       lineLength = 0;
       sendError("invalid", "INVALID_MESSAGE", "Request line is too long.");
       continue;

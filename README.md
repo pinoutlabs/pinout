@@ -10,7 +10,7 @@
 
 <br />
 
-[![CI](https://github.com/IMisbahk/pinout/actions/workflows/ci.yml/badge.svg)](https://github.com/IMisbahk/pinout/actions/workflows/ci.yml)
+[![CI](https://github.com/pinoutlabs/pinout/actions/workflows/ci.yml/badge.svg)](https://github.com/pinoutlabs/pinout/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)
 ![Hardware](https://img.shields.io/badge/hardware-ESP32%20%2B%20simulators-black)
 ![MCP](https://img.shields.io/badge/MCP-compatible-purple)
@@ -462,7 +462,9 @@ instead of inventing an answer.
 
 # MCP
 
-Pinout exposes registered hardware capabilities dynamically through MCP.
+The default daemon-backed MCP catalog is static: `pinout__list_devices`, `pinout__describe_device`, and `pinout__invoke({deviceId, capability, args})` plus governance tools. Board changes require no MCP configuration changes. See the [Uno / ESP32 / C3 LED demo](docs/three-board-demo.md).
+
+The optional compatibility catalog exposes registered hardware capabilities dynamically through MCP.
 
 ```text
 Claude / Agent
@@ -499,7 +501,7 @@ It is not Pinout's internal hardware model.
 Node 20+ is required.
 
 ```bash
-git clone https://github.com/IMisbahk/pinout.git
+git clone https://github.com/pinoutlabs/pinout.git
 cd pinout
 npm install
 npm test
@@ -542,6 +544,8 @@ print(op.result())
 ```
 
 ## Real hardware path
+
+For automatic detection and the static MCP LED demo on Uno R3, ESP32 classic, and ESP32-C3 SuperMini, follow [the three-board guide](docs/three-board-demo.md). All three firmware targets compile; physical validation remains pending.
 
 The first hardware target is a classic ESP32 DevKit (WROOM / 30-pin) running [`firmware/esp32-bridge`](firmware/esp32-bridge). A board-agnostic [`firmware/micropython-bridge`](firmware/micropython-bridge) extends coverage to MicroPython/CircuitPython boards (experimental).
 

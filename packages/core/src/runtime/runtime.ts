@@ -179,7 +179,10 @@ export class PinoutRuntime {
     const instance = new DeviceInstance({
       identity,
       backend,
-      capabilities: module.capabilities,
+      capabilities:
+        backend instanceof ProtocolDeviceBackend
+          ? backend.getDevice().capabilities.filter((c) => module.capabilityNames.includes(c.name))
+          : module.capabilities,
       policies: mergedPolicies.rules as PolicyRule[],
       simulated,
       activeTransportKind: options.transport?.kind ?? backend.kind,

@@ -4,7 +4,7 @@
   "description": "GRBL adapter for Pinout — machine status, homing, motion, and stops over any transport. Sim-first; physical CNC machinery demands independent hardware safeguards.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IMisbahk/pinout.git"
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
   },
   "license": "Apache-2.0",
   "type": "module",

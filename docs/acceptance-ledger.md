@@ -125,3 +125,7 @@
 | **Phase 4** | Prove Recovery and Portability | 11 | 9 | 0 | 2 | 0 |
 | **Phase 5** | Robotics Integration (Sidecar Boundary) | 10 | 8 | 0 | 2 | 0 |
 | **Total** | **Phases 1–5 Combined** | **57** | **41** | **1** | **15** | **0** |
+
+## Three-board LED milestone (2026-09-08)
+
+Static MCP, board-aware USB discovery, Uno firmware, C3 pin validation, firmware builds, and protocol integration checks are recorded in [the dated preparation record](../hardware/records/2026-09-08-three-board-preparation.md). All physical LED/USB/timing gates remain pending. Follow [the demo guide](three-board-demo.md).

@@ -91,7 +91,8 @@ describe('@pinout/mcp stdio subprocess lifecycle', () => {
     // 1. List tools
     const toolsResult = await session.client.listTools();
     const toolNames = toolsResult.tools.map((tool) => tool.name);
-    expect(toolNames).toContain('relay_mcp__relay_set');
+    expect(toolNames).toContain('pinout__invoke');
+    expect(toolNames).not.toContain('relay_mcp__relay_set');
     expect(toolNames).toContain('pinout__describe_device');
     expect(toolNames).toContain('pinout__acquire_lease');
     expect(toolNames).toContain('pinout__read_state');
@@ -120,10 +121,13 @@ describe('@pinout/mcp stdio subprocess lifecycle', () => {
 
     // 4. Invoke capability
     const invokeResult = await session.client.callTool({
-      name: 'relay_mcp__relay_set',
+      name: 'pinout__invoke',
       arguments: {
-        on: true,
-        _pinout: { idempotencyKey: 'subprocess-once', waitFor: 'result' },
+        deviceId: 'relay-mcp',
+        capability: 'relay.set',
+        args: { on: true },
+        idempotencyKey: 'subprocess-once',
+        waitFor: 'result',
       },
     });
     expect(invokeResult.isError).not.toBe(true);

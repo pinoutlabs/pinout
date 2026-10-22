@@ -42,3 +42,5 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ---
 
 Simulation and compile tests are not hardware evidence. A catalog row may only claim hardware verification when it links to a dated record under `hardware/records/`.
+
+- [Three-board LED demo: Uno R3, ESP32, ESP32-C3 SuperMini](three-board-demo.md)

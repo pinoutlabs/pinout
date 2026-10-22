@@ -1,3 +1,4 @@
+import { boardForInfo, validateBoardAction } from '../boards/builtin.js';
 import type { Device } from '../device.js';
 import { DeviceError } from '../errors.js';
 import {
@@ -61,7 +62,9 @@ export class ProtocolDeviceBackend implements DeviceBackend {
     if (options.outputs) {
       for (const out of options.outputs) {
         const pin = assertGpioPin(out.pin);
-        assertEsp32WritePin(pin);
+        const board = boardForInfo(this.device.info);
+        if (board) validateBoardAction(board, 'gpio.write', { pin });
+        else assertEsp32WritePin(pin);
         const safeLevel = out.safeLevel !== undefined ? assertSafeLevel(out.safeLevel) : 'low';
         const polarity = out.polarity !== undefined ? assertPolarity(out.polarity) : 'active-high';
         this.configuredOutputs.set(pin, { safeLevel, polarity });
@@ -177,6 +180,14 @@ export class ProtocolDeviceBackend implements DeviceBackend {
       );
     }
 
+    const requestedTimeout = options?.timeoutMs ?? this.options.watchdogTimeoutMs ?? 1000;
+    if (
+      requireWatchdog &&
+      this.device.info.boardId &&
+      (!Number.isInteger(requestedTimeout) || requestedTimeout < 250 || requestedTimeout > 10000)
+    ) {
+      throw new DeviceError('INVALID_PAYLOAD', 'Watchdog timeout must be 250–10000 ms.');
+    }
     await this.initializeOutputs();
 
     const nowIso = formatIsoTimestamp();
@@ -235,7 +246,9 @@ export class ProtocolDeviceBackend implements DeviceBackend {
     safeLevel: GpioSafeLevel = 'low',
     polarity: GpioPolarity = 'active-high',
   ): Promise<Record<string, unknown>> {
-    assertEsp32WritePin(pin);
+    const board = boardForInfo(this.device.info);
+    if (board) validateBoardAction(board, 'gpio.write', { pin });
+    else assertEsp32WritePin(pin);
     this.configuredOutputs.set(pin, { safeLevel, polarity });
     if (this.device.supports('gpio.configSafeState')) {
       return this.device.configSafeState(pin, safeLevel, polarity);
@@ -248,6 +261,16 @@ export class ProtocolDeviceBackend implements DeviceBackend {
     payload: Record<string, unknown>,
     context?: BackendInvocationContext,
   ): Promise<Record<string, unknown>> {
+    if (
+      action === 'watchdog.configure' &&
+      this.options.requireWatchdog &&
+      (typeof payload.timeoutMs !== 'number' ||
+        payload.timeoutMs < 250 ||
+        payload.timeoutMs > 10000)
+    )
+      throw new DeviceError('INVALID_PAYLOAD', 'Watchdog timeout must be 250–10000 ms.');
+    if (action === 'sys.arm') return this.arm(payload as { timeoutMs?: number });
+    if (action === 'sys.disarm') return this.disarm();
     const cmdIso = formatIsoTimestamp();
 
     if (action === 'gpio.write' && typeof payload.pin === 'number') {
@@ -340,7 +363,13 @@ export class ProtocolDeviceBackend implements DeviceBackend {
   async close(): Promise<void> {
     this.stopHeartbeat();
     this.cleanupListener?.();
-    await this.device.close();
+    try {
+      if (this.state === 'armed') await this.disarm();
+    } catch {
+      /* Link loss: firmware watchdog owns expiry. */
+    } finally {
+      await this.device.close();
+    }
   }
 
   getDevice(): Device {
@@ -358,6 +387,7 @@ export class ProtocolDeviceBackend implements DeviceBackend {
 
   getOperationalState(): Record<string, unknown> {
     return {
+      board: boardForInfo(this.device.info),
       firmware: this.device.info.firmware,
       version: this.device.info.version,
       protocol: this.device.info.protocol,

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { resolvePinoutHome } from '@pinout/core';
 /**
  * Daemon-aware CLI commands: talk to a running `pinoutd` over its local HTTP
  * API. These never connect to hardware directly — execution belongs to the
@@ -29,15 +32,25 @@ async function requestDaemon(
   body?: unknown,
 ): Promise<DaemonHttpResponse> {
   const url = `${daemonUrl(program)}${path}`;
+  let token = process.env.PINOUT_TOKEN;
+  if (!token && daemonUrl(program) === DEFAULT_DAEMON_URL) {
+    try {
+      token = (
+        JSON.parse(readFileSync(join(resolvePinoutHome(), 'pinoutd.json'), 'utf8')) as {
+          token?: string;
+        }
+      ).token;
+    } catch {
+      /* Daemon can be started separately. */
+    }
+  }
   let response: Response;
   try {
     response = await fetch(url, {
       method,
       headers: {
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
-        ...(process.env.PINOUT_TOKEN
-          ? { authorization: `Bearer ${process.env.PINOUT_TOKEN}` }
-          : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });

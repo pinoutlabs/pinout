@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { BoardDiscovery } from './boardDiscovery.js';
 /**
  * pinoutd CLI entry point.
  *
@@ -9,9 +10,13 @@
 import process from 'node:process';
 import { randomBytes } from 'node:crypto';
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { createRuntimeFromConfig, PINOUT_VERSION } from '@pinout/core';
+import {
+  createRuntimeFromConfig,
+  PINOUT_VERSION,
+  resolvePinoutHome,
+  readDevicesFile,
+} from '@pinout/core';
 import { startDaemon } from './start.js';
 import { DEFAULT_DAEMON_PORT, type DaemonConfig } from './httpServer.js';
 
@@ -21,6 +26,7 @@ interface ParsedArgs {
   token: string | undefined;
   journalPath: string | undefined;
   demo: boolean;
+  discover: boolean;
   allowRemote: boolean;
 }
 
@@ -31,6 +37,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     token: undefined,
     journalPath: undefined,
     demo: false,
+    discover: false,
     allowRemote: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -52,6 +59,9 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--journal':
         args.journalPath = next;
         i += 1;
+        break;
+      case '--discover':
+        args.discover = true;
         break;
       case '--demo':
         args.demo = true;
@@ -76,7 +86,7 @@ async function loadPersistedConfig(): Promise<{
   generated: boolean;
   path: string;
 }> {
-  const dir = join(homedir(), '.pinout');
+  const dir = resolvePinoutHome();
   const path = join(dir, 'pinoutd.json');
   try {
     const parsed = JSON.parse(await readFile(path, 'utf8')) as PersistedDaemonConfig;
@@ -101,9 +111,9 @@ async function loadPersistedConfig(): Promise<{
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const persisted = await loadPersistedConfig();
-  const defaultJournalDir = join(homedir(), '.pinout', 'journal');
+  const defaultJournalDir = join(resolvePinoutHome(), 'journal');
   await mkdir(defaultJournalDir, { recursive: true, mode: 0o700 });
-  const { runtime } = await createRuntimeFromConfig({
+  const { runtime, errors } = await createRuntimeFromConfig({
     includeDemoDefaults: args.demo,
     continueOnError: true,
   });
@@ -117,6 +127,18 @@ async function main(): Promise<void> {
     ...(persisted.config.safetyRules ? { safetyRules: persisted.config.safetyRules } : {}),
   });
 
+  for (const failure of errors)
+    process.stderr.write(`Device ${failure.deviceId}: ${String(failure.error)}\n`);
+  const discovery = args.discover
+    ? new BoardDiscovery(runtime, {
+        excludedPaths: readDevicesFile().devices.flatMap((d) =>
+          d.backend?.transport?.path ? [d.backend.transport.path] : [],
+        ),
+        log: (message) => process.stderr.write(`${message}\n`),
+      })
+    : undefined;
+  await discovery?.start();
+
   const where = daemon.socketPath ?? `http://${daemon.host}:${daemon.port}`;
   process.stdout.write(
     `pinoutd v${PINOUT_VERSION} listening on ${where}${args.allowRemote ? '' : ' (loopback only)'}\n`,
@@ -128,6 +150,7 @@ async function main(): Promise<void> {
   }
 
   const shutdown = async (): Promise<void> => {
+    await discovery?.close();
     await daemon.close();
     process.exit(0);
   };

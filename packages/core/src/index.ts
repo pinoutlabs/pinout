@@ -213,6 +213,11 @@ export {
 export { DeviceInstance } from './runtime/deviceInstance.js';
 export { ProtocolDeviceBackend } from './runtime/protocolBackend.js';
 export {
+  createBackendEventBus,
+  type BackendEventBus,
+  type BackendEventHandler,
+} from './runtime/backendEvents.js';
+export {
   CompositeDeviceBackend,
   createCompositeBackend,
   createCompositeDevice,
@@ -230,6 +235,11 @@ export {
   createRoboticsWorkbench,
   defaultRoboticsDeviceIds,
 } from './runtime/createRoboticsWorkbench.js';
+export {
+  createLabWorkbench,
+  defaultLabDeviceIds,
+  type LabWorkbenchOptions,
+} from './runtime/createLabWorkbench.js';
 export {
   AgentToolNameCollisionError,
   runtimeToAgentTools,
@@ -333,6 +343,14 @@ export { createSimulatedEncoderBackend } from './modules/encoder/simulator.js';
 export { createSimulatedLimitSwitchBackend } from './modules/limitSwitch/simulator.js';
 export { createSimulatedForceBackend } from './modules/force/simulator.js';
 export { createSimulatedMobileBaseBackend } from './modules/mobileBase/simulator.js';
+export { syringePumpModule, syringePumpModuleId } from './modules/syringePumpModule.js';
+export { createSimulatedSyringePumpBackend } from './modules/syringePump/simulator.js';
+export { centrifugeModule, centrifugeModuleId } from './modules/centrifugeModule.js';
+export { createSimulatedCentrifugeBackend } from './modules/centrifuge/simulator.js';
+export { heaterShakerModule, heaterShakerModuleId } from './modules/heaterShakerModule.js';
+export { createSimulatedHeaterShakerBackend } from './modules/heaterShaker/simulator.js';
+export { pipetteModule, pipetteModuleId } from './modules/pipetteModule.js';
+export { createSimulatedPipetteBackend } from './modules/pipette/simulator.js';
 export { evaluatePolicies } from './policy/engine.js';
 export { SafetyEngine, mergeModuleAndDeploymentRules } from './policy/safety.js';
 export type {
@@ -448,3 +466,6 @@ export type {
 export type { PolicyRule, PolicyContext } from './policy/types.js';
 export type { LogContext, LogLevel, Logger } from './logger.js';
 export type { PinoutEnvConfig } from './config.js';
+
+export { builtinBoards, boardForInfo } from './boards/builtin.js';
+export type { SerialPortInfo } from './serial.js';

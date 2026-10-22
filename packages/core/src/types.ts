@@ -28,6 +28,7 @@ export interface CapabilityDescriptor {
 }
 
 export interface DeviceInfo {
+  boardId?: string;
   firmware: string;
   version: string;
   protocol: number;
