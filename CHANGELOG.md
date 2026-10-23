@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- **Room Environment Sensor external module (`room-sensor/environment`, SIMULATED)**:
+  - Maker-facing BME280 / DHT11 / DHT22 module under `examples/external-module/room-sensor` using `defineModule` + `sensorRead` (kept outside `@pinout/core`).
+  - Capabilities: `sensor.read`, `temperature.read`, `humidity.read`, `pressure.read` (BME280-only), `status.read`.
+  - Simulator returns plausible structured readings; `status.read` / `getOperationalStateEvidence()` follow the physical evidence contract (reads update `observed` only; `commanded`/`acknowledged` stay null).
+  - Docs: [docs/room-sensor.md](docs/room-sensor.md), module README with ESP32/MicroPython wiring notes; catalog entry stays honest `SIMULATED` (no HIL / no sensor-specific firmware hooks).
+
 ### Added (Phases 1–5 sprint)
 
 - **MCP Stdio Lifecycle & Governance Fix** (`packages/mcp`): Repaired process lifecycle in `runStdio.ts` so the stdio transport maintains session lifetime across sequential calls, exits cleanly on stdin EOF and `SIGINT`/`SIGTERM`, and returns structured `DAEMON_UNAVAILABLE` errors without transport crashes when `pinoutd` is offline.

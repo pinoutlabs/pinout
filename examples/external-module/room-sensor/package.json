@@ -1,0 +1,18 @@
+{
+  "name": "room-sensor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "External Pinout module for BME280 / DHT room temperature, humidity, and pressure sensors (SIMULATED).",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pinout/core": "file:../../../packages/core"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.7"
+  }
+}

@@ -152,7 +152,7 @@ When `~/.pinout/devices.json` exists (or `PINOUT_CONFIG` is set), `npm run mcp` 
 
 ## Reference module
 
-See [examples/external-module/weird-sensor](../examples/external-module/weird-sensor/README.md) for a complete working external module.
+See [examples/external-module/weird-sensor](../examples/external-module/weird-sensor/README.md) for a complete working external module, and [examples/external-module/room-sensor](../examples/external-module/room-sensor/README.md) for a BME280/DHT environment sensor with physical-evidence status (`SIMULATED`).
 
 ## Conformance kit
 

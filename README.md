@@ -122,6 +122,7 @@ Applications and agents interact with **Pinout capabilities**, not the underlyin
 | MicroPython / CircuitPython boards (generic bridge) | `EXPERIMENTAL` — host-validated protocol only |
 | Modbus Lamp (Coil + Discrete Input Readback) | `SIMULATED` (`@pinout/protocols-modbus` backend tested against simulator; physical HIL pending) |
 | ROS 2 Sidecar (`@pinout/ros2-sidecar`) | `SIMULATED` (narrow Cartesian action mapped to fake ROS action server; physical platform pending) |
+| Room environment sensor (BME280 / DHT external module) | `SIMULATED` (`examples/external-module/room-sensor`; wiring notes only; no HIL) |
 | Simulated devices (lamp, arm, mobile base, chamber, coffee machine, motors, sensors, …) | `SIMULATED` |
 | Modbus TCP/RTU, SCPI instruments, MQTT | `IMPLEMENTED` adapter packages (scripted/in-process tests; not physical-equipment verified or automatically registered as runtime devices) |
 | Universal Robots, OPC UA, MAVLink | `PLANNED` |
