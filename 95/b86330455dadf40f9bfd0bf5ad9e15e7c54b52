@@ -1,0 +1,273 @@
+docs/testing.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 33,87,113-117
+docs/capabilities.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 278-295
+examples/external-module/room-sensor/src/types.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-135
+firmware/esp32-mqtt-bridge/include/pinout_mqtt_config.h.example
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-28
+packages/core/src/device.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 112-113
+packages/core/src/boards/descriptors.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 41-51
+packages/core/tests/multiDeviceRuntime.test.ts
+  s_54e973c090b6a0::t_514684e7fc89c3 109-112
+  s_54e973c090b6a0::t_d6b1f9440494b0 1-75,82-108,114-116,118-133
+  s_54e973c090b6a0::t_76e9c790f37732 113,117
+  s_54e973c090b6a0::t_c3f7759d3c669d 76-81
+docs/raspberry-pi-pico.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-116
+docs/room-sensor.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-54
+eslint.config.js
+  s_54e973c090b6a0::t_ea0aaa778baad6 10
+packages/cli/src/doctor/formatter.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 7
+examples/external-module/room-sensor/tsconfig.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-13
+packages/discovery/src/index.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 27-38
+docs/protocol.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 3
+firmware/esp32-mqtt-bridge/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-83
+packages/mcp/tests/threeBoards.test.ts
+  s_54e973c090b6a0::t_514684e7fc89c3 163
+examples/external-module/room-sensor/package.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-18
+firmware/esp32-mqtt-bridge/platformio.ini
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-21
+packages/discovery/src/plugins.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 4-6
+packages/core/src/modules/panTilt/esp32Backend.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-439
+packages/core/src/modules/panTiltModule.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-57
+docs/lamp.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 3
+packages/discovery/src/ble.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-363
+firmware/boards/esp32-s3-devkitc-1.json
+  s_87b9411a234c77::t_c591ea3f9ba4ff 7-43,46-70,73-96,99-119,128-132
+examples/pan-tilt.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-62
+firmware/micropython-bridge/boards/raspberry-pi-pico/config.py
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-77
+docs/lamp-mqtt.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-155
+docs/esp32-mqtt.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-51
+packages/core/src/drivers/esp32/pins.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 2,11-42,63-195
+  s_87b9411a234c77::t_6ef5f8842d668c 196
+docs/acceptance-ledger.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 5-6,33,85,88,125,129
+packages/protocols-mqtt/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 9-21,33-41
+packages/core/src/modules/panTilt/simulator.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-368
+packages/core/src/runtime/composite.ts
+  s_54e973c090b6a0::t_f20e505a8a5cd6 174,180
+  s_54e973c090b6a0::t_ac3d9bcf9874c8 5,31
+  s_54e973c090b6a0::t_a72055a982daa3 68
+hardware/records/2026-10-23-pan-tilt-servo-pending.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-32
+packages/discovery/tests/discovery.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 16-21,331-417
+  s_87b9411a234c77::t_a047d8ff4de42c 418
+scripts/hil/esp32-c3-experimental.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 5-19
+examples/lamp-mqtt.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-91
+firmware/boards/esp32-devkit-v1.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 24-39
+examples/external-module/room-sensor/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-121
+.github/workflows/ci.yml
+  s_87b9411a234c77::t_b6b72d6dc263cd 103-105
+firmware/esp32-bridge/platformio.ini
+  s_87b9411a234c77::t_c591ea3f9ba4ff 2-3,62-63,79-92
+packages/core/src/modules/panTilt/types.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-283
+packages/core/src/home/deviceStore.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 7
+firmware/micropython-bridge/README.md
+  s_87b9411a234c77::t_90d53aa6b162cb 3-50,53-56,64-67,70-87,90-97
+packages/core/src/transports/bleGattUuids.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-35
+.github/workflows/release-alpha.yml
+  s_87b9411a234c77::t_b6b72d6dc263cd 53,56,59,64-65
+packages/protocols-mqtt/tests/esp32Mqtt.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-106
+packages/discovery/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 12-13,23-28,38,42-69
+examples/external-module/room-sensor/src/backend.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-210
+firmware/micropython-bridge/board-descriptor.json
+  s_87b9411a234c77::t_90d53aa6b162cb 13-15,37,39-43
+firmware/esp32-mqtt-bridge/include/pinout_mqtt_config.h
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-29
+docs/three-board-demo.md
+  s_87b9411a234c77::t_c591ea3f9ba4ff 28,31,33,42-43
+packages/core/src/runtime/backendEvents.ts
+  s_54e973c090b6a0::t_05b7a763e2397c 1-35
+vitest.config.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 35-38
+  s_54e973c090b6a0::t_f667eec622059f 14-22
+packages/cli/src/discoverCommand.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 4-6,16,35,37,39-45,63
+packages/cli/tests/doctor.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 112,117-147
+packages/core/src/modules/panTilt/capabilities.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-238
+packages/core/tests/panTilt.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-193
+packages/core/src/index.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 13-29,150-152,157-158,163,167-168,171,241,347-375
+  s_54e973c090b6a0::t_8b4a8bec7447a9 242-245
+packages/protocols-mqtt/src/esp32MqttBackend.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-478
+hardware/records/2026-09-09-esp32-classic-compile.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-51
+packages/core/src/modules/registry.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 16,46
+packages/protocols-mqtt/src/esp32MqttDeviceSimulator.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-229
+scripts/docs-check.mjs
+  s_87b9411a234c77::t_b6b72d6dc263cd 11
+packages/protocols-mqtt/src/lampBackend.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-764
+packages/protocols-mqtt/tests/lampBackend.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-226
+docs/build-a-module.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 155
+docs/architecture.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 45-46,68,175-176,180
+firmware/esp32-mqtt-bridge/src/main.cpp
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-281
+CHANGELOG.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 7-48
+packages/protocols-mqtt/src/esp32MqttMapping.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-79
+firmware/micropython-bridge/sim/machine.py
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-144
+docs/index.md
+  s_87b9411a234c77::t_c591ea3f9ba4ff 8,20,23-24,27
+packages/cli/src/doctor/types.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 57-62
+packages/discovery/src/core.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 10-12
+packages/protocols-mqtt/src/lampTopics.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-170
+packages/core/tests/bleGattTransport.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-98
+firmware/micropython-bridge/config.py
+  s_87b9411a234c77::t_b6b72d6dc263cd 3-9,12-20,26-28,43-48
+  s_87b9411a234c77::t_a5422be84eda0c 49
+examples/external-module/room-sensor/src/index.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-120
+packages/core/src/transports/simulatedBleGatt.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-136
+docs/cli.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 99-103
+packages/core/src/transports/bleGattSession.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-20
+firmware/micropython-bridge/validate-pico.js
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-279
+docs/modules.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 47,143-144,165
+firmware/esp32-ble-bridge/platformio.ini
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-17
+packages/core/src/modules/semanticModules.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 391-396
+  s_54e973c090b6a0::t_50cbc1f72fc68d 3
+  s_54e973c090b6a0::t_e18a3ee5e5a358 220,240,244,249-269,317
+firmware/esp32-bridge/README.md
+  s_87b9411a234c77::t_c591ea3f9ba4ff 3-7,11-31,38-40,74-78,86-91,93,95-97,106-131,136,140-142,145-159,166-168
+examples/external-module/room-sensor/pinout.module.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-28
+firmware/boards/raspberry-pi-pico.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 7,10-11,20,23-26,28
+hardware/catalog.json
+  s_87b9411a234c77::t_beeaecdbc14865 42-45,51,53,58-61,74-77,119-134,207-214,270-285
+docs/ble-gatt.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-71
+packages/discovery/package.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 4
+packages/core/src/modules/esp32Module.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 28-35
+firmware/micropython-bridge/main.py
+  s_87b9411a234c77::t_90d53aa6b162cb 70-74,169,174-177,247-248,277-278,370,618,621
+examples/external-module/room-sensor/test/module.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-95
+packages/core/src/transports/bleGattTransport.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-83
+scripts/hil/esp32-s3-experimental.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-20
+firmware/esp32-ble-bridge/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-80
+README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 122-125,128-129,553,555,641
+packages/protocols-mqtt/src/mapping.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 25-28,31-35,93-95,108-110
+  s_87b9411a234c77::t_c6afbb5802d241 111-112
+firmware/esp32-bridge/src/boards/board.h
+  s_87b9411a234c77::t_c591ea3f9ba4ff 40
+  s_87b9411a234c77::t_1532fa0460d054 38
+firmware/esp32-ble-bridge/src/main.cpp
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-314
+docs/hardware-support.md
+  s_87b9411a234c77::t_c591ea3f9ba4ff 20,22-41,51-67
+packages/core/src/modules/panTilt/conformance.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-276
+packages/protocols-mqtt/src/esp32MqttModule.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-151
+packages/protocols-mqtt/src/index.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 14-19,29-58
+hardware/records/2026-10-23-raspberry-pi-pico-simulated.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-21
+hardware/records/README.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 3,8-10,19-22
+packages/cli/src/doctor/discovery.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 3,67-77,85,108,119-120,168-245
+  s_87b9411a234c77::t_f1ee66b181b048 246-247
+packages/protocols-mqtt/src/lampModule.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 1-53
+packages/core/src/boards/builtin.ts
+  s_87b9411a234c77::t_beeaecdbc14865 91-107,236-240,250,293-345,376-377
+CONTRIBUTING.md
+  s_87b9411a234c77::t_b6b72d6dc263cd 25-26,70-72,112-114
+package.json
+  s_87b9411a234c77::t_b6b72d6dc263cd 18,39,41
+packages/core/src/home/transportFactory.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 4,31-32,48-52
+packages/core/tests/boards.test.ts
+  s_87b9411a234c77::t_b6b72d6dc263cd 8-16,65-126
+  s_87b9411a234c77::t_91c9fd62951fac 127
+package-lock.json
+  s_87b9411a234c77::t_f262133b29a96a 1661-1663,1681-1683,1688-1691,1704,1710-1712,1720-1722,1726-1729,1745-1747,1751-1752,1767-1769,1773-1774,1785-1787,1802-1804,1808-1810,1827-1829,1841-1843,1847-1850,1879-1881,1908-1910,1915-1917,1932-1934,1938,4142-4144,4856-4858,4933-4935,4939-4942
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "95b86330455dadf40f9bfd0bf5ad9e15e7c54b52",
+  "prompts": {},
+  "sessions": {
+    "s_54e973c090b6a0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7cfa3459-3060-40bc-87f3-64dda6a751d7",
+        "model": "grok-4.7-xhigh"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    },
+    "s_87b9411a234c77": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1699d-4409-7fc1-805d-ac04c0182339",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Misbah Khursheed <m.misbahkhursheed@gmail.com>"
+    }
+  }
+}
