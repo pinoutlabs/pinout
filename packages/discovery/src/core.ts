@@ -7,8 +7,9 @@
  *
  * - confidence is capped at 0.95 and only reachable via a device-confirmed
  *   handshake (e.g. a `GET /v1/health` that answered with `{ok:true}`);
- * - a single weak heuristic (VID/PID match, port open, manufacturer string)
- *   caps confidence at 0.5 — a device identity is never claimed on one signal;
+ * - a single weak heuristic (VID/PID match, port open, manufacturer string,
+ *   BLE local name / advertised service UUID) caps confidence at 0.5 — a
+ *   device identity is never claimed on one signal;
  * - every candidate must carry at least one piece of evidence.
  */
 import { createHash } from 'node:crypto';

@@ -1,8 +1,9 @@
 /**
  * `pinout discover` — enumerate candidate devices WITHOUT actuating them.
  *
- * Serial + USB + mDNS run by default; network probing is opt-in via --network
- * and bounded to explicitly supplied endpoints (--probe host:port, repeatable).
+ * Serial + USB + mDNS + BLE (advertisement-only) run by default; network
+ * probing is opt-in via --network and bounded to explicitly supplied endpoints
+ * (--probe host:port, repeatable). BLE never connects or writes GATT.
  */
 import type { Command } from 'commander';
 import {
@@ -12,6 +13,7 @@ import {
   usbDiscoveryPlugin,
   mdnsDiscoveryPlugin,
   networkProbePlugin,
+  bleDiscoveryPlugin,
 } from '@pinout/discovery';
 
 export interface DiscoverOutput {
@@ -30,10 +32,17 @@ export function registerDiscoverCommand(program: Command, outputFor: () => Disco
       'endpoint to probe with --network (repeatable)',
       (value: string, previous: string[] = []) => [...previous, value],
     )
-    .option('--timeout <ms>', 'per-probe timeout in milliseconds', '300')
+    .option('--timeout <ms>', 'per-probe / BLE scan timeout in milliseconds', '300')
     .option('--no-mdns', 'skip mDNS scanning')
+    .option('--no-ble', 'skip BLE advertisement scanning')
     .action(
-      async (options: { network: boolean; probe?: string[]; timeout: string; mdns: boolean }) => {
+      async (options: {
+        network: boolean;
+        probe?: string[];
+        timeout: string;
+        mdns: boolean;
+        ble: boolean;
+      }) => {
         const out = outputFor();
         const endpoints = (options.probe ?? [])
           .map((pair) => {
@@ -51,6 +60,7 @@ export function registerDiscoverCommand(program: Command, outputFor: () => Disco
 
         const plugins = [serialDiscoveryPlugin(), usbDiscoveryPlugin()];
         if (options.mdns) plugins.push(mdnsDiscoveryPlugin());
+        if (options.ble) plugins.push(bleDiscoveryPlugin());
         if (options.network) plugins.push(networkProbePlugin());
 
         const run = await runDiscovery({
