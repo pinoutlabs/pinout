@@ -38,6 +38,7 @@
     "demo:lamp": "npm run build --silent && tsx examples/lamp.ts",
     "demo:pan-tilt": "npm run build --silent && tsx examples/pan-tilt.ts",
     "demo:lamp-modbus": "npm run build --silent && tsx examples/lamp-modbus.ts",
+    "demo:lamp-mqtt": "npm run build --silent && tsx examples/lamp-mqtt.ts",
     "example:ros2-sidecar": "npm run build --silent && tsx examples/ros2-sidecar.ts",
     "demo:robotics": "npm run build --silent && tsx examples/robotics-parts.ts",
     "demo:composite": "npm run build --silent && tsx examples/multi-driver-rig.ts",

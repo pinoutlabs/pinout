@@ -6,9 +6,11 @@ for tests).
 
 ## Status
 
-`IMPLEMENTED` — wire-codec vectors and full client flows tested against an
-in-process broker simulator (connect, subscribe, QoS-0/1 publish, PUBACK,
-ping). Not verified against a production broker (Mosquitto/EMQX) yet.
+`IMPLEMENTED` (client + bridge) / `SIMULATED` (home lamp/plug) — wire-codec
+vectors and full client flows tested against an in-process broker simulator
+(connect, subscribe, QoS-0/1 publish, PUBACK, ping). Home lamp/plug backend
+passes shared `runLampConformance` against the same simulator. **Not verified**
+against a production broker (Mosquitto/EMQX) or physical Tasmota/Shelly devices.
 
 ## What's implemented
 
@@ -22,6 +24,9 @@ ping). Not verified against a production broker (Mosquitto/EMQX) yet.
   number/text/json codecs, and `capability → publish` rules where the payload
   template interpolates invoke arguments. Topics without a mapping never
   become capabilities; publishes require explicit rules.
+- **Home lamp / plug** (`MqttLampBackend`, module `pinout/mqtt-lamp`): semantic
+  arm/disarm/on/off/set/status over Tasmota/Shelly topic presets. See
+  [`docs/lamp-mqtt.md`](../../docs/lamp-mqtt.md).
 
 The client bounds buffered data to 1 MiB and closes a session after a request
 timeout; create a new client to reconnect. QoS 1 waits for acknowledgement but

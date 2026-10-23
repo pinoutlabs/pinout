@@ -21,3 +21,19 @@ export {
   type MqttBackendOptions,
 } from './mqttBackend.js';
 export { mqttBridgeModule, mqttBridgeModuleId, createMqttBridgeModule } from './mqttModule.js';
+export {
+  resolveMqttLampTopics,
+  buildMqttLampMapping,
+  parseMqttLampPayload,
+  type MqttLampPreset,
+  type MqttLampTopicTemplates,
+  type ResolvedMqttLampTopics,
+} from './lampTopics.js';
+export {
+  MqttLampBackend,
+  createMqttLampBackend,
+  validateMqttLampConfig,
+  type MqttLampConfig,
+  type ValidatedMqttLampConfig,
+} from './lampBackend.js';
+export { mqttLampModule, mqttLampModuleId, createMqttLampModule } from './lampModule.js';
