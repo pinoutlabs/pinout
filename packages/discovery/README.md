@@ -64,6 +64,10 @@ const run = await runDiscovery({
 });
 ```
 
+Protocol bytes over GATT are a separate concern: see `@pinout/core`
+`bleGattTransport` / [docs/ble-gatt.md](../../docs/ble-gatt.md) (SIMULATED host
+path). Discovery never opens that transport.
+
 ## Output
 
 ```

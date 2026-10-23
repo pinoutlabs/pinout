@@ -119,6 +119,7 @@ Applications and agents interact with **Pinout capabilities**, not the underlyin
 | Target | Status |
 | --- | --- |
 | ESP32 classic DevKit/WROOM (bridge firmware: GPIO, PWM, ADC, I2C, SPI, servo/motor) | `COMPILE_TESTED` reference path (simulator and transport-tested; physical HIL pending) |
+| ESP32 BLE GATT transport (`bleGattTransport` + `firmware/esp32-ble-bridge`) | Host **SIMULATED** (CI); firmware **COMPILE_TESTED** (`pio run -e esp32dev-ble`); physical radio HIL **NOT RUN** — see [docs/ble-gatt.md](docs/ble-gatt.md) |
 | Raspberry Pi Pico (MicroPython USB CDC bridge) | `SIMULATED` — host validators + Pico pin-policy sim; physical HIL pending ([docs/raspberry-pi-pico.md](docs/raspberry-pi-pico.md)) |
 | MicroPython / CircuitPython boards (generic bridge) | `SIMULATED` — host-validated protocol only |
 | Modbus Lamp (Coil + Discrete Input Readback) | `SIMULATED` (`@pinout/protocols-modbus` backend tested against simulator; physical HIL pending) |

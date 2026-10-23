@@ -2,6 +2,10 @@
 
 Minimal firmware that speaks Pinout protocol v1 over USB serial (UART0 at 115200 8N1).
 
+For a desk path without Wi-Fi credentials, see the adjacent BLE GATT sketch
+[`firmware/esp32-ble-bridge`](../esp32-ble-bridge/) and [docs/ble-gatt.md](../../docs/ble-gatt.md)
+(host **SIMULATED**; firmware **COMPILE_TESTED** only when PlatformIO succeeds; no HIL).
+
 It does not implement a full board support package. It accepts structured commands, validates them, executes GPIO read/write, and returns JSON responses.
 
 Classic ESP32 and C3 SuperMini builds advertise distinct `boardId` values. See the [three-board guide](../../docs/three-board-demo.md) for the current daemon/MCP workflow; physical testing remains pending. C3 I2C defaults are GPIO 4/5, and GPIO 2/8/9 are reserved.

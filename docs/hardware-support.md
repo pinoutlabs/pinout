@@ -28,7 +28,7 @@ Desk/school path over USB CDC — cheap Pico boards, no PlatformIO flash cycle:
 - **Setup:** [Raspberry Pi Pico + MicroPython bridge](raspberry-pi-pico.md) (flash UF2, deploy `main.py` + Pico `config.py`, blink GPIO 25).
 - **Board descriptor:** [`firmware/boards/raspberry-pi-pico.json`](../firmware/boards/raspberry-pi-pico.json).
 
-ESP32-S2/S3/C6, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
+ESP32-S2/S3/C6 and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog. BLE GATT transport is **SIMULATED** on the host (CI) with an adjacent firmware sketch marked **COMPILE_TESTED** only when PlatformIO succeeds — see [ble-gatt.md](ble-gatt.md). Advertisement-only BLE discovery is available in `@pinout/discovery` (never connects or writes GATT); no physical transport HIL record yet.
 
 ## Room Environment Sensor — BME280 / DHT (SIMULATED)
 
