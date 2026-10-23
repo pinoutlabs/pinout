@@ -11,6 +11,23 @@ export {
   type WebSocketTransportOptions,
 } from './transports/webSocketTransport.js';
 export {
+  pinoutBleAdvertisedNamePrefix,
+  pinoutBleDefaultAttPayloadBytes,
+  pinoutBleGattUuids,
+  type PinoutBleGattUuidKey,
+} from './transports/bleGattUuids.js';
+export type { BleGattSession } from './transports/bleGattSession.js';
+export {
+  bleGattTransport,
+  BleGattTransport,
+  type BleGattTransportOptions,
+} from './transports/bleGattTransport.js';
+export {
+  createSimulatedBleGattBridge,
+  type SimulatedBleGattBridge,
+  type SimulatedBleGattBridgeOptions,
+} from './transports/simulatedBleGatt.js';
+export {
   capabilityCatalog,
   describeCapabilities,
   describeCapability,

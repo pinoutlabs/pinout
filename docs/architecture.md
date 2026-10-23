@@ -64,7 +64,7 @@ See [docs/generator.md](generator.md) and [docs/generator-safety.md](generator-s
 
 ## Core concepts
 
-**Transport** — opens, writes bytes, yields bytes, closes. Serial and the ESP32 simulator both implement this. Additional transports can implement the same interface without changing `Device`.
+**Transport** — opens, writes bytes, yields bytes, closes. Serial, TCP, the ESP32 simulator, and the BLE GATT path (SIMULATED in CI via `createSimulatedBleGattBridge`) all implement this. Additional transports can implement the same interface without changing `Device`. See [ble-gatt.md](ble-gatt.md).
 
 **Session** — line-framing, request ids, timeouts, `ready` handshake. Sessions speak Pinout protocol v1. They do not know what GPIO 2 means.
 
@@ -171,7 +171,8 @@ When code bypasses `pinoutd` and invokes `@pinout/core` directly:
 
 ## Intentionally deferred
 
-- BLE and CAN transports
+- CAN transports
+- Physical BLE radio bindings for the GATT *transport* (host SIMULATED path + firmware sketch exist; advertisement-only BLE discovery plugin ships separately — never connects or writes GATT; no transport HIL)
 - Cameras
 - Flashing firmware from the CLI
 - A published npm release

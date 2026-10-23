@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **ESP32 BLE GATT transport** (`@pinout/core`, **SIMULATED**): `bleGattTransport` + injectable `BleGattSession` carrying Pinout NDJSON over a fixed RX-write / TX-notify GATT layout (`pinoutBleGattUuids`). In-process `createSimulatedBleGattBridge()` pairs the host path with `simulatedEsp32` and ATT-sized TX chunking for CI without a radio. Factory type `simulated-ble-gatt`. Docs: [docs/ble-gatt.md](docs/ble-gatt.md).
+- **ESP32 BLE bridge sketch** (`firmware/esp32-ble-bridge`, **COMPILE_TESTED** via `pio run -e esp32dev-ble`; **not** HARDWARE_VERIFIED): minimal GATT server advertising the same UUIDs with a desk bring-up protocol subset (`sys.*`, `gpio.mode` / `write` / `read`). No flash/HIL record. Advertisement-only BLE discovery lives separately in `@pinout/discovery` (never connects or writes GATT).
 - **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):
   - Pico board profile (`boards/raspberry-pi-pico/config.py`) with USB CDC transport (`TRANSPORT=usb`), onboard LED on GPIO 25, I2C/SPI/ADC defaults aligned to `firmware/boards/raspberry-pi-pico.json`.
   - Bridge 0.2.0: `ready` boot event, `boardId` / `ledPin` in `sys.hello`, reserved/allowed pin checks mapped to shared `INVALID_PIN` (plus `UNSUPPORTED_ACTION` / `ACTION_FAILED`).

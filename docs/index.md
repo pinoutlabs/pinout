@@ -5,6 +5,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Platform & Architecture
 
 - [Architecture](architecture.md) — the runtime, module, and daemon boundaries.
+- [BLE GATT transport](ble-gatt.md) — NDJSON over BLE (host SIMULATED; firmware COMPILE_TESTED when PlatformIO succeeds; no HIL).
 - [Hardware support](hardware-support.md) — statuses generated from `hardware/catalog.json`.
 - [Acceptance ledger](acceptance-ledger.md) — phase-by-phase implementation and verification status matrix.
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.

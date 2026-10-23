@@ -4,8 +4,7 @@ import { DeviceAlreadyExistsError, DeviceConfigInvalidError } from '../module/er
 import { resolveDevicesConfigPath, resolvePinoutHome } from './paths.js';
 
 export interface DeviceTransportConfig {
-  type: 'serial' | 'tcp' | 'simulated-esp32' | 'loopback';
-  path?: string;
+  type: 'serial' | 'tcp' | 'simulated-esp32' | 'loopback' | 'simulated-ble-gatt';  path?: string;
   host?: string;
   port?: number;
   baud?: number;
