@@ -25,12 +25,12 @@ npm run build
 python3 -m venv .venv
 .venv/bin/pip install platformio
 .venv/bin/pio run -d firmware/uno-bridge
-.venv/bin/pio run -d firmware/esp32-bridge -e esp32dev -e esp32-c3-supermini
+.venv/bin/pio run -d firmware/esp32-bridge -e esp32dev -e esp32-c3-supermini -e esp32-s3-devkitc-1
 ```
 
-C3 compile here is manual/demo-only, not the CI default gate (CI compiles classic `esp32dev` only; C3 via release-candidate workflow).
+C3/S3 compile here is manual/demo-only, not the CI default gate (CI compiles classic `esp32dev` only; C3/S3 via release-candidate workflow). Status is `COMPILE_TESTED` until a dated HIL record exists.
 
-Identify your physical board and serial port (`npm run pinout -- ports`). Close serial monitors before uploading or starting Pinout. Explicitly upload **only the matching target**, replacing `PORT`:
+Identify your physical board and serial port (`npm run pinout -- ports`). Close serial monitors before uploading or starting Pinout. Explicitly upload **only the matching target**, replacing `PORT` (never auto-flash):
 
 ```bash
 # Uno R3 / ATmega328P
@@ -39,6 +39,8 @@ Identify your physical board and serial port (`npm run pinout -- ports`). Close 
 .venv/bin/pio run -d firmware/esp32-bridge -e esp32dev -t upload --upload-port PORT
 # ESP32-C3 SuperMini, native USB
 .venv/bin/pio run -d firmware/esp32-bridge -e esp32-c3-supermini -t upload --upload-port PORT
+# ESP32-S3-DevKitC-1, native USB
+.venv/bin/pio run -d firmware/esp32-bridge -e esp32-s3-devkitc-1 -t upload --upload-port PORT
 ```
 
 For a C3 that will not upload, hold BOOT, tap RESET, release BOOT, and retry the explicitly selected upload. Reset afterward. “ESP32 Mini C3” is assumed to mean the common C3 SuperMini with native USB; confirm your actual board is that variant before flashing. Other mini boards can have different wiring.

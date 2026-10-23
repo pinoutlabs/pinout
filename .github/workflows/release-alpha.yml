@@ -50,16 +50,19 @@ jobs:
           for workspace in core cli daemon mcp discovery; do
             npm pack --workspace "packages/$workspace" --pack-destination "$RUNNER_TEMP/release/npm"
           done
-      - name: Compile classic and experimental C3 firmware
+      - name: Compile classic plus C3/S3 firmware (COMPILE_TESTED, no flash)
         working-directory: firmware/esp32-bridge
         run: |
-          pio run -e esp32dev -e esp32-c3-supermini
+          pio run -e esp32dev -e esp32-c3-supermini -e esp32-s3-devkitc-1
           mkdir -p "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32dev"
           mkdir -p "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32-c3-supermini"
+          mkdir -p "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32-s3-devkitc-1"
           cp .pio/build/esp32dev/firmware.bin .pio/build/esp32dev/firmware.elf \
             "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32dev/"
           cp .pio/build/esp32-c3-supermini/firmware.bin .pio/build/esp32-c3-supermini/firmware.elf \
             "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32-c3-supermini/"
+          cp .pio/build/esp32-s3-devkitc-1/firmware.bin .pio/build/esp32-s3-devkitc-1/firmware.elf \
+            "$RUNNER_TEMP/release/firmware/esp32-bridge/esp32-s3-devkitc-1/"
       - name: Generate CycloneDX SBOM
         run: |
           mkdir -p "$RUNNER_TEMP/release"

@@ -88,6 +88,23 @@ export const builtinBoards: BoardDescriptor[] = [
       'Pins 34-39 are input-only and have no pull-ups.',
       'Pin 12 (MTDI) straps the flash voltage at boot.',
     ],
+    wireless: {
+      mqttBridge: {
+        firmware: 'firmware/esp32-mqtt-bridge',
+        support: 'SIMULATED',
+        compileTarget: 'esp32-mqtt',
+        compileStatus: 'COMPILE_TESTED',
+        config: [
+          'PINOUT_WIFI_SSID',
+          'PINOUT_WIFI_PASSWORD',
+          'PINOUT_MQTT_HOST',
+          'PINOUT_MQTT_PORT',
+          'PINOUT_MQTT_DEVICE_ID',
+        ],
+        notes:
+          'Host simulator is SIMULATED. Firmware pio run -e esp32-mqtt is COMPILE_TESTED (2026-10-23); no physical Wi-Fi HIL claimed.',
+      },
+    },
     support: 'IMPLEMENTED',
   },
   {
@@ -129,6 +146,54 @@ export const builtinBoards: BoardDescriptor[] = [
     warnings: [
       'GPIO 2, 8, 9 are reserved boot straps; onboard LED on 8 is intentionally unavailable.',
       'GPIO 11-17 are flash, 18/19 USB, 20/21 UART; use an external LED on GPIO 4.',
+    ],
+    support: 'COMPILE_TESTED',
+  },
+  {
+    schemaVersion: '1',
+    boardId: 'esp32-s3-devkitc-1',
+    family: 'esp32-s3',
+    mcu: 'ESP32-S3',
+    gpioPins: [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 35, 36, 37, 38, 39, 40,
+      41, 42, 47, 48,
+    ],
+    adcPins: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    pwmPins: [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
+    ],
+    reservedPins: [19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 43, 44, 45, 46],
+    inputOnlyPins: [],
+    uartPins: [
+      {
+        id: 0,
+        tx: 43,
+        rx: 44,
+      },
+    ],
+    i2cDefaults: {
+      sda: 8,
+      scl: 9,
+    },
+    spiDefaults: {
+      sck: 12,
+      miso: 13,
+      mosi: 11,
+      cs: 10,
+    },
+    voltage: {
+      logic: 3.3,
+      adcMax: 3.3,
+    },
+    usb: {
+      vendorId: '303a',
+      productId: '1001',
+    },
+    firmwareTarget: 'esp32-s3-devkitc-1',
+    warnings: [
+      'Pins 26-32 are wired to SPI flash on WROOM modules: never drive them. 22-25/33 are also reserved on this map.',
+      'Pins 19/20 are native USB D-/D+ when CDC is enabled; 43/44 are UART0.',
+      'Pins 45/46 are strap pins; do not drive at boot. Use an external LED on GPIO 2 or 4.',
     ],
     support: 'COMPILE_TESTED',
   },
@@ -205,6 +270,8 @@ export function validateBoardAction(
 ): void {
   if (board.family === 'esp32-c3' && typeof payload.channel === 'number' && payload.channel > 5)
     throw new ValidationError('ESP32-C3 supports PWM channels 0–5.');
+  if (board.family === 'esp32-s3' && typeof payload.channel === 'number' && payload.channel > 7)
+    throw new ValidationError('ESP32-S3 supports PWM channels 0–7.');
   const read =
     ['gpio.read', 'gpio.watch', 'gpio.unwatch', 'gpio.analogRead'].includes(action) ||
     (action === 'gpio.mode' && payload.mode === 'input');

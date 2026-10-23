@@ -67,9 +67,9 @@ Do not mock away the protocol just to assert that a mock was called.
 
 Firmware compile (`pio run` in `firmware/esp32-bridge`) is optional locally. The
 selected CI run compiles the reference classic target and uploads its artifacts;
-the experimental C3 target is compiled only by the manual release-candidate
-workflow. See [Firmware compile gate](#firmware-compile-gate) below for the
-classic `esp32dev` command and merge requirements.
+the C3 and S3 targets (`COMPILE_TESTED`, no HIL) are compiled only by the manual
+release-candidate workflow. See [Firmware compile gate](#firmware-compile-gate)
+below for the classic `esp32dev` command and merge requirements.
 
 ## Hardware
 
@@ -109,9 +109,9 @@ This is compile-only and never uploads a board. Before merging a firmware PR,
 a maintainer must obtain the selected CI run by applying the `ci:run` label or
 dispatching the workflow manually. The gated firmware job runs the same
 `pio run -e esp32dev` command and publishes the `esp32-bridge-esp32dev`
-artifact (`firmware.bin` and `firmware.elf`). The experimental C3 target stays
-out of the default gate and is compiled only by the manual release-candidate
-workflow.
+artifact (`firmware.bin` and `firmware.elf`). The C3 and S3 environments stay
+out of the default gate and are compiled only by the manual release-candidate
+workflow (`pio run -e esp32dev -e esp32-c3-supermini -e esp32-s3-devkitc-1`).
 
 ## Pull requests
 

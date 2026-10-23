@@ -110,9 +110,11 @@ pio run -e esp32dev
 ```
 
 CI publishes `esp32-bridge-esp32dev` (`firmware.bin` + `firmware.elf`). The
-experimental C3 target (`esp32-c3-supermini`) stays out of the default gate and
-is compiled only by the manual release-candidate workflow
-(`.github/workflows/release-alpha.yml` via `workflow_dispatch`).
+C3 and S3 targets (`esp32-c3-supermini`, `esp32-s3-devkitc-1`) stay out of the
+default gate and are compiled only by the manual release-candidate workflow
+(`.github/workflows/release-alpha.yml` via `workflow_dispatch`). Locally you may
+also run `pio run -e esp32-c3-supermini -e esp32-s3-devkitc-1` for compile-only
+evidence; never use `-t upload` unless an operator has identified the board.
 
 If PlatformIO is not installed, skip this step — Node tests and the simulator remain sufficient for SDK changes. Install via [platformio.org](https://platformio.org/) or `pip install platformio`.
 

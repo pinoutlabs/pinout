@@ -17,7 +17,7 @@ For the alpha release, the classic ESP32 DevKit (`esp32-devkit-v1` / ESP-WROOM-3
 - **HIL Test Procedure:** See [`scripts/hil/esp32-classic.md`](../scripts/hil/esp32-classic.md) for the step-by-step physical test matrix, including separate recording of protocol acknowledgments and physical oscilloscope measurements.
 - **Test Records:** Tracked in [`hardware/records/2026-09-04-esp32-classic-pending.md`](../hardware/records/2026-09-04-esp32-classic-pending.md) and [`hardware/records/2026-09-05-esp32-classic-reference-circuit-pending.md`](../hardware/records/2026-09-05-esp32-classic-reference-circuit-pending.md).
 
-Uno R3 and ESP32-C3 SuperMini are now compile-tested with board-aware host validation and static MCP integration; physical HIL remains pending. See [the three-board guide](three-board-demo.md).
+Uno R3, ESP32-C3 SuperMini, and ESP32-S3-DevKitC-1 are compile-tested with board-aware host validation (and static MCP for the three-board demo path); physical HIL remains pending. See [the three-board guide](three-board-demo.md) and [`firmware/esp32-bridge/README.md`](../firmware/esp32-bridge/README.md).
 
 ## Raspberry Pi Pico (MicroPython, SIMULATED)
 
@@ -28,7 +28,7 @@ Desk/school path over USB CDC — cheap Pico boards, no PlatformIO flash cycle:
 - **Setup:** [Raspberry Pi Pico + MicroPython bridge](raspberry-pi-pico.md) (flash UF2, deploy `main.py` + Pico `config.py`, blink GPIO 25).
 - **Board descriptor:** [`firmware/boards/raspberry-pi-pico.json`](../firmware/boards/raspberry-pi-pico.json).
 
-ESP32-S2/S3/C6 and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog. BLE GATT transport is **SIMULATED** on the host (CI) with an adjacent firmware sketch marked **COMPILE_TESTED** only when PlatformIO succeeds — see [ble-gatt.md](ble-gatt.md). Advertisement-only BLE discovery is available in `@pinout/discovery` (never connects or writes GATT); no physical transport HIL record yet.
+ESP32-S2/C6 and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog. BLE GATT transport is **SIMULATED** on the host (CI) with an adjacent firmware sketch marked **COMPILE_TESTED** only when PlatformIO succeeds — see [ble-gatt.md](ble-gatt.md). Advertisement-only BLE discovery is available in `@pinout/discovery` (never connects or writes GATT); no physical transport HIL record yet.
 
 ## Room Environment Sensor — BME280 / DHT (SIMULATED)
 

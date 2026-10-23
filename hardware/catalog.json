@@ -38,11 +38,19 @@
     },
     {
       "category": "embedded",
-      "target": "ESP32-S2 / S3 / C6",
-      "integration": "planned family descriptors; current pin maps cover classic ESP32 only",
+      "target": "ESP32-S3-DevKitC-1 (native USB)",
+      "integration": "firmware/esp32-bridge, esp32-s3-devkitc-1 target + board descriptor + family pin rules",
+      "status": "COMPILE_TESTED",
+      "testedHow": "PlatformIO env esp32-s3-devkitc-1 compile; host board descriptor / pin-rule unit tests; no physical HIL",
+      "notes": "First-class PlatformIO environment with pin map from firmware/boards/esp32-s3-devkitc-1.json. Physical HIL pending. Not in the default CI gate (classic esp32dev only). Never auto-flash."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-S2 / C6",
+      "integration": "planned family descriptors",
       "status": "PLANNED",
       "testedHow": "none",
-      "notes": "Do not assume identical pin maps across variants."
+      "notes": "Do not assume identical pin maps across variants. S3 is tracked separately as COMPILE_TESTED."
     },
     {
       "category": "embedded",
