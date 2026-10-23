@@ -21,6 +21,14 @@ Uno R3 and ESP32-C3 SuperMini are now compile-tested with board-aware host valid
 
 ESP32-S2/S3/C6, Raspberry Pi, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
 
+## Room Environment Sensor — BME280 / DHT (SIMULATED)
+
+External maker module for room temperature, humidity, and (BME280) pressure:
+
+- **Catalog Status:** `SIMULATED` (in-process simulator + evidence-contract unit tests under `examples/external-module/room-sensor`).
+- **Physical Verification:** **PENDING** — ESP32/MicroPython wiring notes are documentation only; no dated HIL record.
+- **Documentation:** See [`docs/room-sensor.md`](room-sensor.md). Product-specific drivers stay outside `@pinout/core`.
+
 ## Modbus Lamp Backend (SIMULATED)
 
 The second physical backend for the semantic `lamp` contract is implemented over Modbus TCP / RTU (`@pinout/protocols-modbus`):

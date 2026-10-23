@@ -190,6 +190,14 @@
     },
     {
       "category": "lab",
+      "target": "Room environment sensor (BME280 / DHT)",
+      "integration": "examples/external-module/room-sensor (defineModule external package)",
+      "status": "SIMULATED",
+      "testedHow": "in-process simulator unit tests covering sensor.read/status.read and physical-evidence honesty (observed-only updates)",
+      "notes": "Local maker module outside @pinout/core. ESP32/MicroPython wiring notes are documentation only. No physical HIL; no sensor-specific firmware hooks claimed. Generic ESP32 i2c.* primitives remain separately COMPILE_TESTED."
+    },
+    {
+      "category": "lab",
       "target": "Simulated instruments (chamber, PSU, pump, valve, relay)",
       "integration": "@pinout/core first-party modules",
       "status": "SIMULATED",
