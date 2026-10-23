@@ -30,6 +30,7 @@ Tests live next to each package under `packages/<name>/tests/`:
 | `@pinout/cli` | Commander parsing, **module/device/generate commands** |
 | `@pinout/mcp` | MCP tool listing; **dynamic runtime tools** (no per-device code) |
 | `@pinout/generator` | Source ingestion, Hardware IR, candidate module emission |
+| `@pinout/protocols-mqtt` | MQTT wire codec, mapping, broker simulator, MQTT lamp (`pinout/mqtt-lamp`) + ESP32 Wi-Fi bridge (`pinout/esp32-mqtt`) (**SIMULATED**) |
 
 Core Sprint 3 test files:
 

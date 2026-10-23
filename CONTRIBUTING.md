@@ -22,7 +22,8 @@ Copy [.env.example](.env.example) when working with serial hardware.
 - `packages/cli` — `pinout` CLI
 - `packages/mcp` — MCP stdio adapter over the daemon control plane (embedded mode is for demos)
 - `packages/generator` — hardware documentation → candidate module compiler
-- `firmware/esp32-bridge` — ESP32 firmware
+- `firmware/esp32-bridge` — ESP32 firmware (USB serial)
+- `firmware/esp32-mqtt-bridge` — ESP32 Wi-Fi/MQTT LAN bridge (SIMULATED host path; compile-tested firmware)
 - `docs/` — architecture, protocol, capabilities, CLI, testing, generator
 - `examples/` — SDK usage and [external-module/weird-sensor](examples/external-module/weird-sensor) reference driver
 - `fixtures/generator/` — vendor SDK fixtures for generator evaluation

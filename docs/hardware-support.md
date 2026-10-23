@@ -54,7 +54,15 @@ Home Wi-Fi lamp and smart-plug control over MQTT (`@pinout/protocols-mqtt`), usi
 - **Physical Verification:** **NOT DONE** — not exercised against Mosquitto/EMQX or physical Tasmota/Shelly devices in this tree.
 - **Documentation:** See [`docs/lamp-mqtt.md`](lamp-mqtt.md) for topic presets, evidence mapping, and LAN Mosquitto configuration notes.
 
-SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT bridge (`pinout/mqtt-bridge`), MQTT lamp (`pinout/mqtt-lamp`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
+## ESP32 Wi-Fi MQTT Bridge (SIMULATED host / COMPILE_TESTED firmware)
+
+Raw GPIO + arming over LAN MQTT for classic ESP32 (`pinout/esp32-mqtt`), separate from the semantic MQTT lamp module:
+
+- **Catalog Status:** `SIMULATED` for the host/device simulator path; firmware `pio run -e esp32-mqtt` is **COMPILE_TESTED** only.
+- **Physical Verification:** **NOT DONE** — no dated Wi-Fi/broker HIL record.
+- **Documentation:** See [`docs/esp32-mqtt.md`](esp32-mqtt.md) and [`firmware/esp32-mqtt-bridge/README.md`](../firmware/esp32-mqtt-bridge/README.md).
+
+SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT bridge (`pinout/mqtt-bridge`), MQTT lamp (`pinout/mqtt-lamp`), ESP32 Wi-Fi MQTT (`pinout/esp32-mqtt`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
 
 ## Flashing Policy: Never Auto-Flash Unidentified Hardware
 

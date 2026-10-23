@@ -21,5 +21,21 @@
     "Pins 34-39 are input-only and have no pull-ups.",
     "Pin 12 (MTDI) straps the flash voltage at boot."
   ],
+  "wireless": {
+    "mqttBridge": {
+      "firmware": "firmware/esp32-mqtt-bridge",
+      "support": "SIMULATED",
+      "compileTarget": "esp32-mqtt",
+      "compileStatus": "COMPILE_TESTED",
+      "config": [
+        "PINOUT_WIFI_SSID",
+        "PINOUT_WIFI_PASSWORD",
+        "PINOUT_MQTT_HOST",
+        "PINOUT_MQTT_PORT",
+        "PINOUT_MQTT_DEVICE_ID"
+      ],
+      "notes": "Host simulator is SIMULATED. Firmware pio run -e esp32-mqtt is COMPILE_TESTED (2026-10-23); no physical Wi-Fi HIL claimed."
+    }
+  },
   "support": "IMPLEMENTED"
 }

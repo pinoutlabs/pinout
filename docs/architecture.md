@@ -42,7 +42,8 @@ This repository is an npm workspace:
 | `@pinout/mcp` | Thin MCP stdio server: single-device or runtime-derived tools from all registered devices. |
 | `@pinout/generator` | Documentation/SDK → Hardware IR → candidate external module (no AI deps in core). |
 
-Firmware lives in `firmware/esp32-bridge`. It is not an npm package.
+Firmware lives in `firmware/esp32-bridge` (USB serial) and
+`firmware/esp32-mqtt-bridge` (local Wi-Fi/MQTT). Neither is an npm package.
 
 ## Generate pipeline (Sprint 4)
 

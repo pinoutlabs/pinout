@@ -1,0 +1,28 @@
+#pragma once
+// Copy to pinout_mqtt_config.h (gitignored) or pass -D flags via platformio.ini.
+// Status honesty: flashing this firmware is COMPILE_TESTED at best until a
+// dated hardware/records entry exists. Never auto-flash.
+
+#ifndef PINOUT_WIFI_SSID
+#define PINOUT_WIFI_SSID "your-ssid"
+#endif
+
+#ifndef PINOUT_WIFI_PASSWORD
+#define PINOUT_WIFI_PASSWORD "your-password"
+#endif
+
+#ifndef PINOUT_MQTT_HOST
+#define PINOUT_MQTT_HOST "192.168.1.10"
+#endif
+
+#ifndef PINOUT_MQTT_PORT
+#define PINOUT_MQTT_PORT 1883
+#endif
+
+#ifndef PINOUT_MQTT_DEVICE_ID
+#define PINOUT_MQTT_DEVICE_ID "local"
+#endif
+
+#ifndef PINOUT_MQTT_CLIENT_ID
+#define PINOUT_MQTT_CLIENT_ID "esp32-mqtt-bridge"
+#endif
