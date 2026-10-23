@@ -126,6 +126,14 @@
     },
     {
       "category": "protocol",
+      "target": "ESP32 Wi-Fi MQTT bridge (local LAN)",
+      "integration": "@pinout/protocols-mqtt Esp32MqttBackend + firmware/esp32-mqtt-bridge",
+      "status": "SIMULATED",
+      "testedHow": "in-process Esp32MqttDeviceSimulator + Esp32MqttBackend mapping/client tests; 2026-10-23 pio run -e esp32-mqtt COMPILE_TESTED (no upload)",
+      "notes": "Module `pinout/esp32-mqtt` (GPIO/arming bridge). Coexists with `pinout/mqtt-lamp`. Host path is SIMULATED. Firmware compile is COMPILE_TESTED only — not physical Wi-Fi/broker HIL; never HARDWARE_VERIFIED. Configure SSID/broker via pinout_mqtt_config.h or -D flags. Pinout never auto-flashes."
+    },
+    {
+      "category": "protocol",
       "target": "OPC UA",
       "integration": "none",
       "status": "PLANNED",

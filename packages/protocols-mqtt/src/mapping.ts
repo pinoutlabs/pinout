@@ -22,9 +22,17 @@ export interface PublishRule {
   /** Capability id exposed to the runtime, e.g. `pump.start`. */
   capability: string;
   topic: string;
-  /** Static payload template; `{value}` interpolates the invoke arg `value`. */
+  /**
+   * Payload template when `codec` is omitted or `'template'`.
+   * `{value}` interpolates the invoke arg `value`. Ignored when `codec` is `'json'`.
+   */
   payload: string;
   qos?: 0 | 1;
+  /**
+   * `template` (default): interpolate `{arg}` placeholders in `payload`.
+   * `json`: publish `JSON.stringify(args)` and ignore `payload` (use `''`).
+   */
+  codec?: 'template' | 'json';
 }
 
 export interface MqttMapping {
@@ -82,6 +90,9 @@ export function decodeIngestion(rule: TopicIngestRule, payload: Buffer): MappedI
 }
 
 export function encodePublishPayload(rule: PublishRule, args: Record<string, unknown>): string {
+  if (rule.codec === 'json') {
+    return JSON.stringify(args);
+  }
   return rule.payload.replace(/\{(\w+)\}/g, (_match, key: string) => {
     const value = args[key];
     if (value === undefined) {
@@ -92,6 +103,11 @@ export function encodePublishPayload(rule: PublishRule, args: Record<string, unk
     }
     return String(value);
   });
+}
+
+/** Topic prefix for the local ESP32 Wi-Fi/MQTT bridge contract. */
+export function esp32MqttTopicPrefix(deviceId: string): string {
+  return `pinout/esp32/${deviceId}`;
 }
 
 /** Match an exact topic or single-level (+) filters against a topic. */

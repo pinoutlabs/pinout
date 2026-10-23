@@ -20,6 +20,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 - [Lamp module](lamp.md) — commissioned semantic lamp actuator with explicit arming and evidence model.
 - [Modbus lamp backend](lamp-modbus.md) — coil actuation and discrete input readback over Modbus TCP/RTU.
 - [MQTT lamp / plug backend](lamp-mqtt.md) — Tasmota/Shelly-style topics for local home Wi-Fi lamps and plugs (SIMULATED).
+- [ESP32 Wi-Fi / MQTT bridge](esp32-mqtt.md) — local LAN GPIO/arming path (**SIMULATED** host; firmware **COMPILE_TESTED** only).
 - [ROS 2 sidecar](ros2-sidecar.md) — narrow robot manipulation action bridge, transport abstraction, and simulator.
 - [ESP32 reference circuit](../hardware/reference/esp32-classic-led-sensor.md) — low-voltage LED and sensor test fixture.
 - [Raspberry Pi Pico + MicroPython](raspberry-pi-pico.md) — desk/school USB CDC path (`SIMULATED` host tests; not HARDWARE_VERIFIED).

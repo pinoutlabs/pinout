@@ -31,6 +31,19 @@ All notable changes to this project are documented here. The format follows [Kee
   - Commissioned semantic lamp contract (`lamp.arm` / `disarm` / `on` / `off` / `set` / `status`) over declarative Tasmota/Shelly-style topic templates.
   - Presets (`tasmota`, `shelly`, `custom`), in-process `MqttBrokerSimulator` path, module `pinout/mqtt-lamp`, and shared `runLampConformance()` coverage.
   - Docs: [`docs/lamp-mqtt.md`](docs/lamp-mqtt.md) (LAN Mosquitto notes marked unverified); example `examples/lamp-mqtt.ts` (`npm run demo:lamp-mqtt`).
+- **ESP32 Wi-Fi / MQTT local bridge** (`@pinout/protocols-mqtt`, **SIMULATED**):
+  Declarative `createEsp32MqttMapping` / `Esp32MqttBackend` / `Esp32MqttDeviceSimulator`
+  and runtime module `pinout/esp32-mqtt` mapping Pinout arming + GPIO capabilities
+  onto `pinout/esp32/{deviceId}/cmd|state|evt/...` topics. Publish rules gain
+  optional `codec: 'json'`. CI exercises the device-side simulator against the
+  in-process broker — not a production Mosquitto/EMQX or physical HIL path.
+  Coexists with `pinout/mqtt-lamp` (semantic home lamp); this path is the raw GPIO/arming bridge.
+- **Firmware** `firmware/esp32-mqtt-bridge`: classic ESP32 sketch (PubSubClient)
+  with SSID/broker config via `include/pinout_mqtt_config.h` or `-D` flags.
+  Status after a successful `pio run -e esp32-mqtt` is **COMPILE_TESTED** only;
+  never auto-flash; never HARDWARE_VERIFIED from compile. Docs:
+  [docs/esp32-mqtt.md](docs/esp32-mqtt.md), firmware README, catalog + board
+  `wireless.mqttBridge` notes.
 
 ### Added (Phases 1–5 sprint)
 

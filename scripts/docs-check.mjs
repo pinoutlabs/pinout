@@ -8,6 +8,7 @@ const root = resolve(new URL('..', import.meta.url).pathname);
 const required = [
   'docs/index.md',
   'docs/hardware-support.md',
+  'docs/esp32-mqtt.md',
   'docs/releasing.md',
   'docs/safety-model.md',
   'docs/security-model.md',
