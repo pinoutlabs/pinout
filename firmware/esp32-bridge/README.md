@@ -13,7 +13,7 @@ Classic ESP32 and C3 SuperMini builds advertise distinct `boardId` values. See t
 - `gpio.pwm`, `gpio.analogRead`, `gpio.watch`, `gpio.unwatch` (`gpio.changed` events)
 - `i2c.begin`, `i2c.write`, `i2c.read`, `i2c.scan` (default SDA 21 / SCL 22)
 - `spi.begin`, `spi.transfer` (default SCK 18 / MISO 19 / MOSI 23 / CS 5)
-- `gpio.servo` (50 Hz hobby servo on a GPIO)
+- `gpio.servo` (50 Hz hobby servo on a GPIO) — **COMPILE_TESTED** PWM hook used by the host `pinout/pan-tilt` module for 1–2 desk servos; not HIL-verified
 - `gpio.motor` (PWM + optional direction pin)
 
 `gpio.batchWrite` validates all entries before changing any output (1–16 writes), making

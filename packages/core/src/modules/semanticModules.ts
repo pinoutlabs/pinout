@@ -388,3 +388,9 @@ export {
   createSimulatedLampBackend,
   createEsp32LampBackend,
 } from './lampModule.js';
+export {
+  panTiltModule,
+  panTiltModuleId,
+  createSimulatedPanTiltBackend,
+  createEsp32PanTiltBackend,
+} from './panTiltModule.js';
