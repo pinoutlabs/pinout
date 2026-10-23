@@ -19,7 +19,16 @@ For the alpha release, the classic ESP32 DevKit (`esp32-devkit-v1` / ESP-WROOM-3
 
 Uno R3 and ESP32-C3 SuperMini are now compile-tested with board-aware host validation and static MCP integration; physical HIL remains pending. See [the three-board guide](three-board-demo.md).
 
-ESP32-S2/S3/C6, Raspberry Pi, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
+## Raspberry Pi Pico (MicroPython, SIMULATED)
+
+Desk/school path over USB CDC — cheap Pico boards, no PlatformIO flash cycle:
+
+- **Catalog Status:** `SIMULATED` (host validators `validate.js` / `validate-pico.js`; Pico pin policy and `sim/machine.py` stubs).
+- **Physical Verification:** **PENDING** — not HARDWARE_VERIFIED.
+- **Setup:** [Raspberry Pi Pico + MicroPython bridge](raspberry-pi-pico.md) (flash UF2, deploy `main.py` + Pico `config.py`, blink GPIO 25).
+- **Board descriptor:** [`firmware/boards/raspberry-pi-pico.json`](../firmware/boards/raspberry-pi-pico.json).
+
+ESP32-S2/S3/C6, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
 
 ## Room Environment Sensor — BME280 / DHT (SIMULATED)
 

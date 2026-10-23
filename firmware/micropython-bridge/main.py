@@ -1,8 +1,8 @@
 """Pinout bridge for MicroPython / CircuitPython boards.
 
-Speaks the Pinout NDJSON wire protocol (v1) over a UART (on hardware) or
-stdin/stdout (for host-side validation and simulation). One JSON object per
-line:
+Speaks the Pinout NDJSON wire protocol (v1) over USB CDC (sys.stdin/stdout),
+a UART (optional), or stdin/stdout on a host for validation and simulation.
+One JSON object per line:
 
   request  {"v":1,"id":"1","action":"gpio.write","payload":{"pin":2,"value":1}}
   response {"v":1,"id":"1","ok":true,"result":{...}}
@@ -13,7 +13,11 @@ board (or the host) cannot support return a protocol failure instead of
 guessing. Pin state is always tracked in software so gpio.read/toggle work
 everywhere; on hardware the physical pin is driven as well.
 
-Support status: EXPERIMENTAL — not hardware-verified.
+Error codes match the shared Pinout dialect (INVALID_PIN, UNSUPPORTED_ACTION,
+ACTION_FAILED) — see docs/protocol.md and firmware/esp32-bridge.
+
+Support status: SIMULATED on host (validate.js / validate-pico.js). Not
+HARDWARE_VERIFIED — physical Pico runs remain operator-confirmed.
 """
 
 import json
@@ -26,7 +30,7 @@ except ImportError:  # pragma: no cover - config always ships with the bridge
 
 PROTOCOL_VERSION = 1
 FIRMWARE_NAME = "micropython-bridge"
-FIRMWARE_VERSION = "0.1.0"
+FIRMWARE_VERSION = "0.2.0"
 # Maximum protocol frame size in bytes (1024) matching host and ESP32 bridge.
 LINE_MAX = 1024
 
@@ -48,8 +52,8 @@ CAPABILITIES = [
 ]
 
 # ---------------------------------------------------------------------------
-# Hardware detection: `machine` exists on MicroPython boards. On a laptop the
-# bridge runs in software-only mode (used by validate.js).
+# Hardware detection: `machine` exists on MicroPython boards (and the host
+# sim/ stub). On a bare laptop without the stub the bridge runs software-only.
 # ---------------------------------------------------------------------------
 
 try:
@@ -61,7 +65,12 @@ except ImportError:
     HARDWARE = False
 
 if cfg is None:  # minimal fallbacks so the bridge never crashes without config
+    BOARD_ID = None
+    TRANSPORT = "usb"
     RESERVED_PINS = frozenset()
+    ALLOWED_PINS = frozenset()
+    ADC_PINS = frozenset()
+    LED_PIN = None
     MAX_WATCHES = 8
     UART_ID = 0
     UART_BAUD = 115200
@@ -73,7 +82,12 @@ if cfg is None:  # minimal fallbacks so the bridge never crashes without config
     SPI_MISO_PIN = 4
     SPI_FREQUENCY = 1000000
 else:
+    BOARD_ID = getattr(cfg, "BOARD_ID", None)
+    TRANSPORT = getattr(cfg, "TRANSPORT", "usb")
     RESERVED_PINS = getattr(cfg, "RESERVED_PINS", frozenset())
+    ALLOWED_PINS = getattr(cfg, "ALLOWED_PINS", frozenset())
+    ADC_PINS = getattr(cfg, "ADC_PINS", frozenset())
+    LED_PIN = getattr(cfg, "LED_PIN", None)
     MAX_WATCHES = getattr(cfg, "MAX_WATCHES", 8)
     UART_ID = getattr(cfg, "UART_ID", 0)
     UART_BAUD = getattr(cfg, "UART_BAUD", 115200)
@@ -86,25 +100,33 @@ else:
     SPI_FREQUENCY = getattr(cfg, "SPI_FREQUENCY", 1000000)
 
 
+class PinError(ValueError):
+    """Raised for reserved / out-of-range pins → protocol INVALID_PIN."""
+
+
 class Bridge:
     def __init__(self):
-        self.pin_modes = {}      # pin -> "input" | "output"
-        self.pin_values = {}     # pin -> 0 | 1 (software shadow of every pin)
+        self.pin_modes = {}  # pin -> "input" | "output" | pull variants
+        self.pin_values = {}  # pin -> 0 | 1 (software shadow of every pin)
         self.hardware_pins = {}  # pin -> machine.Pin when hardware-backed
-        self.watches = {}        # pin -> last observed value
-        self.adc_channels = {}   # pin -> machine.ADC
-        self.pwm = {}            # pin -> {"pwm": machine.PWM, "duty": int} or software
+        self.watches = {}  # pin -> last observed value
+        self.adc_channels = {}  # pin -> machine.ADC
+        self.pwm = {}  # pin -> {"pwm": machine.PWM, "duty": int} or software
         self.i2c = None
         self.spi = None
         self.boot_ticks = 0
 
     # -- helpers -------------------------------------------------------------
 
-    def _check_pin(self, pin):
+    def _check_pin(self, pin, for_adc=False):
         if not isinstance(pin, int) or isinstance(pin, bool) or pin < 0:
-            raise ValueError("pin must be a non-negative integer")
+            raise PinError("pin must be a non-negative integer")
         if pin in RESERVED_PINS:
-            raise ValueError("pin %d is reserved" % pin)
+            raise PinError("pin %d is reserved" % pin)
+        if ALLOWED_PINS and pin not in ALLOWED_PINS:
+            raise PinError("pin %d is not a usable GPIO on this board" % pin)
+        if for_adc and ADC_PINS and pin not in ADC_PINS:
+            raise PinError("pin %d does not support ADC on this board" % pin)
 
     def _hardware_pin(self, pin, mode):
         """Return a machine.Pin for `pin` or None in software-only mode."""
@@ -119,10 +141,9 @@ class Bridge:
         self.hardware_pins[key] = hw
         return hw
 
-    # -- sys actions ----------------------------------------------------------
-
-    def sys_hello(self, payload):
+    def _identity(self):
         info = self.sys_info({})
+        boardId = BOARD_ID or info.get("board", "unknown")
         return {
             "firmware": FIRMWARE_NAME,
             "version": FIRMWARE_VERSION,
@@ -130,7 +151,14 @@ class Bridge:
             "capabilities": list(CAPABILITIES),
             "hardware": HARDWARE,
             "board": info.get("board", "unknown"),
+            "boardId": boardId,
+            "ledPin": LED_PIN,
         }
+
+    # -- sys actions ----------------------------------------------------------
+
+    def sys_hello(self, payload):
+        return self._identity()
 
     def sys_ping(self, payload):
         return {"pong": True}
@@ -140,10 +168,6 @@ class Bridge:
         machine_name = "none"
         if HARDWARE:
             try:
-                uname = machine.info() if hasattr(machine, "info") else None
-            except Exception:
-                uname = None
-            try:
                 import os
 
                 uname = os.uname()
@@ -152,7 +176,7 @@ class Bridge:
             except Exception:
                 machine_name = "micropython"
                 board = "unknown"
-        return {
+        result = {
             "firmware": FIRMWARE_NAME,
             "version": FIRMWARE_VERSION,
             "protocol": PROTOCOL_VERSION,
@@ -161,6 +185,11 @@ class Bridge:
             "machine": machine_name,
             "capabilities": list(CAPABILITIES),
         }
+        if BOARD_ID:
+            result["boardId"] = BOARD_ID
+        if LED_PIN is not None:
+            result["ledPin"] = LED_PIN
+        return result
 
     # -- gpio actions ----------------------------------------------------------
 
@@ -172,12 +201,16 @@ class Bridge:
             raise ValueError("mode must be input, input-pullup, input-pulldown or output")
         self.pin_modes[pin] = mode
         if HARDWARE and mode.startswith("input"):
-            pulls = {
-                "input": machine.Pin.PULL_NONE,
-                "input-pullup": machine.Pin.PULL_UP,
-                "input-pulldown": machine.Pin.PULL_DOWN,
-            }
-            self.hardware_pins[(pin, "input")] = machine.Pin(pin, machine.Pin.IN, pulls[mode])
+            if mode == "input":
+                self.hardware_pins[(pin, "input")] = machine.Pin(pin, machine.Pin.IN)
+            elif mode == "input-pullup":
+                self.hardware_pins[(pin, "input")] = machine.Pin(
+                    pin, machine.Pin.IN, machine.Pin.PULL_UP
+                )
+            else:
+                self.hardware_pins[(pin, "input")] = machine.Pin(
+                    pin, machine.Pin.IN, machine.Pin.PULL_DOWN
+                )
         return {"pin": pin, "mode": mode}
 
     def gpio_read(self, payload):
@@ -191,7 +224,9 @@ class Bridge:
                 self.pin_values[pin] = value
                 return {"pin": pin, "value": value}
         if pin not in self.pin_values:
-            raise ValueError("pin %d has no known value; call gpio.write or gpio.mode first" % pin)
+            raise ValueError(
+                "pin %d has no known value; call gpio.write or gpio.mode first" % pin
+            )
         return {"pin": pin, "value": self.pin_values[pin]}
 
     def gpio_write(self, payload):
@@ -233,7 +268,7 @@ class Bridge:
 
     def adc_read(self, payload):
         pin = payload.get("pin")
-        self._check_pin(pin)
+        self._check_pin(pin, for_adc=True)
         if not HARDWARE:
             raise ValueError("adc.read requires hardware (no machine module on this host)")
         adc = self.adc_channels.get(pin)
@@ -280,7 +315,7 @@ class Bridge:
                 hw.duty(int(duty * 1023 / 65535))
         return {"pin": pin, "duty": duty}
 
-    # -- i2c / spi -----------------------------------------------------------
+    # -- i2c / spi (sensor-ready bus hooks) ------------------------------------
 
     def _ensure_i2c(self):
         if self.i2c is not None:
@@ -288,7 +323,11 @@ class Bridge:
         if not HARDWARE:
             raise ValueError("i2c requires hardware (no machine module on this host)")
         try:
-            self.i2c = machine.SoftI2C(scl=machine.Pin(I2C_SCL_PIN), sda=machine.Pin(I2C_SDA_PIN), freq=I2C_FREQUENCY)
+            self.i2c = machine.SoftI2C(
+                scl=machine.Pin(I2C_SCL_PIN),
+                sda=machine.Pin(I2C_SDA_PIN),
+                freq=I2C_FREQUENCY,
+            )
         except AttributeError:
             self.i2c = machine.I2C(I2C_SCL_PIN, I2C_SDA_PIN, freq=I2C_FREQUENCY)
         return self.i2c
@@ -358,6 +397,8 @@ def handle_request(bridge, request):
     try:
         result = handler(bridge, payload)
         return {"v": PROTOCOL_VERSION, "id": request["id"], "ok": True, "result": result}
+    except PinError as error:
+        return _failure(request["id"], "INVALID_PIN", str(error))
     except Exception as error:
         return _failure(request["id"], "ACTION_FAILED", str(error))
 
@@ -395,6 +436,9 @@ def process_line(bridge, line, emit):
     line = line.strip()
     if not line or not line.startswith("{"):
         return  # ignore: keepalive noise, echoes, partial lines
+    if len(line.encode("utf-8")) > LINE_MAX:
+        # Oversized frames are dropped (same policy as ESP32 lineMax).
+        return
     try:
         request = json.loads(line)
     except ValueError:
@@ -406,24 +450,44 @@ def process_line(bridge, line, emit):
     emit(json.dumps(handle_request(bridge, request)))
 
 
+def ready_event(bridge):
+    identity = bridge._identity()
+    return {
+        "v": PROTOCOL_VERSION,
+        "event": "ready",
+        "payload": {
+            "firmware": identity["firmware"],
+            "version": identity["version"],
+            "protocol": identity["protocol"],
+            "capabilities": identity["capabilities"],
+            "boardId": identity["boardId"],
+            "hardware": identity["hardware"],
+            "ledPin": identity.get("ledPin"),
+        },
+    }
+
+
 def run_stdio(bridge):
-    """Host/simulation mode: request lines on stdin, responses on stdout."""
+    """USB CDC / host mode: request lines on stdin, responses on stdout."""
+
     def emit(text):
         sys.stdout.write(text + "\n")
         sys.stdout.flush()
 
+    emit(json.dumps(ready_event(bridge)))
     for line in sys.stdin:
         process_line(bridge, line, emit)
 
 
 def run_uart(bridge):
-    """Hardware mode: NDJSON over a UART."""
-    uart = machine.UART(cfg.UART_ID, baudrate=cfg.UART_BAUD)
+    """Optional hardware mode: NDJSON over a UART (USB-UART adapter)."""
+    uart = machine.UART(UART_ID, baudrate=UART_BAUD)
     buffer = b""
 
     def emit(text):
         uart.write((text + "\n").encode())
 
+    emit(json.dumps(ready_event(bridge)))
     while True:
         waiting = uart.read()
         if waiting:
@@ -441,7 +505,10 @@ def run_uart(bridge):
 
 def main():
     bridge = Bridge()
-    if HARDWARE:
+    # Desk/school Pico path: USB CDC via stdin/stdout whenever TRANSPORT is
+    # "usb" (default) or the host has no UART intent. UART is opt-in only.
+    use_uart = HARDWARE and TRANSPORT == "uart"
+    if use_uart:
         run_uart(bridge)
     else:
         run_stdio(bridge)

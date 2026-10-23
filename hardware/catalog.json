@@ -48,17 +48,17 @@
       "category": "embedded",
       "target": "MicroPython / CircuitPython boards (generic)",
       "integration": "firmware/micropython-bridge",
-      "status": "EXPERIMENTAL",
-      "testedHow": "host-side protocol validation (node validate.js) in software mode",
-      "notes": "No hardware verification. Runtime capability detection guards machine.* usage."
+      "status": "SIMULATED",
+      "testedHow": "host-side protocol validation (node validate.js) in software mode; ready event + INVALID_PIN/UNSUPPORTED_ACTION dialect",
+      "notes": "No hardware verification. Runtime capability detection guards machine.* usage. Prefer the Pico profile for desk/school setups."
     },
     {
       "category": "embedded",
       "target": "Raspberry Pi Pico / Pico W (RP2040)",
-      "integration": "reachable via micropython-bridge; native bridge",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "USB VID 0x2e8a is recognized by discovery."
+      "integration": "firmware/micropython-bridge + boards/raspberry-pi-pico profile; USB CDC NDJSON",
+      "status": "SIMULATED",
+      "testedHow": "node validate-pico.js (Pico config + sim/machine.py stub: blink GPIO 25, reserved pins, ADC/I2C/SPI hooks); board descriptor load in packages/core",
+      "notes": "Desk path documented in docs/raspberry-pi-pico.md. Not HARDWARE_VERIFIED. Pico W LED is not GPIO 25. USB VID 0x2e8a recognized by discovery. No factory protocols."
     },
     {
       "category": "embedded",

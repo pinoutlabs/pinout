@@ -119,7 +119,8 @@ Applications and agents interact with **Pinout capabilities**, not the underlyin
 | Target | Status |
 | --- | --- |
 | ESP32 classic DevKit/WROOM (bridge firmware: GPIO, PWM, ADC, I2C, SPI, servo/motor) | `COMPILE_TESTED` reference path (simulator and transport-tested; physical HIL pending) |
-| MicroPython / CircuitPython boards (generic bridge) | `EXPERIMENTAL` — host-validated protocol only |
+| Raspberry Pi Pico (MicroPython USB CDC bridge) | `SIMULATED` — host validators + Pico pin-policy sim; physical HIL pending ([docs/raspberry-pi-pico.md](docs/raspberry-pi-pico.md)) |
+| MicroPython / CircuitPython boards (generic bridge) | `SIMULATED` — host-validated protocol only |
 | Modbus Lamp (Coil + Discrete Input Readback) | `SIMULATED` (`@pinout/protocols-modbus` backend tested against simulator; physical HIL pending) |
 | ROS 2 Sidecar (`@pinout/ros2-sidecar`) | `SIMULATED` (narrow Cartesian action mapped to fake ROS action server; physical platform pending) |
 | Desk pan-tilt (`pinout/pan-tilt`, 1–2 hobby servos via `gpio.servo`) | `SIMULATED` (host + sim); firmware PWM path `COMPILE_TESTED` only — HIL pending |
@@ -549,7 +550,7 @@ print(op.result())
 
 For automatic detection and the static MCP LED demo on Uno R3, ESP32 classic, and ESP32-C3 SuperMini, follow [the three-board guide](docs/three-board-demo.md). All three firmware targets compile; physical validation remains pending.
 
-The first hardware target is a classic ESP32 DevKit (WROOM / 30-pin) running [`firmware/esp32-bridge`](firmware/esp32-bridge). A board-agnostic [`firmware/micropython-bridge`](firmware/micropython-bridge) extends coverage to MicroPython/CircuitPython boards (experimental).
+The first hardware target is a classic ESP32 DevKit (WROOM / 30-pin) running [`firmware/esp32-bridge`](firmware/esp32-bridge). A board-agnostic [`firmware/micropython-bridge`](firmware/micropython-bridge) covers MicroPython boards; the desk/school path is the [Raspberry Pi Pico guide](docs/raspberry-pi-pico.md) (`SIMULATED` host tests).
 
 ```bash
 npm run pinout -- ports
@@ -635,7 +636,7 @@ More detail: [`docs/architecture.md`](./docs/architecture.md)
 | `packages/protocols-modbus` | Modbus TCP/RTU adapter + register maps |
 | `sdk/python` | Python SDK (sync + asyncio) |
 | `firmware/esp32-bridge` | Protocol v1 ESP32 firmware |
-| `firmware/micropython-bridge` | Generic MicroPython/CircuitPython bridge |
+| `firmware/micropython-bridge` | MicroPython/CircuitPython bridge (Pico USB CDC profile + host sim) |
 | `examples` | SDK, MCP, heterogeneous, and robotics narratives |
 | `docs` | Spec v1, product, architecture, modules, safety, generator guidance |
 

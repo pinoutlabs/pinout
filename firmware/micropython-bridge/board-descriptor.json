@@ -6,12 +6,13 @@
   "firmware": {
     "entry": "main.py",
     "config": "config.py",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "protocol": 1
   },
   "transport": {
-    "kind": "uart",
-    "baudRate": 115200
+    "kind": "usb-cdc",
+    "baudRate": 115200,
+    "note": "Default TRANSPORT=usb speaks NDJSON over USB CDC (stdin/stdout). Set TRANSPORT=uart in config.py only when using an external USB-UART adapter."
   },
   "capabilities": [
     "sys.ping",
@@ -31,8 +32,9 @@
   ],
   "pinPolicy": {
     "reservedPins": [],
-    "note": "Board-agnostic: per-board reservations are set in config.py at deployment time. The bridge never assumes a pin map it was not given."
+    "note": "Board-agnostic defaults leave reserved/allowed empty. Pico profile lives in boards/raspberry-pi-pico/config.py and mirrors firmware/boards/raspberry-pi-pico.json."
   },
-  "support": "EXPERIMENTAL",
-  "notes": "Runtime capability detection guards machine.* usage; unsupported peripherals return protocol failures rather than fabricating values. Not hardware-verified."
+  "boardProfiles": ["boards/raspberry-pi-pico/config.py"],
+  "support": "SIMULATED",
+  "notes": "Host validation: node validate.js (generic software mode) and node validate-pico.js (Pico config + sim/machine stub). Not HARDWARE_VERIFIED. Runtime capability detection guards machine.*; unsupported peripherals return protocol failures rather than fabricating values."
 }
