@@ -150,7 +150,7 @@ Implementation-specific details stay in module backends. The runtime and policy 
 
 ## Extending
 
-1. Run `pinout module create <name>` or copy [examples/external-module/weird-sensor](../examples/external-module/weird-sensor).
+1. Run `pinout module create <name>` or copy [examples/external-module/weird-sensor](../examples/external-module/weird-sensor) / [room-sensor](../examples/external-module/room-sensor).
 2. Implement capabilities with `defineModule` / `action` helpers.
 3. Add `pinout.module.json` and build to `dist/`.
 4. `pinout module test .` then `pinout module install .`

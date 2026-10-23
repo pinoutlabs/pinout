@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "room-sensor/environment",
+  "version": "0.1.0",
+  "deviceClass": "sensor.environment",
+  "entrypoint": "./dist/index.js",
+  "runtime": "node",
+  "capabilities": [
+    "sensor.read",
+    "temperature.read",
+    "humidity.read",
+    "pressure.read",
+    "status.read"
+  ],
+  "simulation": {
+    "provided": true,
+    "simulator": "in-process",
+    "notes": "Plausible room climate readings. Hardware backend not implemented; catalog status SIMULATED."
+  },
+  "status": "TESTED",
+  "name": "Room Environment Sensor",
+  "description": "Local maker module for BME280 (I2C) and DHT11/DHT22 room temperature, humidity, and pressure. Hardware support status: SIMULATED.",
+  "vendor": "Pinout Labs (makers)",
+  "model": "BME280/DHT",
+  "pinout": {
+    "minimumVersion": "0.0.1-alpha.1"
+  }
+}

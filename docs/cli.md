@@ -91,6 +91,11 @@ npm run pinout -- exec gpio.write --payload '{"pin":2,"value":true}' --mock
 npm run pinout -- module test ./examples/external-module/weird-sensor
 npm run pinout -- module install ./examples/external-module/weird-sensor
 npm run pinout -- device add sensor-01 --module weird-sensor/thermometer --simulated
+
+# Room environment sensor (BME280 / DHT, SIMULATED)
+npm run pinout -- module test ./examples/external-module/room-sensor
+npm run pinout -- module install ./examples/external-module/room-sensor
+npm run pinout -- device add room-01 --module room-sensor/environment --simulated
 npm run pinout -- devices
 npm run pinout -- invoke sensor-01 temperature.read --payload '{}'
 npm run pinout -- blink --mock --count 3

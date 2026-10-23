@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 
 - **Desk pan-tilt module (`pinout/pan-tilt`)**: Commissioned local 1–2 hobby-servo mount with `panTilt.arm`, `panTilt.disarm`, `panTilt.setAngles`, `panTilt.setAngle`, and `panTilt.status`. Simulator and ESP32 backends share the same interfaces; ESP32 path uses existing firmware `gpio.servo` (COMPILE_TESTED only — no HIL claim). Disarm drives commissioned safe angles within per-axis limits. Does not expand the ROS 2 sidecar or robot-arm core. See [docs/capabilities.md](docs/capabilities.md) and [docs/modules.md](docs/modules.md).
+- **Room Environment Sensor external module (`room-sensor/environment`, SIMULATED)**:
+  - Maker-facing BME280 / DHT11 / DHT22 module under `examples/external-module/room-sensor` using `defineModule` + `sensorRead` (kept outside `@pinout/core`).
+  - Capabilities: `sensor.read`, `temperature.read`, `humidity.read`, `pressure.read` (BME280-only), `status.read`.
+  - Simulator returns plausible structured readings; `status.read` / `getOperationalStateEvidence()` follow the physical evidence contract (reads update `observed` only; `commanded`/`acknowledged` stay null).
+  - Docs: [docs/room-sensor.md](docs/room-sensor.md), module README with ESP32/MicroPython wiring notes; catalog entry stays honest `SIMULATED` (no HIL / no sensor-specific firmware hooks).
 
 ### Added (Phases 1–5 sprint)
 
