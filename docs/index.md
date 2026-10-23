@@ -20,6 +20,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 - [Modbus lamp backend](lamp-modbus.md) — coil actuation and discrete input readback over Modbus TCP/RTU.
 - [ROS 2 sidecar](ros2-sidecar.md) — narrow robot manipulation action bridge, transport abstraction, and simulator.
 - [ESP32 reference circuit](../hardware/reference/esp32-classic-led-sensor.md) — low-voltage LED and sensor test fixture.
+- [Raspberry Pi Pico + MicroPython](raspberry-pi-pico.md) — desk/school USB CDC path (`SIMULATED` host tests; not HARDWARE_VERIFIED).
 
 ## Interfaces & Operations
 

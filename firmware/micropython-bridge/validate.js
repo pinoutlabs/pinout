@@ -9,7 +9,7 @@
  *
  * Exits 0 on success, 1 on mismatch, and prints SKIP (exit 0) when python3 is
  * unavailable. This validates protocol shape only — hardware behavior still
- * needs real-device verification.
+ * needs real-device verification. Evidence: SIMULATED.
  */
 import { spawnSync } from 'node:child_process';
 
@@ -20,11 +20,13 @@ function pythonAvailable() {
   return !probe.error && probe.status === 0;
 }
 
-function toLines(text) {
+function toResponseLines(text) {
   return text
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line.startsWith('{'));
+    .filter((line) => line.startsWith('{'))
+    .map((line) => JSON.parse(line))
+    .filter((message) => message.id !== undefined);
 }
 
 function request(id, action, payload = {}) {
@@ -90,9 +92,10 @@ const expectations = [
     },
   },
   {
-    // The bridge is board-agnostic: any non-negative pin is trackable in
-    // software mode. Deployment-specific reservations live in config.py's
-    // RESERVED_PINS (per-board edit), so pin 99 writing cleanly is correct.
+    // The bridge is board-agnostic without ALLOWED_PINS: any non-negative pin
+    // is trackable in software mode. Deployment-specific reservations live in
+    // config.py's RESERVED_PINS (per-board edit), so pin 99 writing cleanly is
+    // correct for the generic profile. Pico validation is validate-pico.js.
     action: 'gpio.write',
     payload: { pin: 99, value: 0 },
     assert(_response, result) {
@@ -139,12 +142,22 @@ function main() {
     process.exit(1);
   }
   if (run.status !== 0 && run.stderr) {
-    // The bridge should never crash; a non-zero exit means it did.
     console.error(`FAIL: bridge exited with ${run.status}\n${run.stderr}`);
     process.exit(1);
   }
 
-  const lines = toLines(run.stdout);
+  const messages = run.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('{'))
+    .map((line) => JSON.parse(line));
+  const ready = messages.find((message) => message.event === 'ready');
+  if (!ready || ready.v !== 1 || ready.payload?.firmware !== 'micropython-bridge') {
+    console.error('FAIL: missing ready event on boot\nstdout:\n' + run.stdout);
+    process.exit(1);
+  }
+
+  const lines = toResponseLines(run.stdout);
   if (lines.length !== expectations.length) {
     console.error(
       `FAIL: expected ${expectations.length} responses, got ${lines.length}\nstdout:\n${run.stdout}`,
@@ -154,7 +167,7 @@ function main() {
 
   let failures = 0;
   expectations.forEach((item, index) => {
-    const response = JSON.parse(lines[index]);
+    const response = lines[index];
     const label = `${item.action} (#${index + 1})`;
     try {
       if (response.v !== 1) throw new Error('missing v=1');
@@ -175,7 +188,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    `PASS: ${expectations.length}/${expectations.length} bridge protocol checks match the v1 wire contract`,
+    `PASS: ${expectations.length}/${expectations.length} bridge protocol checks match the v1 wire contract (SIMULATED)`,
   );
   process.exit(0);
 }

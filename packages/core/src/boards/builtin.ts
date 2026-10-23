@@ -132,6 +132,60 @@ export const builtinBoards: BoardDescriptor[] = [
     ],
     support: 'COMPILE_TESTED',
   },
+  {
+    schemaVersion: '1',
+    boardId: 'raspberry-pi-pico',
+    family: 'rp2040',
+    mcu: 'RP2040',
+    gpioPins: [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 26, 27,
+      28,
+    ],
+    adcPins: [26, 27, 28],
+    pwmPins: [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25,
+    ],
+    reservedPins: [23, 24, 29],
+    inputOnlyPins: [],
+    uartPins: [
+      {
+        id: 0,
+        tx: 0,
+        rx: 1,
+      },
+      {
+        id: 1,
+        tx: 4,
+        rx: 5,
+      },
+    ],
+    i2cDefaults: {
+      sda: 4,
+      scl: 5,
+    },
+    spiDefaults: {
+      sck: 18,
+      miso: 16,
+      mosi: 19,
+      cs: 17,
+    },
+    voltage: {
+      logic: 3.3,
+      adcMax: 3.3,
+    },
+    usb: {
+      vendorId: '2e8a',
+      productId: '0005',
+    },
+    firmwareTarget: 'pico',
+    warnings: [
+      'GPIO 25 is the onboard LED on the non-W Pico (use for blink demos). Pico W uses a different LED path.',
+      'Pins 23 (SMPS power-save), 24 (VBUS sense), and 29 (ADC VREF / VSYS sense) are reserved — never drive them.',
+      'USB VID 2e8a:0005 is MicroPython CDC; 2e8a:0003 is the UF2 bootloader (BOOTSEL).',
+      'Desk path uses USB CDC via firmware/micropython-bridge (TRANSPORT=usb). No factory protocols.',
+    ],
+    support: 'SIMULATED',
+  },
 ];
 
 export function boardForInfo(info: {

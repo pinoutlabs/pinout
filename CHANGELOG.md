@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):
+  - Pico board profile (`boards/raspberry-pi-pico/config.py`) with USB CDC transport (`TRANSPORT=usb`), onboard LED on GPIO 25, I2C/SPI/ADC defaults aligned to `firmware/boards/raspberry-pi-pico.json`.
+  - Bridge 0.2.0: `ready` boot event, `boardId` / `ledPin` in `sys.hello`, reserved/allowed pin checks mapped to shared `INVALID_PIN` (plus `UNSUPPORTED_ACTION` / `ACTION_FAILED`).
+  - Host simulator stub `sim/machine.py` and `validate-pico.js` so CI exercises blink, reserved pins, ADC/I2C/SPI hooks without hardware (**SIMULATED** only).
+  - First-time setup guide [`docs/raspberry-pi-pico.md`](docs/raspberry-pi-pico.md); catalog + README statuses updated honestly (`SIMULATED`, not HARDWARE_VERIFIED / not COMPILE_TESTED).
 - **Desk pan-tilt module (`pinout/pan-tilt`)**: Commissioned local 1–2 hobby-servo mount with `panTilt.arm`, `panTilt.disarm`, `panTilt.setAngles`, `panTilt.setAngle`, and `panTilt.status`. Simulator and ESP32 backends share the same interfaces; ESP32 path uses existing firmware `gpio.servo` (COMPILE_TESTED only — no HIL claim). Disarm drives commissioned safe angles within per-axis limits. Does not expand the ROS 2 sidecar or robot-arm core. See [docs/capabilities.md](docs/capabilities.md) and [docs/modules.md](docs/modules.md).
 - **Room Environment Sensor external module (`room-sensor/environment`, SIMULATED)**:
   - Maker-facing BME280 / DHT11 / DHT22 module under `examples/external-module/room-sensor` using `defineModule` + `sensorRead` (kept outside `@pinout/core`).

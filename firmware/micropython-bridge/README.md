@@ -2,32 +2,59 @@
 
 A single, conservative bridge that makes **many** MicroPython and
 CircuitPython boards speak the Pinout NDJSON wire protocol (v1) — no bespoke
-firmware per board.
+firmware per board, and no factory protocols.
 
-## Status: EXPERIMENTAL
+## Status: SIMULATED (host-validated)
 
-Protocol behavior is host-validated (`node validate.js`, runs the bridge in
-software mode under `python3`). Hardware behavior is **not verified**; treat
-this as a starting point, not a supported target.
+| Check | Evidence |
+| --- | --- |
+| `node validate.js` | Generic software-mode protocol contract |
+| `node validate-pico.js` | Pico pin policy + `sim/machine.py` hardware-path stubs |
+| Physical Pico | **Not HARDWARE_VERIFIED** — operator must confirm on desk hardware |
 
-## Install
+Never inflate these statuses. A green CI job is not a blink on a real LED.
 
-1. Copy `main.py` and `config.py` to the board's filesystem
-   (`mpremote cp main.py :/`, Thonny, `ampy`, …).
-2. Edit `config.py` for your board: UART pins, I2C/SPI defaults, and
-   `RESERVED_PINS` (flash/strap pins you never want driven).
-3. Reset the board. It now speaks Pinout over UART at 115200.
+## Desk path: Raspberry Pi Pico (recommended)
+
+Cheap boards + MicroPython + USB cable. See the full first-time guide:
+[docs/raspberry-pi-pico.md](../../docs/raspberry-pi-pico.md).
+
+Short version:
+
+1. Flash [MicroPython for Pico](https://micropython.org/download/RPI_PICO/) (UF2 / BOOTSEL).
+2. Copy the bridge and Pico profile:
+
+   ```bash
+   mpremote cp main.py :
+   mpremote cp boards/raspberry-pi-pico/config.py :config.py
+   mpremote reset
+   ```
+
+3. The board speaks Pinout NDJSON over **USB CDC** (115200 on the host serial
+   port, typically `/dev/ttyACM0` or `COMx`). Onboard LED blink uses **GPIO 25**.
+
+## Install (other boards)
+
+1. Copy `main.py` and a board `config.py` to the filesystem
+   (`mpremote`, Thonny, `ampy`, …).
+2. Edit `config.py`: `TRANSPORT`, UART/I2C/SPI defaults, `RESERVED_PINS`,
+   optional `ALLOWED_PINS` / `BOARD_ID` / `LED_PIN`.
+3. Reset. Default `TRANSPORT=usb` uses stdin/stdout (USB CDC on Pico).
+   Set `TRANSPORT=uart` only when you have an external USB-UART adapter.
 
 ## Capability detection
 
 `machine.*` imports are guarded: on boot the bridge detects what the runtime
-provides and reports failures (`ACTION_FAILED`) for peripherals that are not
-available, rather than fabricating values. Pin state is always mirrored in
-software, so `gpio.read`/`gpio.toggle` behave consistently; on hardware the
-physical pin is driven too.
+provides and reports failures for peripherals that are not available, rather
+than fabricating values. Reserved / out-of-map pins return `INVALID_PIN`.
+Unknown actions return `UNSUPPORTED_ACTION`. Other failures use
+`ACTION_FAILED` — the same dialect as `firmware/esp32-bridge`.
 
-Software-only mode (no `machine` module — e.g. a laptop) runs the same
-protocol over stdin/stdout. That is what `validate.js` exercises.
+Pin state is always mirrored in software, so `gpio.read`/`gpio.toggle` behave
+consistently; on hardware the physical pin is driven too.
+
+Software-only mode (no `machine` module) and the host `sim/machine.py` stub
+both run over stdin/stdout. That is what the validators exercise.
 
 ## Wire protocol
 
@@ -35,14 +62,19 @@ Identical to the ESP32 bridge (`firmware/esp32-bridge`) and
 `packages/core/src/protocol.ts`:
 
 ```
-→ {"v":1,"id":"1","action":"gpio.write","payload":{"pin":2,"value":1}}
-← {"v":1,"id":"1","ok":true,"result":{"pin":2,"value":1}}
-← {"v":1,"id":"2","ok":false,"error":{"code":"ACTION_FAILED","message":"..."}}
+→ {"v":1,"id":"1","action":"gpio.write","payload":{"pin":25,"value":1}}
+← {"v":1,"event":"ready","payload":{"firmware":"micropython-bridge",...}}
+← {"v":1,"id":"1","ok":true,"result":{"pin":25,"value":1}}
+← {"v":1,"id":"2","ok":false,"error":{"code":"INVALID_PIN","message":"..."}}
 ```
 
 ## Boards
 
+| Profile | Path |
+| --- | --- |
+| Raspberry Pi Pico (RP2040) | `boards/raspberry-pi-pico/config.py` + `firmware/boards/raspberry-pi-pico.json` |
+| Generic / bring-your-own | edit root `config.py` |
+
 Any board with the `machine` module should work for GPIO/PWM/ADC/I2C/SPI,
-subject to its own pin capabilities. Because the bridge never assumes a pin
-map it was not given, board-specific knowledge stays in `config.py` and in
-Pinout's data-driven board descriptors (see `board-descriptor.json`).
+subject to its own pin capabilities. Board-specific knowledge stays in
+`config.py` and Pinout's data-driven descriptors.
