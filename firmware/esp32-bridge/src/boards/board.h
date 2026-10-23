@@ -35,9 +35,9 @@
 #include "board_esp32.h"
 #endif
 
-// Native USB Serial/JTAG transports need the HWCDC stream and a short host
+// C3 and S3 native USB transports need the HWCDC stream and a short host
 // open wait; hardware UART transports do not (see src/main.cpp setup).
-#if defined(PINOUT_ESP32_C3)
+#if defined(PINOUT_ESP32_C3) || defined(PINOUT_ESP32_S3)
 #define PINOUT_NATIVE_USB_SERIAL 1
 #else
 #define PINOUT_NATIVE_USB_SERIAL 0

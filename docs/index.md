@@ -5,6 +5,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Platform & Architecture
 
 - [Architecture](architecture.md) — the runtime, module, and daemon boundaries.
+- [BLE GATT transport](ble-gatt.md) — NDJSON over BLE (host SIMULATED; firmware COMPILE_TESTED when PlatformIO succeeds; no HIL).
 - [Hardware support](hardware-support.md) — statuses generated from `hardware/catalog.json`.
 - [Acceptance ledger](acceptance-ledger.md) — phase-by-phase implementation and verification status matrix.
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.
@@ -16,10 +17,14 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 
 - [Modules](modules.md) and [build a module](build-a-module.md).
 - [Module registry](registry.md) — offline-first distribution with content hashes and optional Ed25519 publisher signatures.
+- [Room sensor (BME280 / DHT)](room-sensor.md) — external maker module for temp/humidity/pressure (`SIMULATED`).
 - [Lamp module](lamp.md) — commissioned semantic lamp actuator with explicit arming and evidence model.
 - [Modbus lamp backend](lamp-modbus.md) — coil actuation and discrete input readback over Modbus TCP/RTU.
+- [MQTT lamp / plug backend](lamp-mqtt.md) — Tasmota/Shelly-style topics for local home Wi-Fi lamps and plugs (SIMULATED).
+- [ESP32 Wi-Fi / MQTT bridge](esp32-mqtt.md) — local LAN GPIO/arming path (**SIMULATED** host; firmware **COMPILE_TESTED** only).
 - [ROS 2 sidecar](ros2-sidecar.md) — narrow robot manipulation action bridge, transport abstraction, and simulator.
 - [ESP32 reference circuit](../hardware/reference/esp32-classic-led-sensor.md) — low-voltage LED and sensor test fixture.
+- [Raspberry Pi Pico + MicroPython](raspberry-pi-pico.md) — desk/school USB CDC path (`SIMULATED` host tests; not HARDWARE_VERIFIED).
 
 ## Interfaces & Operations
 

@@ -17,9 +17,28 @@ For the alpha release, the classic ESP32 DevKit (`esp32-devkit-v1` / ESP-WROOM-3
 - **HIL Test Procedure:** See [`scripts/hil/esp32-classic.md`](../scripts/hil/esp32-classic.md) for the step-by-step physical test matrix, including separate recording of protocol acknowledgments and physical oscilloscope measurements.
 - **Test Records:** Tracked in [`hardware/records/2026-09-04-esp32-classic-pending.md`](../hardware/records/2026-09-04-esp32-classic-pending.md) and [`hardware/records/2026-09-05-esp32-classic-reference-circuit-pending.md`](../hardware/records/2026-09-05-esp32-classic-reference-circuit-pending.md).
 
-Uno R3 and ESP32-C3 SuperMini are now compile-tested with board-aware host validation and static MCP integration; physical HIL remains pending. See [the three-board guide](three-board-demo.md).
+Uno R3, ESP32-C3 SuperMini, and ESP32-S3-DevKitC-1 are compile-tested with board-aware host validation (and static MCP for the three-board demo path); physical HIL remains pending. See [the three-board guide](three-board-demo.md) and [`firmware/esp32-bridge/README.md`](../firmware/esp32-bridge/README.md).
 
-ESP32-S2-DevKitC-1, ESP32-S3-DevKitC-1, and ESP32-C6-DevKitC-1 now have opt-in experimental firmware environments (`esp32s2-devkit`, `esp32s3-devkit`, `esp32c6-devkit`) and validated pin maps under `firmware/boards/`. They have not been compiled or hardware-tested yet; the S2 env builds with the ESP32-S2-Saola-1 PlatformIO board definition but flashes the DevKitC-1 pin table. Raspberry Pi, BLE, and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog.
+ESP32-S2 and ESP32-C6 profiles are available as opt-in experimental environments (esp32s2-devkit and esp32c6-devkit); their compile and HIL evidence remains pending. The local esp32s3-devkit environment shares the first-class S3 board profile, which GitHub marks COMPILE_TESTED through esp32-s3-devkitc-1. See the firmware target table.
+
+## Raspberry Pi Pico (MicroPython, SIMULATED)
+
+Desk/school path over USB CDC — cheap Pico boards, no PlatformIO flash cycle:
+
+- **Catalog Status:** `SIMULATED` (host validators `validate.js` / `validate-pico.js`; Pico pin policy and `sim/machine.py` stubs).
+- **Physical Verification:** **PENDING** — not HARDWARE_VERIFIED.
+- **Setup:** [Raspberry Pi Pico + MicroPython bridge](raspberry-pi-pico.md) (flash UF2, deploy `main.py` + Pico `config.py`, blink GPIO 25).
+- **Board descriptor:** [`firmware/boards/raspberry-pi-pico.json`](../firmware/boards/raspberry-pi-pico.json).
+
+ESP32-S2/C6 and industrial protocol integrations remain experimental, planned, or software-only as recorded in the catalog. BLE GATT transport is **SIMULATED** on the host (CI) with an adjacent firmware sketch marked **COMPILE_TESTED** only when PlatformIO succeeds — see [ble-gatt.md](ble-gatt.md). Advertisement-only BLE discovery is available in `@pinout/discovery` (never connects or writes GATT); no physical transport HIL record yet.
+
+## Room Environment Sensor — BME280 / DHT (SIMULATED)
+
+External maker module for room temperature, humidity, and (BME280) pressure:
+
+- **Catalog Status:** `SIMULATED` (in-process simulator + evidence-contract unit tests under `examples/external-module/room-sensor`).
+- **Physical Verification:** **PENDING** — ESP32/MicroPython wiring notes are documentation only; no dated HIL record.
+- **Documentation:** See [`docs/room-sensor.md`](room-sensor.md). Product-specific drivers stay outside `@pinout/core`.
 
 ## Modbus Lamp Backend (SIMULATED)
 
@@ -29,7 +48,23 @@ The second physical backend for the semantic `lamp` contract is implemented over
 - **Physical Verification:** **PENDING** — physical bench tests with physical Modbus Remote I/O units or PLCs are tracked in [`hardware/records/2026-09-05-modbus-lamp-pending.md`](../hardware/records/2026-09-05-modbus-lamp-pending.md).
 - **Documentation:** See [`docs/lamp-modbus.md`](lamp-modbus.md) for coil actuation, discrete input observation, and watchdog safety details.
 
-SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT (`pinout/mqtt-bridge`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
+## MQTT Lamp / Plug Backend (SIMULATED)
+
+Home Wi-Fi lamp and smart-plug control over MQTT (`@pinout/protocols-mqtt`), using declarative Tasmota/Shelly topic templates:
+
+- **Catalog Status:** `SIMULATED` (tested against in-process `MqttBrokerSimulator` and `@pinout/core` shared lamp conformance suite).
+- **Physical Verification:** **NOT DONE** — not exercised against Mosquitto/EMQX or physical Tasmota/Shelly devices in this tree.
+- **Documentation:** See [`docs/lamp-mqtt.md`](lamp-mqtt.md) for topic presets, evidence mapping, and LAN Mosquitto configuration notes.
+
+## ESP32 Wi-Fi MQTT Bridge (SIMULATED host / COMPILE_TESTED firmware)
+
+Raw GPIO + arming over LAN MQTT for classic ESP32 (`pinout/esp32-mqtt`), separate from the semantic MQTT lamp module:
+
+- **Catalog Status:** `SIMULATED` for the host/device simulator path; firmware `pio run -e esp32-mqtt` is **COMPILE_TESTED** only.
+- **Physical Verification:** **NOT DONE** — no dated Wi-Fi/broker HIL record.
+- **Documentation:** See [`docs/esp32-mqtt.md`](esp32-mqtt.md) and [`firmware/esp32-mqtt-bridge/README.md`](../firmware/esp32-mqtt-bridge/README.md).
+
+SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT bridge (`pinout/mqtt-bridge`), MQTT lamp (`pinout/mqtt-lamp`), ESP32 Wi-Fi MQTT (`pinout/esp32-mqtt`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
 
 ## Linux SBC GPIO (`pinout/linux-gpio`)
 

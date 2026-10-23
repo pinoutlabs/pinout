@@ -4,6 +4,48 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- **ESP32 BLE GATT transport** (`@pinout/core`, **SIMULATED**): `bleGattTransport` + injectable `BleGattSession` carrying Pinout NDJSON over a fixed RX-write / TX-notify GATT layout (`pinoutBleGattUuids`). In-process `createSimulatedBleGattBridge()` pairs the host path with `simulatedEsp32` and ATT-sized TX chunking for CI without a radio. Factory type `simulated-ble-gatt`. Docs: [docs/ble-gatt.md](docs/ble-gatt.md).
+- **ESP32 BLE bridge sketch** (`firmware/esp32-ble-bridge`, **COMPILE_TESTED** via `pio run -e esp32dev-ble`; **not** HARDWARE_VERIFIED): minimal GATT server advertising the same UUIDs with a desk bring-up protocol subset (`sys.*`, `gpio.mode` / `write` / `read`). No flash/HIL record. Advertisement-only BLE discovery lives separately in `@pinout/discovery` (never connects or writes GATT).
+- **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):
+  - Pico board profile (`boards/raspberry-pi-pico/config.py`) with USB CDC transport (`TRANSPORT=usb`), onboard LED on GPIO 25, I2C/SPI/ADC defaults aligned to `firmware/boards/raspberry-pi-pico.json`.
+  - Bridge 0.2.0: `ready` boot event, `boardId` / `ledPin` in `sys.hello`, reserved/allowed pin checks mapped to shared `INVALID_PIN` (plus `UNSUPPORTED_ACTION` / `ACTION_FAILED`).
+  - Host simulator stub `sim/machine.py` and `validate-pico.js` so CI exercises blink, reserved pins, ADC/I2C/SPI hooks without hardware (**SIMULATED** only).
+  - First-time setup guide [`docs/raspberry-pi-pico.md`](docs/raspberry-pi-pico.md); catalog + README statuses updated honestly (`SIMULATED`, not HARDWARE_VERIFIED / not COMPILE_TESTED).
+- **Desk pan-tilt module (`pinout/pan-tilt`)**: Commissioned local 1–2 hobby-servo mount with `panTilt.arm`, `panTilt.disarm`, `panTilt.setAngles`, `panTilt.setAngle`, and `panTilt.status`. Simulator and ESP32 backends share the same interfaces; ESP32 path uses existing firmware `gpio.servo` (COMPILE_TESTED only — no HIL claim). Disarm drives commissioned safe angles within per-axis limits. Does not expand the ROS 2 sidecar or robot-arm core. See [docs/capabilities.md](docs/capabilities.md) and [docs/modules.md](docs/modules.md).
+- **Room Environment Sensor external module (`room-sensor/environment`, SIMULATED)**:
+  - Maker-facing BME280 / DHT11 / DHT22 module under `examples/external-module/room-sensor` using `defineModule` + `sensorRead` (kept outside `@pinout/core`).
+  - Capabilities: `sensor.read`, `temperature.read`, `humidity.read`, `pressure.read` (BME280-only), `status.read`.
+  - Simulator returns plausible structured readings; `status.read` / `getOperationalStateEvidence()` follow the physical evidence contract (reads update `observed` only; `commanded`/`acknowledged` stay null).
+  - Docs: [docs/room-sensor.md](docs/room-sensor.md), module README with ESP32/MicroPython wiring notes; catalog entry stays honest `SIMULATED` (no HIL / no sensor-specific firmware hooks).
+- **BLE discovery plugin** (`@pinout/discovery`): advertisement-only nearby BLE
+  enumeration with evidence-backed candidates and confidence capped at the
+  weak-heuristic limit (≤ 0.5). Never connects, pairs, or writes GATT.
+  Linux uses BlueZ `bluetoothctl` when present; macOS/Windows/missing tooling
+  return empty rather than guessing (same honesty pattern as Windows USB).
+  CI uses `simulatedBleScan([...])` — no radio and no fake HIL claims.
+  Wired into `pinout discover` (disable with `--no-ble`) and `pinout doctor`
+  discovery stage.
+- **MQTT home lamp / plug backend (`@pinout/protocols-mqtt`, SIMULATED)**:
+  - Commissioned semantic lamp contract (`lamp.arm` / `disarm` / `on` / `off` / `set` / `status`) over declarative Tasmota/Shelly-style topic templates.
+  - Presets (`tasmota`, `shelly`, `custom`), in-process `MqttBrokerSimulator` path, module `pinout/mqtt-lamp`, and shared `runLampConformance()` coverage.
+  - Docs: [`docs/lamp-mqtt.md`](docs/lamp-mqtt.md) (LAN Mosquitto notes marked unverified); example `examples/lamp-mqtt.ts` (`npm run demo:lamp-mqtt`).
+- **ESP32 Wi-Fi / MQTT local bridge** (`@pinout/protocols-mqtt`, **SIMULATED**):
+  Declarative `createEsp32MqttMapping` / `Esp32MqttBackend` / `Esp32MqttDeviceSimulator`
+  and runtime module `pinout/esp32-mqtt` mapping Pinout arming + GPIO capabilities
+  onto `pinout/esp32/{deviceId}/cmd|state|evt/...` topics. Publish rules gain
+  optional `codec: 'json'`. CI exercises the device-side simulator against the
+  in-process broker — not a production Mosquitto/EMQX or physical HIL path.
+  Coexists with `pinout/mqtt-lamp` (semantic home lamp); this path is the raw GPIO/arming bridge.
+- **Firmware** `firmware/esp32-mqtt-bridge`: classic ESP32 sketch (PubSubClient)
+  with SSID/broker config via `include/pinout_mqtt_config.h` or `-D` flags.
+  Status after a successful `pio run -e esp32-mqtt` is **COMPILE_TESTED** only;
+  never auto-flash; never HARDWARE_VERIFIED from compile. Docs:
+  [docs/esp32-mqtt.md](docs/esp32-mqtt.md), firmware README, catalog + board
+  `wireless.mqttBridge` notes.
+- **ESP32-C3 / ESP32-S3 first-class bridge targets** (`firmware/esp32-bridge`): PlatformIO envs `esp32-c3-supermini` and `esp32-s3-devkitc-1` build with pin maps, I2C/SPI defaults, and `boardId` values aligned to `firmware/boards/*.json`. Classic `esp32dev` remains the default CI compile gate. C3/S3 stay out of that gate and are compiled by the release-candidate workflow. Status remains honest `COMPILE_TESTED` (no physical HIL; never auto-flash). Host simulator/family pin rules and board-descriptor tests cover reserved flash/USB/UART/strap pins; `builtinBoards` includes S3.
+
 ### Added (Phases 1–5 sprint)
 
 - **MCP Stdio Lifecycle & Governance Fix** (`packages/mcp`): Repaired process lifecycle in `runStdio.ts` so the stdio transport maintains session lifetime across sequential calls, exits cleanly on stdin EOF and `SIGINT`/`SIGTERM`, and returns structured `DAEMON_UNAVAILABLE` errors without transport crashes when `pinoutd` is offline.

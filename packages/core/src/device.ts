@@ -109,6 +109,8 @@ export class Device {
     if (board) validateBoardAction(board, action, checked);
     if (board?.family === 'esp32-c3' && action === 'gpio.pwm' && checked.channel === undefined)
       checked.channel = Number(checked.pin) % 6;
+    if (board?.family === 'esp32-s3' && action === 'gpio.pwm' && checked.channel === undefined)
+      checked.channel = Number(checked.pin) % 8;
     const normalized = validateAction(
       this.info.firmware,
       action,

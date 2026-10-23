@@ -11,6 +11,15 @@ export default defineConfig({
       '@pinout/generator': fileURLToPath(
         new URL('./packages/generator/src/index.ts', import.meta.url),
       ),
+      '@pinout/protocols-scpi': fileURLToPath(
+        new URL('./packages/protocols-scpi/src/index.ts', import.meta.url),
+      ),
+      '@pinout/protocols-grbl': fileURLToPath(
+        new URL('./packages/protocols-grbl/src/index.ts', import.meta.url),
+      ),
+      '@pinout/protocols-mqtt': fileURLToPath(
+        new URL('./packages/protocols-mqtt/src/index.ts', import.meta.url),
+      ),
       '@pinout/core/serial': fileURLToPath(
         new URL('./packages/core/src/serial.ts', import.meta.url),
       ),
@@ -23,7 +32,10 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['packages/*/tests/**/*.test.ts'],
+    include: [
+      'packages/*/tests/**/*.test.ts',
+      'examples/external-module/*/test/**/*.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       include: ['packages/core/src/**/*.ts'],

@@ -109,10 +109,42 @@ describe('doctor unit and integration tests', () => {
     expect(checkNames).toContain('pinout-home');
     expect(checkNames).toContain('env-vars');
     expect(checkNames).toContain('daemon-health');
+    expect(checkNames).toContain('ble-scan');
     expect(checkNames).toContain('firmware-identity:simulator');
     expect(checkNames).toContain('enrolled-devices');
     expect(checkNames).toContain('device:lab-esp');
     expect(checkNames).toContain('mock-handshake');
+
+    const bleCheck = report.checks.find((c) => c.name === 'ble-scan');
+    expect(bleCheck?.status).toBe('pass');
+    expect(bleCheck?.detail).toMatch(/mock mode|no radio/i);
+  });
+
+  it('reports nearby BLE candidates from an injected advertisement scanner', async () => {
+    const home = createTempHome();
+    const report = await evaluateDoctor(
+      {},
+      {
+        home,
+        nodeVersion: '20.18.0',
+        listSerialPorts: async () => [],
+        bleScanAvailable: async () => true,
+        discoverBle: async () => [
+          {
+            endpoint: { address: 'aa:bb:cc:dd:ee:ff' },
+            possibleIdentity: [{ moduleId: 'pinout/esp32' }],
+          },
+        ],
+        fetch: (async () =>
+          new Response(JSON.stringify({ ok: true, version: '0.0.1', devices: 0 }), {
+            status: 200,
+          })) as typeof fetch,
+      },
+    );
+    const bleCheck = report.checks.find((c) => c.name === 'ble-scan');
+    expect(bleCheck?.status).toBe('pass');
+    expect(bleCheck?.detail).toContain('aa:bb:cc:dd:ee:ff');
+    expect(bleCheck?.detail).toContain('never connects');
   });
 
   it('explains when daemon is unreachable and provides correct remedy', async () => {

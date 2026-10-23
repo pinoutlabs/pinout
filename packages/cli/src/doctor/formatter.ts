@@ -4,7 +4,7 @@ import type { CliOutput } from '../output.js';
 const STAGE_TITLES: Record<DoctorStage, string> = {
   environment: 'ENVIRONMENT',
   daemon: 'DAEMON',
-  discovery: 'SERIAL & BOARD DISCOVERY',
+  discovery: 'DEVICE DISCOVERY',
   firmware: 'FIRMWARE IDENTITY',
   configuration: 'CONFIGURATION & REGISTRY',
   simulator: 'SIMULATOR',

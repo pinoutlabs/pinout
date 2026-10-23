@@ -44,6 +44,7 @@ Device instance (esp32-01)
 | `pinout/pump` | `actuator.pump` | In-process simulator |
 | `pinout/power-supply` | `supply.power` | In-process simulator |
 | `pinout/lamp` | `actuator.lamp` | Commissioned GPIO over ESP32 / in-process simulator |
+| `pinout/pan-tilt` | `actuator.pan_tilt` | Commissioned 1–2 hobby servos over ESP32 `gpio.servo` / in-process simulator |
 
 ## Multi-driver devices
 
@@ -139,7 +140,8 @@ Capabilities use dotted names grouped by physical semantics:
 - `gpio.*` — digital I/O (microcontrollers)
 - `motion.*`, `gripper.*`, `pose.*` — manipulators
 - `motor.*` — DC motors
-- `servo.*` — hobby servos
+- `servo.*` — hobby servos (simple simulated single axis)
+- `panTilt.*` — desk pan-tilt mounts (1–2 hobby servos, arm/disarm + safe angles)
 - `stepper.*` — stepper motors
 - `distance.*` — rangefinders
 - `imu.*` — inertial measurement units
@@ -160,7 +162,7 @@ Implementation-specific details stay in module backends. The runtime and policy 
 
 ## Extending
 
-1. Run `pinout module create <name>` or copy [examples/external-module/weird-sensor](../examples/external-module/weird-sensor).
+1. Run `pinout module create <name>` or copy [examples/external-module/weird-sensor](../examples/external-module/weird-sensor) / [room-sensor](../examples/external-module/room-sensor).
 2. Implement capabilities with `defineModule` / `action` helpers.
 3. Add `pinout.module.json` and build to `dist/`.
 4. `pinout module test .` then `pinout module install .`

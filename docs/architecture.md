@@ -42,7 +42,8 @@ This repository is an npm workspace:
 | `@pinout/mcp` | Thin MCP stdio server: single-device or runtime-derived tools from all registered devices. |
 | `@pinout/generator` | Documentation/SDK → Hardware IR → candidate external module (no AI deps in core). |
 
-Firmware lives in `firmware/esp32-bridge`. It is not an npm package.
+Firmware lives in `firmware/esp32-bridge` (USB serial) and
+`firmware/esp32-mqtt-bridge` (local Wi-Fi/MQTT). Neither is an npm package.
 
 ## Generate pipeline (Sprint 4)
 
@@ -64,7 +65,7 @@ See [docs/generator.md](generator.md) and [docs/generator-safety.md](generator-s
 
 ## Core concepts
 
-**Transport** — opens, writes bytes, yields bytes, closes. Serial and the ESP32 simulator both implement this. Additional transports can implement the same interface without changing `Device`.
+**Transport** — opens, writes bytes, yields bytes, closes. Serial, TCP, the ESP32 simulator, and the BLE GATT path (SIMULATED in CI via `createSimulatedBleGattBridge`) all implement this. Additional transports can implement the same interface without changing `Device`. See [ble-gatt.md](ble-gatt.md).
 
 **Session** — line-framing, request ids, timeouts, `ready` handshake. Sessions speak Pinout protocol v1. They do not know what GPIO 2 means.
 
@@ -171,10 +172,11 @@ When code bypasses `pinoutd` and invokes `@pinout/core` directly:
 
 ## Intentionally deferred
 
-- BLE and CAN transports
+- CAN transports
+- Physical BLE radio bindings for the GATT *transport* (host SIMULATED path + firmware sketch exist; advertisement-only BLE discovery plugin ships separately — never connects or writes GATT; no transport HIL)
 - Cameras
 - Flashing firmware from the CLI
 - A published npm release
-- ESP32-S3 native USB and RGB LEDs
+- ESP32-S3 RGB LED / RMT helpers (native USB CDC bridge env is COMPILE_TESTED)
 
 See [docs/capabilities.md](capabilities.md) for the current action catalog.

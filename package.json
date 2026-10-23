@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
-    "pretest": "npm run build --silent && tsc -p examples/external-module/weird-sensor/tsconfig.json",
+    "pretest": "npm run build --silent && tsc -p examples/external-module/weird-sensor/tsconfig.json && tsc -p examples/external-module/room-sensor/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -36,7 +36,9 @@
     "example:agent-tools": "npm run build --silent && tsx examples/agent-tools.ts",
     "demo:heterogeneous": "npm run build --silent && tsx examples/heterogeneous.ts",
     "demo:lamp": "npm run build --silent && tsx examples/lamp.ts",
+    "demo:pan-tilt": "npm run build --silent && tsx examples/pan-tilt.ts",
     "demo:lamp-modbus": "npm run build --silent && tsx examples/lamp-modbus.ts",
+    "demo:lamp-mqtt": "npm run build --silent && tsx examples/lamp-mqtt.ts",
     "example:ros2-sidecar": "npm run build --silent && tsx examples/ros2-sidecar.ts",
     "demo:robotics": "npm run build --silent && tsx examples/robotics-parts.ts",
     "demo:composite": "npm run build --silent && tsx examples/multi-driver-rig.ts",

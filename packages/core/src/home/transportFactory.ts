@@ -1,6 +1,7 @@
 import { serialPort } from '../serial.js';
 import { loopbackTransport } from '../transports/loopbackTransport.js';
 import { tcpTransport } from '../transports/tcpTransport.js';
+import { createSimulatedBleGattBridge } from '../transports/simulatedBleGatt.js';
 import { simulatedEsp32 } from '../drivers/esp32/simulatedTransport.js';
 import type { Transport } from '../types.js';
 import type { DeviceBackendConfig, DeviceTransportConfig } from './deviceStore.js';
@@ -27,6 +28,8 @@ export async function createTransportFromConfig(
     }
     case 'simulated-esp32':
       return simulatedEsp32();
+    case 'simulated-ble-gatt':
+      return createSimulatedBleGattBridge().transport;
     case 'loopback':
       return loopbackTransport({ onOpen: () => [] });
     default:
@@ -42,7 +45,11 @@ export function isSimulatedBackend(
     return true;
   }
   if (backend?.type === 'protocol') {
-    return backend.transport?.type === 'simulated-esp32' || backend.transport?.type === 'loopback';
+    return (
+      backend.transport?.type === 'simulated-esp32' ||
+      backend.transport?.type === 'loopback' ||
+      backend.transport?.type === 'simulated-ble-gatt'
+    );
   }
   return moduleId !== 'pinout/esp32';
 }

@@ -1,6 +1,6 @@
 # Lamp Module (`pinout/lamp`)
 
-The **Lamp** module (`pinout/lamp`, device class `actuator.lamp`) provides commissioned, semantic control and status observation for illumination and indicator hardware (such as reference LEDs, signal lamps, or solid-state relays) over the verified ESP32 path, Modbus/MQTT adapters, or in-process simulation.
+The **Lamp** module (`pinout/lamp`, device class `actuator.lamp`) provides commissioned, semantic control and status observation for illumination and indicator hardware (such as reference LEDs, signal lamps, or solid-state relays) over the verified ESP32 path, Modbus/MQTT adapters, or in-process simulation. For home Wi-Fi lamps and plugs, see the MQTT backend in [`lamp-mqtt.md`](lamp-mqtt.md) (`pinout/mqtt-lamp`, SIMULATED).
 
 ## Product Promise: Semantic Abstraction
 

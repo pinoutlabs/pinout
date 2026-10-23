@@ -38,6 +38,17 @@ export interface BoardDescriptor {
   usb?: { vendorId: string; productId: string };
   firmwareTarget?: string;
   warnings?: string[];
+  /** Optional wireless bridge metadata (e.g. MQTT LAN sketch) from board JSON. */
+  wireless?: {
+    mqttBridge?: {
+      firmware: string;
+      support: 'IMPLEMENTED' | 'COMPILE_TESTED' | 'SIMULATED' | 'PLANNED' | 'EXPERIMENTAL';
+      compileTarget?: string;
+      compileStatus?: 'IMPLEMENTED' | 'COMPILE_TESTED' | 'SIMULATED' | 'PLANNED' | 'EXPERIMENTAL';
+      config?: string[];
+      notes?: string;
+    };
+  };
   support: 'IMPLEMENTED' | 'COMPILE_TESTED' | 'SIMULATED' | 'PLANNED' | 'EXPERIMENTAL';
 }
 

@@ -1,6 +1,6 @@
 # Pinout protocol v1
 
-Host and device exchange **newline-delimited JSON** (NDJSON) over a byte transport. The first implementation uses USB serial at **115200 8N1**, no hardware flow control.
+Host and device exchange **newline-delimited JSON** (NDJSON) over a byte transport. The first implementation uses USB serial at **115200 8N1**, no hardware flow control. The same framing also rides BLE GATT (RX write / TX notify) — see [ble-gatt.md](ble-gatt.md). Host CI covers the BLE path with a SIMULATED bridge; physical radio HIL is not claimed.
 
 The protocol is not ESP32-specific. ESP32 is the first device that speaks it.
 

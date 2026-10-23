@@ -119,9 +119,14 @@ Applications and agents interact with **Pinout capabilities**, not the underlyin
 | Target | Status |
 | --- | --- |
 | ESP32 classic DevKit/WROOM (bridge firmware: GPIO, PWM, ADC, I2C, SPI, servo/motor) | `COMPILE_TESTED` reference path (simulator and transport-tested; physical HIL pending) |
-| MicroPython / CircuitPython boards (generic bridge) | `EXPERIMENTAL` — host-validated protocol only |
+| ESP32-C3 SuperMini / ESP32-S3-DevKitC-1 (native USB bridge envs) | `COMPILE_TESTED` (PlatformIO + board JSON; not default CI gate; no HIL; never auto-flash) |
+| ESP32 BLE GATT transport (`bleGattTransport` + `firmware/esp32-ble-bridge`) | Host **SIMULATED** (CI); firmware **COMPILE_TESTED** (`pio run -e esp32dev-ble`); physical radio HIL **NOT RUN** — see [docs/ble-gatt.md](docs/ble-gatt.md) |
+| Raspberry Pi Pico (MicroPython USB CDC bridge) | `SIMULATED` — host validators + Pico pin-policy sim; physical HIL pending ([docs/raspberry-pi-pico.md](docs/raspberry-pi-pico.md)) |
+| MicroPython / CircuitPython boards (generic bridge) | `SIMULATED` — host-validated protocol only |
 | Modbus Lamp (Coil + Discrete Input Readback) | `SIMULATED` (`@pinout/protocols-modbus` backend tested against simulator; physical HIL pending) |
 | ROS 2 Sidecar (`@pinout/ros2-sidecar`) | `SIMULATED` (narrow Cartesian action mapped to fake ROS action server; physical platform pending) |
+| Desk pan-tilt (`pinout/pan-tilt`, 1–2 hobby servos via `gpio.servo`) | `SIMULATED` (host + sim); firmware PWM path `COMPILE_TESTED` only — HIL pending |
+| Room environment sensor (BME280 / DHT external module) | `SIMULATED` (`examples/external-module/room-sensor`; wiring notes only; no HIL) |
 | Simulated devices (lamp, arm, mobile base, chamber, coffee machine, motors, sensors, …) | `SIMULATED` |
 | Modbus TCP/RTU, SCPI instruments, MQTT | `IMPLEMENTED` adapter packages (scripted/in-process tests; not physical-equipment verified or automatically registered as runtime devices) |
 | Universal Robots, OPC UA, MAVLink | `PLANNED` |
@@ -545,9 +550,9 @@ print(op.result())
 
 ## Real hardware path
 
-For automatic detection and the static MCP LED demo on Uno R3, ESP32 classic, and ESP32-C3 SuperMini, follow [the three-board guide](docs/three-board-demo.md). All three firmware targets compile; physical validation remains pending.
+For automatic detection and the static MCP LED demo on Uno R3, ESP32 classic, and ESP32-C3 SuperMini, follow [the three-board guide](docs/three-board-demo.md). Classic, C3, and S3 esp32-bridge envs compile; physical validation remains pending.
 
-The first hardware target is a classic ESP32 DevKit (WROOM / 30-pin) running [`firmware/esp32-bridge`](firmware/esp32-bridge). A board-agnostic [`firmware/micropython-bridge`](firmware/micropython-bridge) extends coverage to MicroPython/CircuitPython boards (experimental).
+The first hardware target is a classic ESP32 DevKit (WROOM / 30-pin) running [`firmware/esp32-bridge`](firmware/esp32-bridge). A board-agnostic [`firmware/micropython-bridge`](firmware/micropython-bridge) covers MicroPython boards; the desk/school path is the [Raspberry Pi Pico guide](docs/raspberry-pi-pico.md) (`SIMULATED` host tests).
 
 ```bash
 npm run pinout -- ports
@@ -633,7 +638,7 @@ More detail: [`docs/architecture.md`](./docs/architecture.md)
 | `packages/protocols-modbus` | Modbus TCP/RTU adapter + register maps |
 | `sdk/python` | Python SDK (sync + asyncio) |
 | `firmware/esp32-bridge` | Protocol v1 ESP32 firmware |
-| `firmware/micropython-bridge` | Generic MicroPython/CircuitPython bridge |
+| `firmware/micropython-bridge` | MicroPython/CircuitPython bridge (Pico USB CDC profile + host sim) |
 | `examples` | SDK, MCP, heterogeneous, and robotics narratives |
 | `docs` | Spec v1, product, architecture, modules, safety, generator guidance |
 

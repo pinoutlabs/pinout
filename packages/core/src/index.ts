@@ -11,6 +11,23 @@ export {
   type WebSocketTransportOptions,
 } from './transports/webSocketTransport.js';
 export {
+  pinoutBleAdvertisedNamePrefix,
+  pinoutBleDefaultAttPayloadBytes,
+  pinoutBleGattUuids,
+  type PinoutBleGattUuidKey,
+} from './transports/bleGattUuids.js';
+export type { BleGattSession } from './transports/bleGattSession.js';
+export {
+  bleGattTransport,
+  BleGattTransport,
+  type BleGattTransportOptions,
+} from './transports/bleGattTransport.js';
+export {
+  createSimulatedBleGattBridge,
+  type SimulatedBleGattBridge,
+  type SimulatedBleGattBridgeOptions,
+} from './transports/simulatedBleGatt.js';
+export {
   capabilityCatalog,
   describeCapabilities,
   describeCapability,
@@ -130,19 +147,28 @@ export {
   assertEsp32PwmPin,
   assertEsp32ReadPin,
   assertEsp32WritePin,
+  assertFamilyAdcPin,
+  assertFamilyReadPin,
+  assertFamilyWritePin,
   assertGpioMode,
   assertGpioPin,
   assertGpioValue,
   esp32AdcPins,
+  esp32C3PinRules,
+  esp32ClassicPinRules,
   esp32DefaultI2c,
   esp32DefaultLedPin,
   esp32DefaultSpi,
   esp32DevKitPins,
+  esp32S3PinRules,
   esp32StrapPins,
   isEsp32StrapPin,
   maxEsp32BusPayloadBytes,
+  pinRulesForBoard,
+  pinRulesForFamily,
   resolveEsp32BoardPin,
 } from './drivers/esp32/pins.js';
+export type { Esp32FamilyPinRules, Esp32PinFamily } from './drivers/esp32/pins.js';
 export { esp32DevKitPinMap, resolveEsp32DevKitPin } from './drivers/esp32/boardMap.js';
 export { PinoutRuntime, DuplicateDeviceError, DeviceNotFoundError } from './runtime/runtime.js';
 export type { PinoutRuntimeOptions } from './runtime/runtime.js';
@@ -212,6 +238,11 @@ export {
 } from './modules/registry.js';
 export { DeviceInstance } from './runtime/deviceInstance.js';
 export { ProtocolDeviceBackend } from './runtime/protocolBackend.js';
+export {
+  createBackendEventBus,
+  type BackendEventBus,
+  type BackendEventHandler,
+} from './runtime/backendEvents.js';
 export {
   CompositeDeviceBackend,
   createCompositeBackend,
@@ -313,6 +344,35 @@ export type {
   LampConformanceResult,
   LampCheckStatus,
 } from './modules/lampModule.js';
+export {
+  panTiltModule,
+  panTiltModuleId,
+  createSimulatedPanTiltBackend,
+  createEsp32PanTiltBackend,
+  SimulatedPanTiltBackend,
+  Esp32PanTiltBackend,
+  validatePanTiltConfig,
+  panTiltCapabilities,
+  runPanTiltConformance,
+} from './modules/panTiltModule.js';
+export type {
+  PanTiltConfig,
+  ValidatedPanTiltConfig,
+  PanTiltStatus,
+  PanTiltArmedState,
+  PanTiltAxisName,
+  PanTiltAxisAngles,
+  PanTiltAxisLimits,
+  PanTiltObservedSource,
+  PanTiltCommandedState,
+  PanTiltAcknowledgedState,
+  PanTiltObservedState,
+  PanTiltEvidenceBundle,
+  PanTiltBackendLike,
+  PanTiltConformanceCheck,
+  PanTiltConformanceResult,
+  PanTiltCheckStatus,
+} from './modules/panTiltModule.js';
 export {
   coffeeMachineModule,
   coffeeMachineModuleId,

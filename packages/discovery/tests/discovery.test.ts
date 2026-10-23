@@ -13,6 +13,12 @@ import {
   parseMdnsResponse,
   serialDiscoveryPlugin,
 } from '../src/plugins.js';
+import {
+  advertisementToCandidate,
+  bleDiscoveryPlugin,
+  parseBluetoothctlOutput,
+  simulatedBleScan,
+} from '../src/ble.js';
 import { createServer } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import { ByteQueue } from '../../core/src/transports/byteQueue.js';
@@ -320,5 +326,93 @@ describe('formatCandidatesTable', () => {
     expect(text).toContain('possible: Espressif pinout/esp32');
     expect(text).toContain('confidence: 0.50');
     expect(text).toContain('evidence:');
+  });
+});
+
+describe('BLE plugin (advertisement-only)', () => {
+  it('maps known local names with confidence capped at 0.5', async () => {
+    const plugin = bleDiscoveryPlugin(
+      simulatedBleScan([
+        { address: 'AA:BB:CC:DD:EE:01', localName: 'ESP32-DevKit', rssi: -50 },
+        { address: 'aa:bb:cc:dd:ee:02', localName: 'MysteryBeacon' },
+        {
+          address: 'aa:bb:cc:dd:ee:03',
+          serviceUuids: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'],
+        },
+      ]),
+    );
+    const candidates = await plugin.discover({});
+    expect(candidates).toHaveLength(3);
+
+    const esp = candidates.find((c) => c.endpoint.address === 'aa:bb:cc:dd:ee:01')!;
+    expect(esp.possibleIdentity[0]!.moduleId).toBe('pinout/esp32');
+    expect(esp.confidence).toBeLessThanOrEqual(0.5);
+    expect(esp.interfaces).toEqual(['ble']);
+    expect(esp.evidence.some((e) => e.source === 'ble-local-name')).toBe(true);
+    expect(() => validateCandidate(esp)).not.toThrow();
+
+    const mystery = candidates.find((c) => c.endpoint.address === 'aa:bb:cc:dd:ee:02')!;
+    expect(mystery.possibleIdentity[0]!.moduleId).toBe('unknown/ble');
+    expect(mystery.confidence).toBeLessThanOrEqual(0.5);
+
+    const nordic = candidates.find((c) => c.endpoint.address === 'aa:bb:cc:dd:ee:03')!;
+    expect(nordic.possibleIdentity[0]!.moduleId).toBe('unknown/ble-nordic-uart');
+    expect(nordic.confidence).toBeLessThanOrEqual(0.5);
+  });
+
+  it('rejects overconfident advertisement candidates via validateCandidate', () => {
+    const base = advertisementToCandidate({
+      address: 'aa:bb:cc:dd:ee:ff',
+      localName: 'ESP32',
+    });
+    expect(() =>
+      validateCandidate({
+        ...base,
+        confidence: 0.9,
+        evidence: [{ source: 'ble-local-name', detail: 'name only', weight: 0.45 }],
+      }),
+    ).toThrowError(/weak evidence/);
+  });
+
+  it('parses bluetoothctl scan text without a radio', () => {
+    const text = `
+[NEW] Device AA:BB:CC:DD:EE:10 ESP32-Test
+[CHG] Device AA:BB:CC:DD:EE:10 RSSI: -62
+[CHG] Device AA:BB:CC:DD:EE:10 UUID: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
+Device BB:BB:BB:BB:BB:BB Other Device
+`;
+    const ads = parseBluetoothctlOutput(text);
+    expect(ads).toHaveLength(2);
+    const esp = ads.find((ad) => ad.address === 'aa:bb:cc:dd:ee:10')!;
+    expect(esp.localName).toBe('ESP32-Test');
+    expect(esp.rssi).toBe(-62);
+    expect(esp.serviceUuids).toContain('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+  });
+
+  it('returns empty when the scanner is unsupported (no guessing)', async () => {
+    const plugin = bleDiscoveryPlugin(async () => []);
+    expect(await plugin.discover({})).toEqual([]);
+  });
+
+  it('returns empty when the scanner throws (missing radio / permissions)', async () => {
+    const plugin = bleDiscoveryPlugin(async () => {
+      throw new Error('no bluetooth adapter');
+    });
+    expect(await plugin.discover({})).toEqual([]);
+  });
+
+  it('integrates through runDiscovery with the simulated scanner', async () => {
+    const run = await runDiscovery({
+      plugins: [
+        bleDiscoveryPlugin(
+          simulatedBleScan([{ address: '11:22:33:44:55:66', localName: 'pinout-bridge' }]),
+        ),
+      ],
+    });
+    expect(run.errors).toEqual([]);
+    expect(run.pluginsRun).toEqual(['ble']);
+    expect(run.candidates).toHaveLength(1);
+    expect(run.candidates[0]!.possibleIdentity[0]!.moduleId).toBe('pinout/bridge');
+    expect(run.candidates[0]!.confidence).toBeLessThanOrEqual(0.5);
   });
 });

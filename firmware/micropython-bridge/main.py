@@ -67,6 +67,11 @@ def _config(name, fallback):
     return getattr(cfg, name, fallback) if cfg is not None else fallback
 
 
+BOARD_ID = _config("BOARD_ID", None)
+TRANSPORT = _config("TRANSPORT", "usb")
+ALLOWED_PINS = frozenset(_config("ALLOWED_PINS", frozenset()))
+ADC_PINS = frozenset(_config("ADC_PINS", frozenset()))
+LED_PIN = _config("LED_PIN", None)
 RESERVED_PINS = frozenset(_config("RESERVED_PINS", frozenset()))
 MAX_WATCHES = _config("MAX_WATCHES", 8)
 UART_ID = _config("UART_ID", 0)
@@ -161,11 +166,15 @@ class Bridge:
 
     # -- helpers -------------------------------------------------------------
 
-    def _check_pin(self, pin):
+    def _check_pin(self, pin, for_adc=False):
         if not isinstance(pin, int) or isinstance(pin, bool) or pin < 0:
             raise InvalidPin("pin must be a non-negative integer")
         if pin in RESERVED_PINS:
             raise InvalidPin("pin %d is reserved" % pin)
+        if ALLOWED_PINS and pin not in ALLOWED_PINS:
+            raise InvalidPin("pin %d is not a usable GPIO on this board" % pin)
+        if for_adc and ADC_PINS and pin not in ADC_PINS:
+            raise InvalidPin("pin %d does not support ADC on this board" % pin)
 
     def _hardware_pin(self, pin, mode):
         """Return a machine.Pin for `pin` or None in software-only mode."""
@@ -235,6 +244,8 @@ class Bridge:
             "protocol": info["protocol"],
             "hardware": info["hardware"],
             "board": info["board"],
+            "boardId": BOARD_ID or info["board"],
+            "ledPin": LED_PIN,
             "machine": info["machine"],
             "capabilities": info["capabilities"],
         }
@@ -263,6 +274,8 @@ class Bridge:
             "protocol": PROTOCOL_VERSION,
             "hardware": HARDWARE,
             "board": board,
+            "boardId": BOARD_ID or board,
+            "ledPin": LED_PIN,
             "machine": machine_name,
             "capabilities": list(CAPABILITIES),
         }
@@ -354,7 +367,7 @@ class Bridge:
 
     def adc_read(self, payload):
         pin = payload.get("pin")
-        self._check_pin(pin)
+        self._check_pin(pin, for_adc=True)
         if not HARDWARE or not hasattr(machine, "ADC"):
             raise UnsupportedCapability("adc.read requires machine.ADC (none on this runtime)")
         adc = self.adc_channels.get(pin)
@@ -602,9 +615,10 @@ def run_uart(bridge):
 
 def main():
     bridge = Bridge()
-    if HARDWARE:
+    if HARDWARE and TRANSPORT == "uart":
         run_uart(bridge)
     else:
+        # MicroPython USB CDC and host validation both expose stdin/stdout.
         run_stdio(bridge)
 
 

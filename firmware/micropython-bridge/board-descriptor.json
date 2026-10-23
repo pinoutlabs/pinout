@@ -10,8 +10,9 @@
     "protocol": 1
   },
   "transport": {
-    "kind": "uart",
-    "baudRate": 115200
+    "kind": "usb-cdc",
+    "baudRate": 115200,
+    "note": "Default TRANSPORT=usb speaks NDJSON over USB CDC (stdin/stdout). Set TRANSPORT=uart in config.py only when using an external USB-UART adapter."
   },
   "capabilities": [
     "sys.hello",
@@ -33,8 +34,11 @@
   ],
   "pinPolicy": {
     "reservedPins": [],
-    "note": "Board-agnostic: per-board reservations are set in config.py at deployment time. The bridge never assumes a pin map it was not given."
+    "note": "Board-agnostic defaults leave reserved/allowed empty. Pico profile lives in boards/raspberry-pi-pico/config.py and mirrors firmware/boards/raspberry-pi-pico.json."
   },
-  "support": "EXPERIMENTAL",
-  "notes": "Describes the full hardware build; sys.hello/sys.info advertise only the runtime-supported subset (software mode omits adc.read and the buses). Unsupported requests fail with structured codes (INVALID_PIN, INVALID_PAYLOAD, UNSUPPORTED_CAPABILITY, BUS_ERROR, WATCH_TABLE_FULL, UNSUPPORTED_ACTION, ACTION_FAILED) instead of fabricated values. Requires the MicroPython `machine` module; CircuitPython is not supported. Not hardware-verified."
+  "boardProfiles": [
+    "boards/raspberry-pi-pico/config.py"
+  ],
+  "support": "SIMULATED",
+  "notes": "Host validation: node validate.js exercises software, reserved-pin, and fake-machine modes; node validate-pico.js exercises the Pico profile. sys.hello/sys.info advertise only runtime-supported capabilities. Failures use structured codes including INVALID_PIN, INVALID_PAYLOAD, UNSUPPORTED_CAPABILITY, BUS_ERROR, WATCH_TABLE_FULL, and UNSUPPORTED_ACTION. CircuitPython is not supported. Physical hardware is not verified."
 }

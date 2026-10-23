@@ -38,43 +38,27 @@
     },
     {
       "category": "embedded",
-      "target": "ESP32-S2-DevKitC-1",
-      "integration": "firmware/esp32-bridge env esp32s2-devkit + @pinout/core esp32-s2 board descriptor",
-      "status": "EXPERIMENTAL",
-      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
-      "notes": "Opt-in. PlatformIO 6.5.0 ships no DevKitC-1 definition, so the env builds with the ESP32-S2-Saola-1 definition (same S2 module family, 4 MB flash); the firmware pin table is the DevKitC-1 descriptor. UART0 on GPIO 43/44. Expected compile-clean by inspection; compile and HIL pending. Not certified."
-    },
-    {
-      "category": "embedded",
       "target": "ESP32-S3-DevKitC-1",
-      "integration": "firmware/esp32-bridge env esp32s3-devkit + @pinout/core esp32-s3 board descriptor",
-      "status": "EXPERIMENTAL",
-      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
-      "notes": "Opt-in. Same Arduino-ESP32 2.x core line as the classic esp32dev env. UART0 through the USB-to-UART bridge port. GPIO 26-32 (flash) and 33-37 (octal-PSRAM modules) stay reserved. Expected compile-clean by inspection; compile and HIL pending. The onboard addressable RGB LED (GPIO 38 v1.1 / 48 initial) is deliberately not exposed. Not certified."
-    },
-    {
-      "category": "embedded",
-      "target": "ESP32-C6-DevKitC-1",
-      "integration": "firmware/esp32-bridge env esp32c6-devkit + @pinout/core esp32-c6 board descriptor",
-      "status": "EXPERIMENTAL",
-      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
-      "notes": "Opt-in. Requires the community pioarduino platform (Arduino-ESP32 3.x, pinned by release URL; first build needs network access). LEDC calls go through the src/boards/ledc_compat.h shim, the least-verified code in this workstream. Protocol transport is UART0 on GPIO 16/17 via the board's USB Type-C to UART port. Expected compile-clean by inspection; compile and HIL pending. Not certified."
+      "integration": "firmware/esp32-bridge, esp32-s3-devkitc-1 target + board descriptor + family pin rules",
+      "status": "COMPILE_TESTED",
+      "testedHow": "PlatformIO env esp32-s3-devkitc-1 compile; host board descriptor / pin-rule unit tests; no physical HIL",
+      "notes": "First-class PlatformIO environment with pin map from firmware/boards/esp32-s3-devkitc-1.json. Physical HIL pending. Not in the default CI gate (classic esp32dev only). Never auto-flash. Local S2/S3/C6 family pin maps reserve GPIO 33-37 for flash/PSRAM variants."
     },
     {
       "category": "embedded",
       "target": "MicroPython / CircuitPython boards (generic)",
       "integration": "firmware/micropython-bridge",
-      "status": "EXPERIMENTAL",
+      "status": "SIMULATED",
       "testedHow": "host-side three-part protocol matrix via `node validate.js` (no npm install): software mode, reserved-pin config, and fake-`machine` hardware-mode peripheral-call assertions",
-      "notes": "No hardware verification. Runtime capability detection guards machine.* usage; unsupported capabilities fail with structured codes instead of fabricated values. Requires the MicroPython machine module; CircuitPython is not supported."
+      "notes": "No hardware verification. Runtime capability detection guards machine.* usage; unsupported capabilities fail with structured codes instead of fabricated values. Requires the MicroPython machine module; CircuitPython is not supported. The Pico USB CDC profile is separately SIMULATED; physical HIL remains pending."
     },
     {
       "category": "embedded",
       "target": "Raspberry Pi Pico / Pico W (RP2040)",
-      "integration": "reachable via micropython-bridge; native bridge",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "USB VID 0x2e8a is recognized by discovery."
+      "integration": "firmware/micropython-bridge + boards/raspberry-pi-pico profile; USB CDC NDJSON",
+      "status": "SIMULATED",
+      "testedHow": "node validate-pico.js (Pico config + sim/machine.py stub: blink GPIO 25, reserved pins, ADC/I2C/SPI hooks); board descriptor load in packages/core",
+      "notes": "Desk path documented in docs/raspberry-pi-pico.md. Not HARDWARE_VERIFIED. Pico W LED is not GPIO 25. USB VID 0x2e8a recognized by discovery. No factory protocols."
     },
     {
       "category": "embedded",
@@ -87,10 +71,10 @@
     {
       "category": "embedded",
       "target": "Linux SBC GPIO (libgpiod)",
-      "integration": "@pinout/libgpiod (module pinout/linux-gpio)",
-      "status": "IMPLEMENTED",
-      "testedHow": "unit tests against a scripted command runner for argv construction, output parsing, evidence, and safe state; not verified against real hardware",
-      "notes": "libgpiod v2 CLI only (never sysfs); Linux-only; not HARDWARE_VERIFIED."
+      "integration": "planned",
+      "status": "PLANNED",
+      "testedHow": "none",
+      "notes": "libgpiod-first design; sysfs only as documented fallback."
     },
     {
       "category": "protocol",
@@ -131,6 +115,22 @@
       "status": "SIMULATED",
       "testedHow": "unit and regression tests with in-process broker simulator; MqttBackend runtime DeviceBackend publish/ingest tests",
       "notes": "Simulated DeviceBackend/module `pinout/mqtt-bridge` is registerable on PinoutRuntime. MQTT 3.1.1 client + declarative topic\u2192capability mapping remain unit-tested. Not a physical-equipment verification; never HARDWARE_VERIFIED."
+    },
+    {
+      "category": "protocol",
+      "target": "MQTT home lamp / smart plug (Tasmota/Shelly-style)",
+      "integration": "@pinout/protocols-mqtt MqttLampBackend + pinout/mqtt-lamp",
+      "status": "SIMULATED",
+      "testedHow": "in-process MqttBrokerSimulator unit tests and @pinout/core shared runLampConformance suite; topic preset tests for tasmota/shelly/custom",
+      "notes": "Semantic lamp contract for local Wi-Fi homes. Command publish is acknowledged; state-topic ingest is observed. Not verified against Mosquitto/EMQX or physical Tasmota/Shelly hardware."
+    },
+    {
+      "category": "protocol",
+      "target": "ESP32 Wi-Fi MQTT bridge (local LAN)",
+      "integration": "@pinout/protocols-mqtt Esp32MqttBackend + firmware/esp32-mqtt-bridge",
+      "status": "SIMULATED",
+      "testedHow": "in-process Esp32MqttDeviceSimulator + Esp32MqttBackend mapping/client tests; 2026-10-23 pio run -e esp32-mqtt COMPILE_TESTED (no upload)",
+      "notes": "Module `pinout/esp32-mqtt` (GPIO/arming bridge). Coexists with `pinout/mqtt-lamp`. Host path is SIMULATED. Firmware compile is COMPILE_TESTED only \u2014 not physical Wi-Fi/broker HIL; never HARDWARE_VERIFIED. Configure SSID/broker via pinout_mqtt_config.h or -D flags. Pinout never auto-flashes."
     },
     {
       "category": "protocol",
@@ -206,6 +206,14 @@
     },
     {
       "category": "lab",
+      "target": "Room environment sensor (BME280 / DHT)",
+      "integration": "examples/external-module/room-sensor (defineModule external package)",
+      "status": "SIMULATED",
+      "testedHow": "in-process simulator unit tests covering sensor.read/status.read and physical-evidence honesty (observed-only updates)",
+      "notes": "Local maker module outside @pinout/core. ESP32/MicroPython wiring notes are documentation only. No physical HIL; no sensor-specific firmware hooks claimed. Generic ESP32 i2c.* primitives remain separately COMPILE_TESTED."
+    },
+    {
+      "category": "lab",
       "target": "Simulated instruments (chamber, PSU, pump, valve, relay)",
       "integration": "@pinout/core first-party modules",
       "status": "SIMULATED",
@@ -238,14 +246,6 @@
     },
     {
       "category": "platform",
-      "target": "Module registry (offline-first, signed indexes)",
-      "integration": "@pinout/registry + CLI `module pack|publish|search|info|install|verify|conformance`",
-      "status": "IMPLEMENTED",
-      "testedHow": "offline unit tests: index validation, content/manifest hashing, Ed25519 verification (byte-parity with module-host), atomic install, L0-L5 conformance reports",
-      "notes": "file:// and local-directory registries are the tested path; HTTPS fetching exists behind an injectable fetcher with no live service; unsigned modules never display as verified."
-    },
-    {
-      "category": "platform",
       "target": "Device discovery",
       "integration": "@pinout/discovery + `pinout discover`",
       "status": "IMPLEMENTED",
@@ -267,6 +267,22 @@
       "status": "IMPLEMENTED",
       "testedHow": "7-target evaluation corpus with human ground truth; zero fabricated hard constraints measured",
       "notes": "Corpus is authored in-repo (no copyrighted manuals); PDF ingestion is dependency-free text extraction only."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-S2-DevKitC-1",
+      "integration": "firmware/esp32-bridge env esp32s2-devkit + @pinout/core esp32-s2 board descriptor",
+      "status": "EXPERIMENTAL",
+      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
+      "notes": "Opt-in. PlatformIO 6.5.0 ships no DevKitC-1 definition, so the env builds with the ESP32-S2-Saola-1 definition (same S2 module family, 4 MB flash); the firmware pin table is the DevKitC-1 descriptor. UART0 on GPIO 43/44. Expected compile-clean by inspection; compile and HIL pending. Not certified."
+    },
+    {
+      "category": "embedded",
+      "target": "ESP32-C6-DevKitC-1",
+      "integration": "firmware/esp32-bridge env esp32c6-devkit + @pinout/core esp32-c6 board descriptor",
+      "status": "EXPERIMENTAL",
+      "testedHow": "host-side only: board JSON/descriptor parity, pin-rule, ADC/PWM membership and channel-bound tests in packages/core; firmware compile pending",
+      "notes": "Opt-in. Requires the community pioarduino platform (Arduino-ESP32 3.x, pinned by release URL; first build needs network access). LEDC calls go through the src/boards/ledc_compat.h shim, the least-verified code in this workstream. Protocol transport is UART0 on GPIO 16/17 via the board's USB Type-C to UART port. Expected compile-clean by inspection; compile and HIL pending. Not certified."
     }
   ]
 }

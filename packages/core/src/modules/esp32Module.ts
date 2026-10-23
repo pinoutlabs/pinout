@@ -25,7 +25,14 @@ export const esp32Module: PinoutModuleDefinition = {
   capabilities: describeCapabilities([...firstPartyCapabilities]),
   capabilityNames: [...firstPartyCapabilities],
   policies: [],
-  supportedTransportKinds: ['serial', 'simulated-esp32', 'tcp', 'loopback'],
+  supportedTransportKinds: [
+    'serial',
+    'simulated-esp32',
+    'tcp',
+    'loopback',
+    'ble-gatt',
+    'simulated-ble-gatt',
+  ],
   createSimulatedBackend(): DeviceBackend {
     throw new Error('Use createProtocolBackend with simulatedEsp32() transport for ESP32.');
   },

@@ -88,6 +88,23 @@ export const builtinBoards: BoardDescriptor[] = [
       'Pins 34-39 are input-only and have no pull-ups.',
       'Pin 12 (MTDI) straps the flash voltage at boot.',
     ],
+    wireless: {
+      mqttBridge: {
+        firmware: 'firmware/esp32-mqtt-bridge',
+        support: 'SIMULATED',
+        compileTarget: 'esp32-mqtt',
+        compileStatus: 'COMPILE_TESTED',
+        config: [
+          'PINOUT_WIFI_SSID',
+          'PINOUT_WIFI_PASSWORD',
+          'PINOUT_MQTT_HOST',
+          'PINOUT_MQTT_PORT',
+          'PINOUT_MQTT_DEVICE_ID',
+        ],
+        notes:
+          'Host simulator is SIMULATED. Firmware pio run -e esp32-mqtt is COMPILE_TESTED (2026-10-23); no physical Wi-Fi HIL claimed.',
+      },
+    },
     support: 'IMPLEMENTED',
   },
   {
@@ -216,6 +233,11 @@ export const builtinBoards: BoardDescriptor[] = [
     },
     voltage: {
       logic: 3.3,
+      adcMax: 3.3,
+    },
+    usb: {
+      vendorId: '303a',
+      productId: '1001',
     },
     firmwareTarget: 'esp32s3-devkit',
     warnings: [
@@ -225,7 +247,7 @@ export const builtinBoards: BoardDescriptor[] = [
       'The onboard addressable RGB LED is GPIO 38 (v1.1) or GPIO 48 (initial revision).',
       'The bridge transports protocol v1 over UART0 at 115200 baud.',
     ],
-    support: 'EXPERIMENTAL',
+    support: 'COMPILE_TESTED',
   },
   // ESP32-C6-DevKitC-1 (v1.2) pin map per the Espressif DevKitC-1 user guide
   // and the ESP32-C6 datasheet (ADC1 on 0-6 only; 24-30 flash; GPIO 4 MTMS).
@@ -268,6 +290,59 @@ export const builtinBoards: BoardDescriptor[] = [
       'ADC1 covers GPIO 0-6 only; ESP32-C6 has no ADC2.',
     ],
     support: 'EXPERIMENTAL',
+  },  {
+    schemaVersion: '1',
+    boardId: 'raspberry-pi-pico',
+    family: 'rp2040',
+    mcu: 'RP2040',
+    gpioPins: [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 26, 27,
+      28,
+    ],
+    adcPins: [26, 27, 28],
+    pwmPins: [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25,
+    ],
+    reservedPins: [23, 24, 29],
+    inputOnlyPins: [],
+    uartPins: [
+      {
+        id: 0,
+        tx: 0,
+        rx: 1,
+      },
+      {
+        id: 1,
+        tx: 4,
+        rx: 5,
+      },
+    ],
+    i2cDefaults: {
+      sda: 4,
+      scl: 5,
+    },
+    spiDefaults: {
+      sck: 18,
+      miso: 16,
+      mosi: 19,
+      cs: 17,
+    },
+    voltage: {
+      logic: 3.3,
+      adcMax: 3.3,
+    },
+    usb: {
+      vendorId: '2e8a',
+      productId: '0005',
+    },
+    firmwareTarget: 'pico',
+    warnings: [
+      'GPIO 25 is the onboard LED on the non-W Pico (use for blink demos). Pico W uses a different LED path.',
+      'Pins 23 (SMPS power-save), 24 (VBUS sense), and 29 (ADC VREF / VSYS sense) are reserved — never drive them.',
+      'USB VID 2e8a:0005 is MicroPython CDC; 2e8a:0003 is the UF2 bootloader (BOOTSEL).',
+      'Desk path uses USB CDC via firmware/micropython-bridge (TRANSPORT=usb). No factory protocols.',
+    ],
+    support: 'SIMULATED',
   },
 ];
 
@@ -298,14 +373,8 @@ export function validateBoardAction(
   payload: Record<string, unknown>,
 ): void {
   const channelLimit = pwmChannelLimits[board.family];
-  if (
-    channelLimit !== undefined &&
-    typeof payload.channel === 'number' &&
-    payload.channel > channelLimit.max - 1
-  )
-    throw new ValidationError(
-      `${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`,
-    );
+  if (channelLimit !== undefined && typeof payload.channel === 'number' && payload.channel > channelLimit.max - 1)
+    throw new ValidationError(`${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`);
   const read =
     ['gpio.read', 'gpio.watch', 'gpio.unwatch', 'gpio.analogRead'].includes(action) ||
     (action === 'gpio.mode' && payload.mode === 'input');

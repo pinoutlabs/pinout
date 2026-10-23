@@ -2,6 +2,7 @@ import { DeviceError } from '../errors.js';
 import type { PolicyRule } from '../policy/types.js';
 import type { CapabilityDescriptor } from '../types.js';
 import type { EvidenceState, StatePrerequisite } from '../spec/evidence.js';
+import { createBackendEventBus } from './backendEvents.js';
 import type { DeviceBackend, RuntimeEventEnvelope } from './types.js';
 import { DeviceInstance } from './deviceInstance.js';
 
@@ -27,7 +28,7 @@ export class CompositeDeviceBackend implements DeviceBackend {
   private readonly drivers: Readonly<Record<string, DeviceBackend>>;
   private readonly routes: Readonly<Record<string, CompositeRoute>>;
   private readonly closeDrivers: boolean;
-  private readonly listeners = new Set<(event: string, payload: Record<string, unknown>) => void>();
+  private readonly eventBus = createBackendEventBus();
   private readonly unsubs: Array<() => void> = [];
   private closed = false;
 
@@ -64,8 +65,7 @@ export class CompositeDeviceBackend implements DeviceBackend {
   }
 
   subscribe(handler: (event: string, payload: Record<string, unknown>) => void): () => void {
-    this.listeners.add(handler);
-    return () => this.listeners.delete(handler);
+    return this.eventBus.subscribe(handler);
   }
 
   async invoke(
@@ -171,13 +171,13 @@ export class CompositeDeviceBackend implements DeviceBackend {
     if (this.closed) return;
     this.closed = true;
     for (const unsubscribe of this.unsubs.splice(0)) unsubscribe();
-    this.listeners.clear();
+    this.eventBus.clear();
     if (this.closeDrivers)
       await Promise.all(Object.values(this.drivers).map((driver) => driver.close()));
   }
 
   private emit(event: string, payload: Record<string, unknown>): void {
-    for (const listener of this.listeners) listener(event, payload);
+    this.eventBus.emit(event, payload);
   }
 }
 
