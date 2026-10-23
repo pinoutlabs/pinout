@@ -54,6 +54,12 @@ export interface DoctorDependencies {
   env?: NodeJS.ProcessEnv | undefined;
   home?: string | undefined;
   listSerialPorts?: (() => Promise<SerialPortEntry[]>) | undefined;
+  /** Injectable BLE availability probe (defaults to BlueZ bluetoothctl on Linux). */
+  bleScanAvailable?: (() => Promise<boolean>) | undefined;
+  /** Injectable read-only BLE discovery (defaults to advertisement-only plugin). */
+  discoverBle?: (() => Promise<
+    Array<{ endpoint: { address: string }; possibleIdentity: Array<{ moduleId: string }> }>
+  >) | undefined;
   fetch?: typeof globalThis.fetch | undefined;
   boardsDir?: string | undefined;
   loadBoards?:

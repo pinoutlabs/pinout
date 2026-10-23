@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { listSerialPorts, loadBoardDescriptors, type BoardDescriptor } from '@pinout/core';
+import { bleDiscoveryPlugin, bleScanAvailable, runDiscovery } from '@pinout/discovery';
 import type {
   DoctorCheckResult,
   DoctorDependencies,
@@ -63,6 +64,17 @@ export async function checkDiscovery(
     ports = await listPortsFn();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    if (options.mock) {
+      // Mock mode does not need a host serial stack (e.g. missing udevadm).
+      checks.push({
+        stage: 'discovery',
+        name: 'serial-ports',
+        status: 'pass',
+        detail: `Serial enumeration unavailable (${errorMessage}); mock mode active.`,
+      });
+      checks.push(await checkBleDiscovery(options, deps));
+      return { checks, ports: [] };
+    }
     checks.push({
       stage: 'discovery',
       name: 'serial-ports',
@@ -70,6 +82,7 @@ export async function checkDiscovery(
       detail: `Failed to enumerate serial ports: ${errorMessage}`,
       nextStep: 'Check OS serial driver and USB permissions.',
     });
+    checks.push(await checkBleDiscovery(options, deps));
     return { checks, ports: [] };
   }
 
@@ -92,6 +105,7 @@ export async function checkDiscovery(
           'Connect an ESP32 board via USB data cable, verify the cable carries data, or pass --mock for local simulation.',
       });
     }
+    checks.push(await checkBleDiscovery(options, deps));
     return { checks, ports };
   }
 
@@ -101,6 +115,8 @@ export async function checkDiscovery(
     status: 'pass',
     detail: `${ports.length} serial port(s) detected.`,
   });
+
+  checks.push(await checkBleDiscovery(options, deps));
 
   const loadedBoards = loadDescriptors(deps);
 
@@ -147,6 +163,86 @@ export async function checkDiscovery(
   }
 
   return { checks, ports };
+}
+
+/**
+ * Advertisement-only BLE check. Never connects or actuates. Unsupported
+ * platforms report pass with an honest empty/unavailable detail (same honesty
+ * pattern as Windows USB discovery) — not a warn that would fail green CI.
+ */
+async function checkBleDiscovery(
+  options: DoctorOptions,
+  deps: DoctorDependencies,
+): Promise<DoctorCheckResult> {
+  if (options.mock) {
+    return {
+      stage: 'discovery',
+      name: 'ble-scan',
+      status: 'pass',
+      detail: 'BLE scan skipped in mock mode (no radio claims).',
+    };
+  }
+
+  const availableFn = deps.bleScanAvailable ?? bleScanAvailable;
+  let available = false;
+  try {
+    available = await availableFn();
+  } catch {
+    available = false;
+  }
+
+  if (!available) {
+    return {
+      stage: 'discovery',
+      name: 'ble-scan',
+      status: 'pass',
+      detail:
+        'BLE nearby scan unavailable on this platform/tooling (returns empty; Linux needs BlueZ bluetoothctl). No devices invented.',
+    };
+  }
+
+  try {
+    const discoverFn =
+      deps.discoverBle ??
+      (async () => {
+        const run = await runDiscovery({
+          plugins: [bleDiscoveryPlugin()],
+          timeoutMs: options.timeoutMs ?? 1500,
+        });
+        return run.candidates;
+      });
+    const candidates = await discoverFn();
+    if (candidates.length === 0) {
+      return {
+        stage: 'discovery',
+        name: 'ble-scan',
+        status: 'pass',
+        detail: 'BLE advertisement scan available; no nearby advertisements observed (never connects).',
+      };
+    }
+    const preview = candidates
+      .slice(0, 3)
+      .map((candidate) => {
+        const identity = candidate.possibleIdentity[0]?.moduleId ?? 'unknown/ble';
+        return `${candidate.endpoint.address} (${identity})`;
+      })
+      .join(', ');
+    return {
+      stage: 'discovery',
+      name: 'ble-scan',
+      status: 'pass',
+      detail: `BLE advertisement scan found ${candidates.length} candidate(s): ${preview}. Confidence capped as weak heuristics; never connects.`,
+      meta: { count: candidates.length },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      stage: 'discovery',
+      name: 'ble-scan',
+      status: 'pass',
+      detail: `BLE scan tooling present but scan failed (${message}); returning empty rather than guessing.`,
+    };
+  }
 }
 
 function normalizeHex(value: string): string {

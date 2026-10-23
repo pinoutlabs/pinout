@@ -1,7 +1,7 @@
 {
   "name": "@pinout/discovery",
   "version": "0.0.1-alpha.1",
-  "description": "Device discovery for Pinout — serial, USB, mDNS, and opt-in bounded network probing. Discovery never actuates hardware.",
+  "description": "Device discovery for Pinout — serial, USB, mDNS, BLE advertisements, and opt-in bounded network probing. Discovery never actuates hardware.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pinoutlabs/pinout.git"

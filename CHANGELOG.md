@@ -11,6 +11,14 @@ All notable changes to this project are documented here. The format follows [Kee
   - Capabilities: `sensor.read`, `temperature.read`, `humidity.read`, `pressure.read` (BME280-only), `status.read`.
   - Simulator returns plausible structured readings; `status.read` / `getOperationalStateEvidence()` follow the physical evidence contract (reads update `observed` only; `commanded`/`acknowledged` stay null).
   - Docs: [docs/room-sensor.md](docs/room-sensor.md), module README with ESP32/MicroPython wiring notes; catalog entry stays honest `SIMULATED` (no HIL / no sensor-specific firmware hooks).
+- **BLE discovery plugin** (`@pinout/discovery`): advertisement-only nearby BLE
+  enumeration with evidence-backed candidates and confidence capped at the
+  weak-heuristic limit (≤ 0.5). Never connects, pairs, or writes GATT.
+  Linux uses BlueZ `bluetoothctl` when present; macOS/Windows/missing tooling
+  return empty rather than guessing (same honesty pattern as Windows USB).
+  CI uses `simulatedBleScan([...])` — no radio and no fake HIL claims.
+  Wired into `pinout discover` (disable with `--no-ble`) and `pinout doctor`
+  discovery stage.
 
 ### Added (Phases 1–5 sprint)
 

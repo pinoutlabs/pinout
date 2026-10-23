@@ -1,7 +1,9 @@
 /**
  * Built-in discovery plugins. All are READ-ONLY: they enumerate and observe,
  * they never open ports or send anything beyond passive queries (mDNS query
- * packets, single opt-in TCP health checks).
+ * packets, BLE advertisement scans, single opt-in TCP health checks).
+ *
+ * BLE lives in `./ble.js` (advertisement-only; never connects or writes GATT).
  */
 import { execFile } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
