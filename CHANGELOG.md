@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- **Desk pan-tilt module (`pinout/pan-tilt`)**: Commissioned local 1–2 hobby-servo mount with `panTilt.arm`, `panTilt.disarm`, `panTilt.setAngles`, `panTilt.setAngle`, and `panTilt.status`. Simulator and ESP32 backends share the same interfaces; ESP32 path uses existing firmware `gpio.servo` (COMPILE_TESTED only — no HIL claim). Disarm drives commissioned safe angles within per-axis limits. Does not expand the ROS 2 sidecar or robot-arm core. See [docs/capabilities.md](docs/capabilities.md) and [docs/modules.md](docs/modules.md).
+
 ### Added (Phases 1–5 sprint)
 
 - **MCP Stdio Lifecycle & Governance Fix** (`packages/mcp`): Repaired process lifecycle in `runStdio.ts` so the stdio transport maintains session lifetime across sequential calls, exits cleanly on stdin EOF and `SIGINT`/`SIGTERM`, and returns structured `DAEMON_UNAVAILABLE` errors without transport crashes when `pinoutd` is offline.

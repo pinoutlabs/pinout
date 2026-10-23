@@ -1002,6 +1002,9 @@ void handleSpiTransfer(const char* id, const JsonVariantConst& payload) {
   sendSuccess(id, result);
 }
 
+// COMPILE_TESTED only: 50 Hz hobby-servo PWM (1–2 ms pulse). Used by the
+// host `pinout/pan-tilt` module via gpio.servo for one or two desk servos.
+// Not HIL-verified; ACK alone is not physical evidence of horn position.
 void handleGpioServo(const char* id, const JsonVariantConst& payload) {
   if (!payload.is<JsonObjectConst>() || !payload["pin"].is<int>() ||
       !(payload["angle"].is<int>() || payload["angle"].is<float>())) {

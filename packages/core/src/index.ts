@@ -319,6 +319,35 @@ export type {
   LampCheckStatus,
 } from './modules/lampModule.js';
 export {
+  panTiltModule,
+  panTiltModuleId,
+  createSimulatedPanTiltBackend,
+  createEsp32PanTiltBackend,
+  SimulatedPanTiltBackend,
+  Esp32PanTiltBackend,
+  validatePanTiltConfig,
+  panTiltCapabilities,
+  runPanTiltConformance,
+} from './modules/panTiltModule.js';
+export type {
+  PanTiltConfig,
+  ValidatedPanTiltConfig,
+  PanTiltStatus,
+  PanTiltArmedState,
+  PanTiltAxisName,
+  PanTiltAxisAngles,
+  PanTiltAxisLimits,
+  PanTiltObservedSource,
+  PanTiltCommandedState,
+  PanTiltAcknowledgedState,
+  PanTiltObservedState,
+  PanTiltEvidenceBundle,
+  PanTiltBackendLike,
+  PanTiltConformanceCheck,
+  PanTiltConformanceResult,
+  PanTiltCheckStatus,
+} from './modules/panTiltModule.js';
+export {
   coffeeMachineModule,
   coffeeMachineModuleId,
   coffeeMachineSafetyRules,

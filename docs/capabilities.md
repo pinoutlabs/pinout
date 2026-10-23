@@ -275,6 +275,24 @@ Events: `motor.changed`.
 
 Events: `servo.changed`.
 
+This module is the lightweight in-process simulator used by the robotics parts demo. For a commissioned local desk mount with arming and safe angles over ESP32 PWM, use `pinout/pan-tilt` instead.
+
+## Desk pan-tilt (`pinout/pan-tilt`)
+
+Commissioned one- or two-axis hobby-servo mount for local desk motion. Backends: in-process simulator and ESP32 via existing `gpio.servo` (50 Hz PWM). **Does not** extend the ROS 2 sidecar or robot-arm stack.
+
+| Capability | Input | Notes |
+| --- | --- | --- |
+| `panTilt.arm` | `{ timeoutMs? }` | Explicit arm + watchdog; required before actuation |
+| `panTilt.disarm` | `{}` | Drives each axis to commissioned **safe angle**, then disarms |
+| `panTilt.setAngles` | `{ pan?, tilt?, validityMs? }` | At least one axis; enforces per-axis min/max |
+| `panTilt.setAngle` | `{ angle, axis?, validityMs? }` | Single axis (`pan` default) |
+| `panTilt.status` / `status.read` | `{}` | Armed state, commanded/acknowledged angles, evidence |
+
+**Safety notes:** Angle limits and safe angles are commissioning-time configuration. Disarm always applies safe angles before stopping actuation. Hobby servos without independent feedback leave `observed` as `source: "none"` — protocol ACK is not hardware evidence. Physical path status: **COMPILE_TESTED** for firmware `gpio.servo` only; no HIL claim for attached servos.
+
+Events: `panTilt.changed`, `safe_state.applied`, `device.tripped`.
+
 ## Stepper motor (`pinout/stepper`)
 
 | Capability | Input | Notes |
