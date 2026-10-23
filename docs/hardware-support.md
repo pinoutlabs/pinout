@@ -37,7 +37,15 @@ The second physical backend for the semantic `lamp` contract is implemented over
 - **Physical Verification:** **PENDING** — physical bench tests with physical Modbus Remote I/O units or PLCs are tracked in [`hardware/records/2026-09-05-modbus-lamp-pending.md`](../hardware/records/2026-09-05-modbus-lamp-pending.md).
 - **Documentation:** See [`docs/lamp-modbus.md`](lamp-modbus.md) for coil actuation, discrete input observation, and watchdog safety details.
 
-SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT (`pinout/mqtt-bridge`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
+## MQTT Lamp / Plug Backend (SIMULATED)
+
+Home Wi-Fi lamp and smart-plug control over MQTT (`@pinout/protocols-mqtt`), using declarative Tasmota/Shelly topic templates:
+
+- **Catalog Status:** `SIMULATED` (tested against in-process `MqttBrokerSimulator` and `@pinout/core` shared lamp conformance suite).
+- **Physical Verification:** **NOT DONE** — not exercised against Mosquitto/EMQX or physical Tasmota/Shelly devices in this tree.
+- **Documentation:** See [`docs/lamp-mqtt.md`](lamp-mqtt.md) for topic presets, evidence mapping, and LAN Mosquitto configuration notes.
+
+SCPI (`pinout/scpi-power-supply`), GRBL (`pinout/grbl`), MQTT bridge (`pinout/mqtt-bridge`), MQTT lamp (`pinout/mqtt-lamp`), and Modbus register-map backends are simulator-tested DeviceBackends for runtime registration; none are HARDWARE_VERIFIED.
 
 ## Flashing Policy: Never Auto-Flash Unidentified Hardware
 

@@ -82,8 +82,10 @@
 | Volatile lease restart invalidation | **PASSED** | `packages/core/tests/leaseRecovery.test.ts`, commit `4d7975b` | In-memory leases invalidated on restart; stale client sessions cannot actuate without fresh lease. |
 | Competing owner lease conflict prevention | **PASSED** | `packages/core/tests/leaseRecovery.test.ts`, commit `4d7975b` | Competing callers cannot acquire overlapping exclusive lease or actuate leased resource. |
 | Second physical backend: Modbus lamp backend | **PASSED (SIMULATED)** | `packages/protocols-modbus/tests/lampBackend.test.ts`, `docs/lamp-modbus.md`, commits `1f96f32`, `8f681c9`, `9b92f1f` | Coil actuation (acknowledged) and discrete input readback (observed); passes `runLampConformance` suite against `SimulatedModbusServer`. |
+| Home MQTT lamp / plug backend | **PASSED (SIMULATED)** | `packages/protocols-mqtt/tests/lampBackend.test.ts`, `docs/lamp-mqtt.md` | Tasmota/Shelly topic templates; arm/disarm/on/off/set/status; passes `runLampConformance` against `MqttBrokerSimulator`. Not verified on Mosquitto or physical devices. |
 | Dated physical hardware test: ESP32 lamp backend | **BLOCKED** | `hardware/records/2026-09-05-esp32-classic-reference-circuit-pending.md` | Requires physical ESP32 DevKit and reference breadboard fixture. |
 | Dated physical hardware test: Modbus lamp backend | **BLOCKED** | `hardware/records/2026-09-05-modbus-lamp-pending.md` | Requires physical Modbus TCP/RTU Remote I/O module or PLC. |
+| Dated physical hardware test: MQTT lamp / plug | **BLOCKED** | `docs/lamp-mqtt.md` | Requires LAN Mosquitto (or equivalent) plus Tasmota/Shelly (or similar) device. |
 
 ---
 

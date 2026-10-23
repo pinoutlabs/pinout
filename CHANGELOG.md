@@ -20,6 +20,10 @@ All notable changes to this project are documented here. The format follows [Kee
   CI uses `simulatedBleScan([...])` — no radio and no fake HIL claims.
   Wired into `pinout discover` (disable with `--no-ble`) and `pinout doctor`
   discovery stage.
+- **MQTT home lamp / plug backend (`@pinout/protocols-mqtt`, SIMULATED)**:
+  - Commissioned semantic lamp contract (`lamp.arm` / `disarm` / `on` / `off` / `set` / `status`) over declarative Tasmota/Shelly-style topic templates.
+  - Presets (`tasmota`, `shelly`, `custom`), in-process `MqttBrokerSimulator` path, module `pinout/mqtt-lamp`, and shared `runLampConformance()` coverage.
+  - Docs: [`docs/lamp-mqtt.md`](docs/lamp-mqtt.md) (LAN Mosquitto notes marked unverified); example `examples/lamp-mqtt.ts` (`npm run demo:lamp-mqtt`).
 
 ### Added (Phases 1–5 sprint)
 

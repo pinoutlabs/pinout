@@ -118,6 +118,14 @@
     },
     {
       "category": "protocol",
+      "target": "MQTT home lamp / smart plug (Tasmota/Shelly-style)",
+      "integration": "@pinout/protocols-mqtt MqttLampBackend + pinout/mqtt-lamp",
+      "status": "SIMULATED",
+      "testedHow": "in-process MqttBrokerSimulator unit tests and @pinout/core shared runLampConformance suite; topic preset tests for tasmota/shelly/custom",
+      "notes": "Semantic lamp contract for local Wi-Fi homes. Command publish is acknowledged; state-topic ingest is observed. Not verified against Mosquitto/EMQX or physical Tasmota/Shelly hardware."
+    },
+    {
+      "category": "protocol",
       "target": "OPC UA",
       "integration": "none",
       "status": "PLANNED",
