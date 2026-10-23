@@ -44,6 +44,7 @@ All notable changes to this project are documented here. The format follows [Kee
   never auto-flash; never HARDWARE_VERIFIED from compile. Docs:
   [docs/esp32-mqtt.md](docs/esp32-mqtt.md), firmware README, catalog + board
   `wireless.mqttBridge` notes.
+- **ESP32-C3 / ESP32-S3 first-class bridge targets** (`firmware/esp32-bridge`): PlatformIO envs `esp32-c3-supermini` and `esp32-s3-devkitc-1` build with pin maps, I2C/SPI defaults, and `boardId` values aligned to `firmware/boards/*.json`. Classic `esp32dev` remains the default CI compile gate. C3/S3 stay out of that gate and are compiled by the release-candidate workflow. Status remains honest `COMPILE_TESTED` (no physical HIL; never auto-flash). Host simulator/family pin rules and board-descriptor tests cover reserved flash/USB/UART/strap pins; `builtinBoards` includes S3.
 
 ### Added (Phases 1–5 sprint)
 

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#if defined(PINOUT_ESP32_C3)
+#if defined(PINOUT_ESP32_C3) || defined(PINOUT_ESP32_S3)
 // Arduino-ESP32 2.x exposes the native USB CDC stream from HWCDC.h when
 // ARDUINO_USB_MODE=1; Arduino.h alone does not declare the global Serial.
 #include <HWCDC.h>
@@ -17,6 +17,17 @@ constexpr int protocolVersion = 1;
 constexpr const char* firmwareName = "esp32-bridge";
 constexpr const char* firmwareVersion = "0.0.1-alpha.1";
 constexpr size_t maxBusPayloadBytes = 32;
+
+#if defined(PINOUT_ESP32_C3)
+constexpr int pinTableSize = 22;
+constexpr int pwmChannelCount = 6;
+#elif defined(PINOUT_ESP32_S3)
+constexpr int pinTableSize = 49;
+constexpr int pwmChannelCount = 8;
+#else
+constexpr int pinTableSize = 40;
+constexpr int pwmChannelCount = 16;
+#endif
 
 char lineBuffer[lineMax];
 size_t lineLength = 0;
@@ -52,7 +63,7 @@ const char* tripReason = nullptr;
 unsigned long watchdogTimeoutMs = 1000;
 unsigned long watchdogDeadline = 0;
 bool watchdogEnabled = true;
-PinSafeConfig pinSafeConfigs[40];
+PinSafeConfig pinSafeConfigs[pinTableSize];
 
 struct WatchState {
   int pin = -1;
@@ -74,6 +85,9 @@ PulseState pulses[8];
 #if defined(PINOUT_ESP32_C3)
 int i2cSda = 4;
 int i2cScl = 5;
+#elif defined(PINOUT_ESP32_S3)
+int i2cSda = 8;
+int i2cScl = 9;
 #else
 int i2cSda = 21;
 int i2cScl = 22;
@@ -86,6 +100,11 @@ int spiSck = 4;
 int spiMiso = 5;
 int spiMosi = 6;
 int spiCs = 7;
+#elif defined(PINOUT_ESP32_S3)
+int spiSck = 12;
+int spiMiso = 13;
+int spiMosi = 11;
+int spiCs = 10;
 #else
 int spiSck = 18;
 int spiMiso = 19;
@@ -94,7 +113,7 @@ int spiCs = 5;
 #endif
 uint32_t spiFrequency = 1000000;
 bool spiStarted = false;
-bool activeOutputs[40] = {};
+bool activeOutputs[pinTableSize] = {};
 int activePwmPins[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
                          -1, -1, -1, -1, -1, -1, -1, -1};
 
@@ -106,13 +125,21 @@ void cancelPulseForPin(int pin) {
   }
 }
 
+// Pin rules mirror firmware/boards/*.json for each PlatformIO environment.
 #if defined(PINOUT_ESP32_C3)
 bool isFlashPin(int pin) { return pin >= 11 && pin <= 17; }
 bool isInputOnlyPin(int) { return false; }
 bool isUart0Pin(int pin) { return pin == 20 || pin == 21; }
 bool isStrapPin(int pin) { return pin == 2 || pin == 8 || pin == 9; }
-bool isAdcPin(int pin) { return pin >= 0 && pin <= 4; }
+bool isAdcPin(int pin) { return pin == 0 || pin == 1 || pin == 3 || pin == 4; }
 bool isUsbPin(int pin) { return pin == 18 || pin == 19; }
+#elif defined(PINOUT_ESP32_S3)
+bool isFlashPin(int pin) { return pin >= 22 && pin <= 33; }
+bool isInputOnlyPin(int) { return false; }
+bool isUart0Pin(int pin) { return pin == 43 || pin == 44; }
+bool isStrapPin(int pin) { return pin == 45 || pin == 46; }
+bool isAdcPin(int pin) { return pin >= 1 && pin <= 10; }
+bool isUsbPin(int pin) { return pin == 19 || pin == 20; }
 #else
 bool isFlashPin(int pin) { return pin >= 6 && pin <= 11; }
 bool isInputOnlyPin(int pin) { return pin >= 34 && pin <= 39; }
@@ -125,9 +152,21 @@ bool isUsbPin(int) { return false; }
 int maxGpioPin() {
 #if defined(PINOUT_ESP32_C3)
   return 21;
+#elif defined(PINOUT_ESP32_S3)
+  return 48;
 #else
   return 39;
 #endif
+}
+
+int motorPwmChannel(int pin) {
+  const int half = pwmChannelCount / 2;
+  return pin % half;
+}
+
+int servoPwmChannel(int pin) {
+  const int half = pwmChannelCount / 2;
+  return half + (pin % (pwmChannelCount - half));
 }
 
 bool isReadablePin(int pin) {
@@ -196,8 +235,10 @@ void emitGpioChanged(int pin, bool value) {
 }
 
 void fillIdentity(JsonObject payload) {
-  #if defined(PINOUT_ESP32_C3)
+#if defined(PINOUT_ESP32_C3)
   payload["boardId"] = "esp32-c3-supermini";
+#elif defined(PINOUT_ESP32_S3)
+  payload["boardId"] = "esp32-s3-devkitc-1";
 #else
   payload["boardId"] = "esp32-devkit-v1";
 #endif
@@ -278,7 +319,7 @@ void applySafeState(JsonArray* stoppedPins = nullptr) {
       }
     }
   }
-  for (int channel = 0; channel < 16; channel++) {
+  for (int channel = 0; channel < pwmChannelCount; channel++) {
     ledcWrite(channel, 0);
     if (activePwmPins[channel] >= 0) {
       ledcDetachPin(activePwmPins[channel]);
@@ -690,13 +731,8 @@ void handleGpioPwm(const char* id, const JsonVariantConst& payload) {
   const int channel = payload["channel"].as<int>();
   const float duty = payload["duty"].as<float>();
   const int frequency = payload["frequency"].as<int>();
-  if (!isWritablePin(pin) || channel < 0 || channel >=
-#if defined(PINOUT_ESP32_C3)
-      6
-#else
-      16
-#endif
-      || duty < 0 || duty > 1 || frequency <= 0) {
+  if (!isWritablePin(pin) || channel < 0 || channel >= pwmChannelCount || duty < 0 || duty > 1 ||
+      frequency <= 0) {
     sendError(id, "INVALID_PIN", "Invalid PWM pin or parameters.");
     return;
   }
@@ -1021,7 +1057,7 @@ void handleGpioServo(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PAYLOAD", "Servo angle must be between 0 and 180.");
     return;
   }
-  const int channel = 8 + (pin % 8);
+  const int channel = servoPwmChannel(pin);
   cancelPulseForPin(pin);
   ledcSetup(channel, 50, 16);
   activeOutputs[pin] = true;
@@ -1066,7 +1102,7 @@ void handleGpioMotor(const char* id, const JsonVariantConst& payload) {
     sendError(id, "INVALID_PAYLOAD", "Motor speed must be between -1 and 1 when a direction pin is set.");
     return;
   }
-  const int channel = pwmPin % 8;
+  const int channel = motorPwmChannel(pwmPin);
   const float duty = speed < 0 ? -speed : speed;
   cancelPulseForPin(pwmPin);
   if (dirPin >= 0) {

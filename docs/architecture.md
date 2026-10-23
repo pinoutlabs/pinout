@@ -177,6 +177,6 @@ When code bypasses `pinoutd` and invokes `@pinout/core` directly:
 - Cameras
 - Flashing firmware from the CLI
 - A published npm release
-- ESP32-S3 native USB and RGB LEDs
+- ESP32-S3 RGB LED / RMT helpers (native USB CDC bridge env is COMPILE_TESTED)
 
 See [docs/capabilities.md](capabilities.md) for the current action catalog.

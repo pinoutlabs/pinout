@@ -147,19 +147,28 @@ export {
   assertEsp32PwmPin,
   assertEsp32ReadPin,
   assertEsp32WritePin,
+  assertFamilyAdcPin,
+  assertFamilyReadPin,
+  assertFamilyWritePin,
   assertGpioMode,
   assertGpioPin,
   assertGpioValue,
   esp32AdcPins,
+  esp32C3PinRules,
+  esp32ClassicPinRules,
   esp32DefaultI2c,
   esp32DefaultLedPin,
   esp32DefaultSpi,
   esp32DevKitPins,
+  esp32S3PinRules,
   esp32StrapPins,
   isEsp32StrapPin,
   maxEsp32BusPayloadBytes,
+  pinRulesForBoard,
+  pinRulesForFamily,
   resolveEsp32BoardPin,
 } from './drivers/esp32/pins.js';
+export type { Esp32FamilyPinRules, Esp32PinFamily } from './drivers/esp32/pins.js';
 export { esp32DevKitPinMap, resolveEsp32DevKitPin } from './drivers/esp32/boardMap.js';
 export { PinoutRuntime, DuplicateDeviceError, DeviceNotFoundError } from './runtime/runtime.js';
 export type { PinoutRuntimeOptions } from './runtime/runtime.js';
