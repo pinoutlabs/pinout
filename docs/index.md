@@ -11,6 +11,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 - [Acceptance ledger](acceptance-ledger.md) — phase-by-phase implementation and verification status matrix.
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.
 - [Device awareness and automatic connectors](awareness-and-connectors.md) — nearby devices → quarantined connectors → human-approved ranges → MCP (**SIMULATED**; no HIL).
+- [Evidence levels](evidence-levels.md) — canonical `SupportLevel` ladder (`UNKNOWN` → `HARDWARE_VERIFIED`).
 - [Safety model](safety-model.md) and [security model](security-model.md).
 - [State evidence contract](state-evidence.md) — commanded vs acknowledged vs independently observed physical state.
 - [Recovery and reconciliation model](recovery-model.md) — operation persistence, crash recovery windows, and mandatory reconciliation.

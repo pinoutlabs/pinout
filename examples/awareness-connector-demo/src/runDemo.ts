@@ -24,7 +24,7 @@ import {
 } from './mockControlPlane.js';
 import { probeAwarenessUpstream } from './probeUpstream.js';
 import type { ConnectorRecord, SupportLevel } from './types.js';
-import { EVIDENCE_RANK } from './types.js';
+import { evidenceExceeds } from './types.js';
 
 const demoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -43,7 +43,7 @@ function log(section: string, message: string): void {
 }
 
 function assertEvidenceNotAboveCompile(level: SupportLevel): void {
-  if (EVIDENCE_RANK[level] > EVIDENCE_RANK.COMPILE_TESTED) {
+  if (evidenceExceeds(level, 'COMPILE_TESTED')) {
     throw new Error(`Evidence level ${level} exceeds COMPILE_TESTED — honesty invariant broken`);
   }
 }
@@ -113,8 +113,7 @@ async function runAgainstStub(): Promise<{
   const connector = generateConnectorFromStore(plane.store, 'mock-ble-unknown-lamp');
   assertEvidenceNotAboveCompile(connector.evidenceLevel);
   assertions.generatedQuarantined = connector.status === 'QUARANTINED';
-  assertions.evidenceCapped =
-    EVIDENCE_RANK[connector.evidenceLevel] <= EVIDENCE_RANK.COMPILE_TESTED;
+  assertions.evidenceCapped = !evidenceExceeds(connector.evidenceLevel, 'COMPILE_TESTED');
   assertions.notAutoArmed = connector.armed === false;
   log(
     'GENERATE CONNECTOR',
