@@ -8,6 +8,12 @@ export default defineConfig({
     },
     alias: {
       '@pinout/core': fileURLToPath(new URL('./packages/core/src/index.ts', import.meta.url)),
+      '@pinout/awareness': fileURLToPath(
+        new URL('./packages/awareness/src/index.ts', import.meta.url),
+      ),
+      '@pinout/discovery': fileURLToPath(
+        new URL('./packages/discovery/src/index.ts', import.meta.url),
+      ),
       '@pinout/generator': fileURLToPath(
         new URL('./packages/generator/src/index.ts', import.meta.url),
       ),

@@ -213,6 +213,66 @@ export class DeviceGraph {
     return out;
   }
 
+  /**
+   * Register or refresh a node from awareness/presence observations.
+   * Updates health, support, and transport in place when the id exists.
+   */
+  upsert(input: DeviceGraphNodeInput): DeviceDescriptor {
+    const existing = this.nodes.get(input.id);
+    if (!existing) return this.register(input);
+    existing.identity = {
+      ...existing.identity,
+      moduleId: input.moduleId,
+      deviceClass: input.deviceClass,
+      ...(input.vendor !== undefined ? { vendor: input.vendor } : {}),
+      ...(input.model !== undefined ? { model: input.model } : {}),
+      ...(input.label !== undefined ? { label: input.label } : {}),
+    };
+    existing.capabilities = [...input.capabilities];
+    existing.simulated = input.simulated ?? existing.simulated;
+    if (input.tags) existing.tags = [...input.tags];
+    if (input.support) existing.support = input.support;
+    if (input.transport) existing.transport = input.transport;
+    return this.get(input.id)!;
+  }
+
+  updateHealth(id: string, health: Partial<DeviceDescriptor['health']>): DeviceDescriptor {
+    const node = this.nodes.get(id);
+    if (!node) {
+      throw new PinoutStructuredError('DEVICE_NOT_FOUND', 'DEVICE', `Unknown device '${id}'.`, {
+        device: id,
+      });
+    }
+    node.health = {
+      ...node.health,
+      ...health,
+      lastUpdated: health.lastUpdated ?? Date.now(),
+    };
+    return this.get(id)!;
+  }
+
+  updateSupport(id: string, support: DeviceDescriptor['support']): DeviceDescriptor {
+    const node = this.nodes.get(id);
+    if (!node) {
+      throw new PinoutStructuredError('DEVICE_NOT_FOUND', 'DEVICE', `Unknown device '${id}'.`, {
+        device: id,
+      });
+    }
+    node.support = support;
+    return this.get(id)!;
+  }
+
+  updateTransport(id: string, transport: DeviceDescriptor['transport']): DeviceDescriptor {
+    const node = this.nodes.get(id);
+    if (!node) {
+      throw new PinoutStructuredError('DEVICE_NOT_FOUND', 'DEVICE', `Unknown device '${id}'.`, {
+        device: id,
+      });
+    }
+    node.transport = transport;
+    return this.get(id)!;
+  }
+
   private descendsFrom(ancestorId: string, candidateId: string): boolean {
     // True when `candidateId` is an ancestor of `ancestorId`.
     let current = this.nodes.get(ancestorId)?.parent;

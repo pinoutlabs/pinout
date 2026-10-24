@@ -153,4 +153,33 @@ describe('DeviceGraph', () => {
     const graph = new DeviceGraph();
     expect(() => graph.require('nope')).toThrowError(/Unknown device 'nope'/);
   });
+
+  it('upserts presence, health, support, and transport for awareness', () => {
+    const graph = new DeviceGraph();
+    graph.upsert({
+      id: 'cand_1',
+      deviceClass: 'microcontroller',
+      moduleId: 'pinout/esp32',
+      capabilities: [],
+      simulated: true,
+      support: 'SIMULATED',
+      transport: { kind: 'serial', endpoint: '/dev/cu.mock' },
+    });
+    graph.updateHealth('cand_1', { status: 'CONNECTED', lifecycle: 'ready' });
+    graph.updateSupport('cand_1', 'COMPILE_TESTED');
+    graph.updateTransport('cand_1', { kind: 'ble', endpoint: 'aa:bb:cc:dd:ee:ff' });
+    const node = graph.get('cand_1');
+    expect(node?.health.status).toBe('CONNECTED');
+    expect(node?.support).toBe('COMPILE_TESTED');
+    expect(node?.transport.kind).toBe('ble');
+    graph.upsert({
+      id: 'cand_1',
+      deviceClass: 'microcontroller',
+      moduleId: 'pinout/esp32',
+      capabilities: ['gpio.write'],
+      support: 'SIMULATED',
+      transport: { kind: 'serial', endpoint: '/dev/cu.mock' },
+    });
+    expect(graph.get('cand_1')?.capabilities).toEqual(['gpio.write']);
+  });
 });

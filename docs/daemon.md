@@ -11,12 +11,18 @@ and exposes a local HTTP API.
 # From the repo root (demo devices for exploration):
 node packages/daemon/dist/main.js --demo
 
+# Read-only device awareness (no hardware required with mock preset):
+node packages/daemon/dist/main.js --discover --mock-devices demo
+
 # Options:
-#   --port 8787        TCP port (default 8787)
-#   --host 127.0.0.1   bind host — loopback ONLY unless remote access is
-#                      explicitly enabled (see below)
-#   --token <t>        require a bearer token on all /v1 routes except health
-#   --journal <path>   persist the control journal to a JSONL file
+#   --port 8787              TCP port (default 8787)
+#   --host 127.0.0.1         bind host — loopback ONLY unless remote access is
+#                            explicitly enabled (see below)
+#   --token <t>              require a bearer token on all /v1 routes except health
+#   --journal <path>         persist the control journal to a JSONL file
+#   --discover               enable awareness (read-only discovery scheduler)
+#   --mock-devices <src>     inject SIMULATED candidates (`demo` preset or JSON file)
+#   --network-probe host:port  opt-in bounded health probe (repeatable; never a scan)
 ```
 
 ## Environment variables
@@ -60,6 +66,10 @@ Clients interacting with `pinoutd` (CLI daemon commands, Python SDK, MCP adapter
 | `POST /v1/approvals` | Record policy approval token for privileged capabilities |
 | `POST /v1/devices/:id/heartbeat` | Safety deadman switch heartbeat |
 | `GET /v1/modules` | List active device module identifiers |
+| `GET /v1/awareness` | Awareness records (`{ devices: AwarenessRecord[] }`) — see [awareness.md](awareness.md) |
+| `GET /v1/awareness/:id` | Single awareness record |
+| `GET /v1/awareness/events` | SSE stream of awareness events (`seen` / `identified` / `state_changed` / `online` / `offline`) |
+| `POST /v1/awareness/:id/enroll` | Operator-approved enroll into `devices.json` (never arms/actuates) |
 | `GET /v1/streams`, `GET /v1/streams/:id/snapshot` | Stream metadata and latest-frame snapshots |
 | `WS /v1/streams/:id/frames` | Authenticated stream frames with bounded buffering |
 | `GET /v1/journal` | Journal inspection |
