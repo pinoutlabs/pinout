@@ -19,7 +19,7 @@ For the alpha release, the classic ESP32 DevKit (`esp32-devkit-v1` / ESP-WROOM-3
 
 Uno R3, ESP32-C3 SuperMini, and ESP32-S3-DevKitC-1 are compile-tested with board-aware host validation (and static MCP for the three-board demo path); physical HIL remains pending. See [the three-board guide](three-board-demo.md) and [`firmware/esp32-bridge/README.md`](../firmware/esp32-bridge/README.md).
 
-ESP32-S2 and ESP32-C6 profiles are available as opt-in experimental environments (esp32s2-devkit and esp32c6-devkit); their compile and HIL evidence remains pending. The local esp32s3-devkit environment shares the first-class S3 board profile, which GitHub marks COMPILE_TESTED through esp32-s3-devkitc-1. See the firmware target table.
+ESP32-S2 and ESP32-C6 profiles are available as opt-in experimental environments (esp32s2-devkit and esp32c6-devkit); their compile and HIL evidence remains pending. The first-class S3 board descriptor sets `firmwareTarget` to **`esp32-s3-devkitc-1`** (matching the release PlatformIO env); the local alias `esp32s3-devkit` builds the same profile. See [evidence-levels.md](evidence-levels.md) and the firmware target table.
 
 ## Raspberry Pi Pico (MicroPython, SIMULATED)
 
@@ -78,6 +78,12 @@ command-line tools (`@pinout/libgpiod`):
   would be welcome before that).
 - **Prerequisites:** libgpiod v2 tools on `PATH`; `--hold-period` (set-once
   writes) needs libgpiod ≥ 2.2.
+
+## ROS 2 sidecar (`@pinout/ros2-sidecar`)
+
+- **Catalog Status:** `SIMULATED` (in-process `FakeRosActionServer`; package exists in the workspace).
+- **Physical Verification:** **PENDING** — real rclnodejs / live ROS 2 controller path remains gated; never HARDWARE_VERIFIED from the simulator.
+- **Documentation:** See [`docs/ros2-sidecar.md`](ros2-sidecar.md).
 
 ## Flashing Policy: Never Auto-Flash Unidentified Hardware
 

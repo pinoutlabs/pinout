@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Canonical SupportLevel evidence ladder** (`@pinout/core`, PR0 foundation):
+  `UNKNOWN` | `SIMULATED` | `COMPILE_TESTED` | `HARDWARE_VERIFIED` with mappers from
+  module-manifest status, spec `SupportStatus`, `hardware/catalog.json` statuses,
+  conformance L0–L5, and generator lifecycle. Generated/auto-built artifacts cannot
+  exceed `COMPILE_TESTED` without a dated `hardware/records/` entry. Docs:
+  [docs/evidence-levels.md](docs/evidence-levels.md).
+- **pinoutd board discovery Pico path**: USB VID `2e8a` allowlisted; accepts
+  `micropython-bridge` firmware identity (SIMULATED serial tests; never auto-flash).
 - **ESP32 BLE GATT transport** (`@pinout/core`, **SIMULATED**): `bleGattTransport` + injectable `BleGattSession` carrying Pinout NDJSON over a fixed RX-write / TX-notify GATT layout (`pinoutBleGattUuids`). In-process `createSimulatedBleGattBridge()` pairs the host path with `simulatedEsp32` and ATT-sized TX chunking for CI without a radio. Factory type `simulated-ble-gatt`. Docs: [docs/ble-gatt.md](docs/ble-gatt.md).
 - **ESP32 BLE bridge sketch** (`firmware/esp32-ble-bridge`, **COMPILE_TESTED** via `pio run -e esp32dev-ble`; **not** HARDWARE_VERIFIED): minimal GATT server advertising the same UUIDs with a desk bring-up protocol subset (`sys.*`, `gpio.mode` / `write` / `read`). No flash/HIL record. Advertisement-only BLE discovery lives separately in `@pinout/discovery` (never connects or writes GATT).
 - **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):
@@ -45,6 +53,17 @@ All notable changes to this project are documented here. The format follows [Kee
   [docs/esp32-mqtt.md](docs/esp32-mqtt.md), firmware README, catalog + board
   `wireless.mqttBridge` notes.
 - **ESP32-C3 / ESP32-S3 first-class bridge targets** (`firmware/esp32-bridge`): PlatformIO envs `esp32-c3-supermini` and `esp32-s3-devkitc-1` build with pin maps, I2C/SPI defaults, and `boardId` values aligned to `firmware/boards/*.json`. Classic `esp32dev` remains the default CI compile gate. C3/S3 stay out of that gate and are compiled by the release-candidate workflow. Status remains honest `COMPILE_TESTED` (no physical HIL; never auto-flash). Host simulator/family pin rules and board-descriptor tests cover reserved flash/USB/UART/strap pins; `builtinBoards` includes S3.
+
+### Changed
+
+- **BLE discovery rules** (`@pinout/discovery`): every `BLE_RULES` `moduleId` resolves
+  in the builtin registry or is explicitly `unavailable` (no dangling
+  `pinout/micropython-bridge` / `pinout/bridge` / unmarked `unknown/*`).
+- **Hardware catalog honesty**: Linux SBC GPIO (`@pinout/libgpiod`) → `IMPLEMENTED`
+  (scripted tests only); ROS 2 sidecar → `SIMULATED` (package exists; no HIL).
+- **ESP32-S3 `firmwareTarget`**: aligned to PlatformIO env `esp32-s3-devkitc-1`
+  (local alias `esp32s3-devkit` documented); reserved strap GPIO 3 removed from
+  `adcPins` so the board descriptor validates.
 
 ### Added (Phases 1–5 sprint)
 

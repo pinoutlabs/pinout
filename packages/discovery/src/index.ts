@@ -34,5 +34,6 @@ export {
   bleScanAvailable,
   normalizeBleAddress,
   normalizeBleUuid,
+  BLE_RULES,
 } from './ble.js';
-export type { BleAdvertisement, BleScan, BleScanOptions } from './ble.js';
+export type { BleAdvertisement, BleScan, BleScanOptions, BleIdentityRule } from './ble.js';

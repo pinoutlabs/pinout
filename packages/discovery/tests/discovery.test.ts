@@ -15,6 +15,7 @@ import {
 } from '../src/plugins.js';
 import {
   advertisementToCandidate,
+  BLE_RULES,
   bleDiscoveryPlugin,
   parseBluetoothctlOutput,
   simulatedBleScan,
@@ -22,7 +23,7 @@ import {
 import { createServer } from 'node:net';
 import type { AddressInfo } from 'node:net';
 import { ByteQueue } from '../../core/src/transports/byteQueue.js';
-import { connect, type Transport } from '@pinout/core';
+import { connect, isBuiltinModule, type Transport } from '@pinout/core';
 
 function candidate(overrides: Partial<DiscoveredCandidate>): DiscoveredCandidate {
   return {
@@ -352,11 +353,13 @@ describe('BLE plugin (advertisement-only)', () => {
     expect(() => validateCandidate(esp)).not.toThrow();
 
     const mystery = candidates.find((c) => c.endpoint.address === 'aa:bb:cc:dd:ee:02')!;
-    expect(mystery.possibleIdentity[0]!.moduleId).toBe('unknown/ble');
+    expect(mystery.possibleIdentity[0]!.moduleId).toBe('unavailable/ble');
+    expect(mystery.possibleIdentity[0]!.unavailable).toBe(true);
     expect(mystery.confidence).toBeLessThanOrEqual(0.5);
 
     const nordic = candidates.find((c) => c.endpoint.address === 'aa:bb:cc:dd:ee:03')!;
-    expect(nordic.possibleIdentity[0]!.moduleId).toBe('unknown/ble-nordic-uart');
+    expect(nordic.possibleIdentity[0]!.moduleId).toBe('unavailable/ble-nordic-uart');
+    expect(nordic.possibleIdentity[0]!.unavailable).toBe(true);
     expect(nordic.confidence).toBeLessThanOrEqual(0.5);
   });
 
@@ -412,7 +415,18 @@ Device BB:BB:BB:BB:BB:BB Other Device
     expect(run.errors).toEqual([]);
     expect(run.pluginsRun).toEqual(['ble']);
     expect(run.candidates).toHaveLength(1);
-    expect(run.candidates[0]!.possibleIdentity[0]!.moduleId).toBe('pinout/bridge');
+    expect(run.candidates[0]!.possibleIdentity[0]!.moduleId).toBe('pinout/board');
     expect(run.candidates[0]!.confidence).toBeLessThanOrEqual(0.5);
+  });
+
+  it('resolves every BLE_RULES moduleId in the builtin registry or marks it unavailable', () => {
+    expect(BLE_RULES.length).toBeGreaterThan(0);
+    for (const rule of BLE_RULES) {
+      if (rule.unavailable) {
+        expect(isBuiltinModule(rule.moduleId), rule.moduleId).toBe(false);
+        continue;
+      }
+      expect(isBuiltinModule(rule.moduleId), `BLE rule moduleId '${rule.moduleId}'`).toBe(true);
+    }
   });
 });

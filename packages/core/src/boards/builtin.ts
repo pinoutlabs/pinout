@@ -206,7 +206,7 @@ export const builtinBoards: BoardDescriptor[] = [
     gpioPins: [
       1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
     ],
-    adcPins: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    adcPins: [1, 2, 4, 5, 6, 7, 8, 9, 10],
     pwmPins: [
       1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
     ],
@@ -239,13 +239,14 @@ export const builtinBoards: BoardDescriptor[] = [
       vendorId: '303a',
       productId: '1001',
     },
-    firmwareTarget: 'esp32s3-devkit',
+    firmwareTarget: 'esp32-s3-devkitc-1',
     warnings: [
       'GPIO 26-32 are wired to SPI flash: never drive them.',
       'GPIO 33-37 are internal flash/PSRAM pins on octal-PSRAM modules and stay reserved.',
       'GPIO 0/3/45/46 are boot straps; 19/20 USB-JTAG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.',
       'The onboard addressable RGB LED is GPIO 38 (v1.1) or GPIO 48 (initial revision).',
       'The bridge transports protocol v1 over UART0 at 115200 baud.',
+      'firmwareTarget matches PlatformIO env esp32-s3-devkitc-1 (COMPILE_TESTED). Local alias esp32s3-devkit builds the same profile.',
     ],
     support: 'COMPILE_TESTED',
   },

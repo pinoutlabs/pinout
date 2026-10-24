@@ -8,7 +8,8 @@ import {
   type BoardDescriptor,
 } from '../src/boards/descriptors.js';
 
-const variantIds = ['esp32-s2-devkitc-1', 'esp32-s3-devkitc-1', 'esp32-c6-devkitc-1'] as const;
+/** Opt-in experimental family profiles (S3 is first-class COMPILE_TESTED). */
+const variantIds = ['esp32-s2-devkitc-1', 'esp32-c6-devkitc-1'] as const;
 
 function board(boardId: string): BoardDescriptor {
   const found = builtinBoards.find((entry) => entry.boardId === boardId);
@@ -31,6 +32,15 @@ const classic = board('esp32-devkit-v1');
 const s2 = board('esp32-s2-devkitc-1');
 const s3 = board('esp32-s3-devkitc-1');
 const c6 = board('esp32-c6-devkitc-1');
+
+describe('ESP32-S3 first-class target', () => {
+  it('uses the release PlatformIO env name as firmwareTarget', () => {
+    expect(s3.support).toBe('COMPILE_TESTED');
+    expect(s3.firmwareTarget).toBe('esp32-s3-devkitc-1');
+    expect(s3.adcPins).not.toContain(3);
+    expect(s3.reservedPins).toContain(3);
+  });
+});
 
 describe('ESP32 family variant boards', () => {
   it('gates every variant as EXPERIMENTAL until compile and HIL evidence exists', () => {
@@ -60,8 +70,10 @@ describe('ESP32 family variant boards', () => {
 
   it('maps each variant to a distinct firmware target', () => {
     expect(variants.map((variant) => variant.firmwareTarget)).toEqual([
-      'esp32s2-devkit', 'esp32s3-devkit', 'esp32c6-devkit',
+      'esp32s2-devkit',
+      'esp32c6-devkit',
     ]);
+    expect(s3.firmwareTarget).toBe('esp32-s3-devkitc-1');
   });
 
   it('keeps every reserved pin out of the usable list, including the first reserved pin', () => {
@@ -101,13 +113,14 @@ describe('ESP32 family variant boards', () => {
 
   it('advertises only real ADC1 pins per variant', () => {
     expect(s2.adcPins).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(s3.adcPins).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // GPIO 3 is a reserved strap on S3 — keep it out of usable ADC lists.
+    expect(s3.adcPins).toEqual([1, 2, 4, 5, 6, 7, 8, 9, 10]);
     expect(c6.adcPins).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(Math.max(...(c6.adcPins ?? []))).toBeLessThanOrEqual(6);
-    for (const variant of variants) {
-      for (const pin of variant.adcPins ?? []) {
-        expect(variant.gpioPins).toContain(pin);
-        expect(() => validateBoardAction(variant, 'gpio.analogRead', { pin })).not.toThrow();
+    for (const entry of [...variants, s3]) {
+      for (const pin of entry.adcPins ?? []) {
+        expect(entry.gpioPins).toContain(pin);
+        expect(() => validateBoardAction(entry, 'gpio.analogRead', { pin })).not.toThrow();
       }
     }
     expect(() => validateBoardAction(s2, 'gpio.analogRead', { pin: 11 })).toThrow(/ADC/);

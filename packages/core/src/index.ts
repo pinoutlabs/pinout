@@ -302,7 +302,12 @@ export {
 export type { BoardDescriptor } from './boards/descriptors.js';
 export type { ToolDefinition, ToolDanger } from './runtime/toolExport.js';
 export type { InvokeOptions } from './runtime/deviceInstance.js';
-export { getModule, listModules, registerModule } from './modules/registry.js';
+export {
+  getModule,
+  listModules,
+  registerModule,
+  isBuiltinModule,
+} from './modules/registry.js';
 export {
   esp32Module,
   esp32ModuleId,

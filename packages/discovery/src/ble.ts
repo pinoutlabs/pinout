@@ -37,7 +37,7 @@ export interface BleScanOptions {
 /** Read-only scanner. Must not connect or actuate. */
 export type BleScan = (options: BleScanOptions) => Promise<BleAdvertisement[]>;
 
-interface BleIdentityRule {
+export interface BleIdentityRule {
   testName?: RegExp;
   /** Normalized lowercase UUID (with or without dashes). */
   serviceUuid?: string;
@@ -46,10 +46,22 @@ interface BleIdentityRule {
   deviceClass?: string;
   confidence: number;
   reason: string;
+  /**
+   * When true, `moduleId` is a discovery hint only — it is not expected to
+   * resolve in the builtin module registry (no dangling installable id).
+   */
+  unavailable?: boolean;
 }
 
-/** Weak heuristics only — names and UUIDs are not device-confirmed handshakes. */
-const BLE_RULES: BleIdentityRule[] = [
+/**
+ * Weak heuristics only — names and UUIDs are not device-confirmed handshakes.
+ *
+ * Every `moduleId` must either exist in `@pinout/core` builtin modules or set
+ * `unavailable: true`. Do not reference installable-looking ids that are not
+ * registered (`pinout/micropython-bridge`, `pinout/bridge`, bare `unknown/*`
+ * without the unavailable flag).
+ */
+export const BLE_RULES: BleIdentityRule[] = [
   {
     testName: /esp32|espressif/i,
     moduleId: 'pinout/esp32',
@@ -60,7 +72,8 @@ const BLE_RULES: BleIdentityRule[] = [
   },
   {
     testName: /pico|raspberry\s*pi/i,
-    moduleId: 'pinout/micropython-bridge',
+    // Desk Pico path is USB CDC today; BLE name match is a weak hint only.
+    moduleId: 'pinout/board',
     vendor: 'Raspberry Pi',
     deviceClass: 'microcontroller',
     confidence: 0.45,
@@ -76,7 +89,7 @@ const BLE_RULES: BleIdentityRule[] = [
   },
   {
     testName: /pinout/i,
-    moduleId: 'pinout/bridge',
+    moduleId: 'pinout/board',
     vendor: 'Pinout',
     deviceClass: 'bridge',
     confidence: 0.5,
@@ -85,13 +98,15 @@ const BLE_RULES: BleIdentityRule[] = [
   {
     // Nordic UART Service — common on maker BLE bridges; still a weak signal.
     serviceUuid: '6e400001b5a3f393e0a9e50e24dcca9e',
-    moduleId: 'unknown/ble-nordic-uart',
+    moduleId: 'unavailable/ble-nordic-uart',
+    unavailable: true,
     confidence: 0.4,
     reason: 'advertisement lists Nordic UART Service UUID',
   },
   {
     serviceUuid: '0000ffe000001000800000805f9b34fb',
-    moduleId: 'unknown/ble-ffe0',
+    moduleId: 'unavailable/ble-ffe0',
+    unavailable: true,
     confidence: 0.35,
     reason: 'advertisement lists common 0xFFE0 vendor service UUID',
   },
@@ -288,6 +303,7 @@ export function advertisementToCandidate(ad: BleAdvertisement): DiscoveredCandid
           ...(rule.vendor !== undefined ? { vendor: rule.vendor } : {}),
           ...(rule.deviceClass !== undefined ? { deviceClass: rule.deviceClass } : {}),
           reason: rule.reason,
+          ...(rule.unavailable ? { unavailable: true } : {}),
         });
         confidence = Math.max(confidence, rule.confidence);
       }
@@ -309,6 +325,7 @@ export function advertisementToCandidate(ad: BleAdvertisement): DiscoveredCandid
           ...(rule.vendor !== undefined ? { vendor: rule.vendor } : {}),
           ...(rule.deviceClass !== undefined ? { deviceClass: rule.deviceClass } : {}),
           reason: rule.reason,
+          ...(rule.unavailable ? { unavailable: true } : {}),
         });
         confidence = Math.max(confidence, rule.confidence);
       }
@@ -317,7 +334,8 @@ export function advertisementToCandidate(ad: BleAdvertisement): DiscoveredCandid
 
   if (identities.length === 0) {
     identities.push({
-      moduleId: 'unknown/ble',
+      moduleId: 'unavailable/ble',
+      unavailable: true,
       reason: 'BLE advertisement with no matching name or service UUID signature',
     });
   }
