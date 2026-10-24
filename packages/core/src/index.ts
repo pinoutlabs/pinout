@@ -231,6 +231,7 @@ export {
   uninstallModule,
   inspectInstalledModule,
   readModulesIndex,
+  writeModulesIndex,
   type InstalledModuleRecord,
 } from './home/moduleStore.js';
 export {
@@ -245,6 +246,7 @@ export {
 export {
   resolvePinoutHome,
   resolveDevicesConfigPath,
+  moduleInstallDirectory,
   PINOUT_HOME_ENV,
   PINOUT_CONFIG_ENV,
 } from './home/paths.js';
@@ -302,7 +304,13 @@ export {
 export type { BoardDescriptor } from './boards/descriptors.js';
 export type { ToolDefinition, ToolDanger } from './runtime/toolExport.js';
 export type { InvokeOptions } from './runtime/deviceInstance.js';
-export { getModule, listModules, registerModule, isBuiltinModule } from './modules/registry.js';
+export {
+  getModule,
+  listModules,
+  registerModule,
+  unregisterModule,
+  isBuiltinModule,
+} from './modules/registry.js';
 export {
   esp32Module,
   esp32ModuleId,

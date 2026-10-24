@@ -51,6 +51,14 @@ These commands route through `pinoutd` and enforce centralized safety, leases, a
 | `disarm <deviceId> [--owner <name>]` | Disarm a registered device (daemon-routed) |
 | `operations [--device <id>]` | List tracked daemon operations and status |
 | `logs [--device <id>] [--limit <n>]` | Inspect the append-only daemon control journal |
+| `connector list` | List generated connectors |
+| `connector show <id>` | Show status, capabilities, safety, conformance report |
+| `connector generate --awareness <id>` | Generate + conformance gate (quarantine or candidate) |
+| `connector approve <id> --capabilities <csv> --ranges <json> [--by <who>]` | Human approval with policy ranges |
+| `connector install <id>` | Install approved connector (never auto) |
+| `connector reject <id> [--reason <text>]` | Reject / uninstall |
+
+See [connectors.md](connectors.md) for the pipeline rules.
 
 ## Direct developer and registry commands
 

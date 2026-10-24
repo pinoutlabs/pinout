@@ -9,6 +9,8 @@
   "references": [
     { "path": "../core" },
     { "path": "../awareness" },
-    { "path": "../discovery" }
+    { "path": "../discovery" },
+    { "path": "../generator" },
+    { "path": "../module-host" }
   ]
 }

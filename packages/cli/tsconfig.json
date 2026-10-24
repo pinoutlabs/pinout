@@ -8,6 +8,7 @@
   "include": ["src"],
   "references": [
     { "path": "../core" },
+    { "path": "../daemon" },
     { "path": "../generator" },
     { "path": "../discovery" },
     { "path": "../module-host" },

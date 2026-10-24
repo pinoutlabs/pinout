@@ -67,7 +67,12 @@ export type JournalEntryKind =
   | 'device.reconnected'
   | 'lease.acquired'
   | 'lease.released'
-  | 'lease.expired';
+  | 'lease.expired'
+  | 'connector.generated'
+  | 'connector.quarantined'
+  | 'connector.approved'
+  | 'connector.installed'
+  | 'connector.rejected';
 
 export interface JournalEntry {
   sequence: number;

@@ -35,6 +35,7 @@ import {
 } from './connectionArgs.js';
 import { runDoctor } from './doctor.js';
 import { registerDaemonCommands } from './daemonCommands.js';
+import { registerConnectorCommands } from './connectorCommands.js';
 import { registerRecordCommands } from './recordCommands.js';
 import { registerModuleIntegrityCommands } from './moduleIntegrityCommands.js';
 import { registerRegistryCommands } from './registryCommands.js';
@@ -175,6 +176,7 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
     );
 
   registerDaemonCommands(program, () => outputFor(program, io));
+  registerConnectorCommands(program, () => outputFor(program, io));
   registerRecordCommands(program, () => outputFor(program, io));
   registerModuleIntegrityCommands(findExistingCommand(program, 'module'), () =>
     outputFor(program, io),
