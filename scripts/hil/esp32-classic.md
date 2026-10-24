@@ -90,6 +90,17 @@ This document specifies the step-by-step physical verification procedure and evi
 4. Inspect device boot state: confirm device boots in a **DISARMED** state with outputs at safe levels.
 5. Verify that the device does **NOT** automatically resume actuation or re-energize outputs without a fresh handshake and explicit arming sequence.
 
+### Phase 9: Awareness + automatic connector (real hardware) — **NOT RUN**
+> Software demo (`npm run demo:awareness`) is **SIMULATED** only. Do **not** mark this phase verified until a dated `hardware/records/` entry exists. See also [`awareness-connectors.md`](./awareness-connectors.md).
+
+1. Attach a **known** Pinout firmware board; confirm awareness `IDENTIFIED` with the expected `moduleId` (passive discovery / hello — no auto-flash, no auto-arm).
+2. Attach or advertise an **unknown** BLE or MQTT endpoint with no matching module; confirm awareness `SEEN` / `UNKNOWN` evidence.
+3. Generate a connector; confirm quarantine is **read-only** and evidence ≤ `COMPILE_TESTED`.
+4. Attempt physical-output invoke **before** operator approval; confirm rejection (`SAFETY_APPROVAL_REQUIRED` or equivalent) and **no** GPIO/radio actuation.
+5. Operator performs an explicit **HUMAN APPROVES** step with documented numeric ranges; install; confirm still **disarmed**.
+6. Out-of-range invoke rejected; in-range invoke observed with independent instruments (not firmware ACK alone).
+7. Record results under `hardware/records/` — until then catalog/evidence remain non-`HARDWARE_VERIFIED`.
+
 ---
 
 ## 3. Fill-in Evidence Matrix Template

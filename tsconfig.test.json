@@ -4,5 +4,11 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["packages/*/src/**/*.ts", "packages/*/tests/**/*.ts"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/tests/**/*.ts",
+    "examples/awareness-connector-demo/src/**/*.ts",
+    "examples/awareness-connector-demo/test/**/*.ts",
+    "scripts/demo/**/*.ts"
+  ]
 }

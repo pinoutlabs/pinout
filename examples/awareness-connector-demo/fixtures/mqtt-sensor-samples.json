@@ -1,0 +1,31 @@
+{
+  "$schemaComment": "SIMULATED MQTT tele/SENSOR samples for an unknown room sensor. No live broker.",
+  "evidenceLevel": "SIMULATED",
+  "source": "fixture",
+  "broker": "mqtt://127.0.0.1:1883",
+  "samples": [
+    {
+      "topic": "tele/sim-room/SENSOR",
+      "payload": {
+        "Time": "2026-10-24T20:00:00",
+        "BME280": { "Temperature": 21.4, "Humidity": 48.2, "Pressure": 1012.6 }
+      }
+    },
+    {
+      "topic": "tele/sim-room/SENSOR",
+      "payload": {
+        "Time": "2026-10-24T20:01:00",
+        "BME280": { "Temperature": 21.5, "Humidity": 48.0, "Pressure": 1012.5 }
+      }
+    }
+  ],
+  "inferredCapabilities": [
+    {
+      "id": "environment.read",
+      "physicalOutput": false,
+      "params": {},
+      "confidence": 0.65,
+      "requiresHumanReview": true
+    }
+  ]
+}

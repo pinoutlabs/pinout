@@ -46,6 +46,7 @@ export default defineConfig({
     include: [
       'packages/*/tests/**/*.test.ts',
       'examples/external-module/*/test/**/*.test.ts',
+      'examples/awareness-connector-demo/test/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',

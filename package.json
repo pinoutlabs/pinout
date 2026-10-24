@@ -51,6 +51,7 @@
     "demo:physical-intelligence": "npm run build --silent && tsx examples/physical-intelligence.ts",
     "demo:generate-device": "npm run build --silent && tsx examples/generate-device.ts",
     "demo:coffee": "npm run build --silent && tsx examples/coffee-machine.ts",
+    "demo:awareness": "npm run build --silent && tsx scripts/demo/awareness.ts",
     "bench": "npm run build --silent && tsx scripts/benchmark.ts",
     "bench:mcp": "npm run build --silent && tsx scripts/benchmark-mcp.ts",
     "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts",
