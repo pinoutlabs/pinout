@@ -1,0 +1,39 @@
+{
+  "name": "@pinout/awareness",
+  "version": "0.0.1-alpha.1",
+  "description": "Device awareness — persistent observation registry, state machine, and HTTP client for Pinout. Discovery remains read-only; enrollment is never automatic.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinoutlabs/pinout.git"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@pinout/core": "0.0.1-alpha.1",
+    "@pinout/discovery": "0.0.1-alpha.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

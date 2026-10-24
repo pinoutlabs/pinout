@@ -3,9 +3,13 @@ import { BoardDiscovery } from './boardDiscovery.js';
 /**
  * pinoutd CLI entry point.
  *
- * Usage: pinoutd [--port 8787] [--host 127.0.0.1] [--token <t>] [--journal <path>]
+ * Usage:
+ *   pinoutd [--port 8787] [--host 127.0.0.1] [--token <t>] [--journal <path>]
+ *   pinoutd --discover [--mock-devices <file|preset>] [--network-probe host:port]
  *
  * Binds loopback only unless --host and --token are both provided explicitly.
+ * `--discover` enables read-only awareness (serial/usb/ble/mdns). Network probe
+ * stays opt-in. `--mock-devices` injects SIMULATED candidates (no hardware).
  */
 import process from 'node:process';
 import { randomBytes } from 'node:crypto';
@@ -19,6 +23,7 @@ import {
 } from '@pinout/core';
 import { startDaemon } from './start.js';
 import { DEFAULT_DAEMON_PORT, type DaemonConfig } from './httpServer.js';
+import { AwarenessService } from './awareness/service.js';
 
 interface ParsedArgs {
   port: number;
@@ -28,6 +33,8 @@ interface ParsedArgs {
   demo: boolean;
   discover: boolean;
   allowRemote: boolean;
+  mockDevices: string | undefined;
+  networkProbes: Array<{ host: string; port: number }>;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -39,6 +46,8 @@ function parseArgs(argv: string[]): ParsedArgs {
     demo: false,
     discover: false,
     allowRemote: false,
+    mockDevices: undefined,
+    networkProbes: [],
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -63,6 +72,25 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--discover':
         args.discover = true;
         break;
+      case '--mock-devices':
+        args.mockDevices = next;
+        args.discover = true;
+        i += 1;
+        break;
+      case '--network-probe': {
+        // Opt-in bounded probe: host:port (repeatable). Never a subnet scan.
+        if (!next || !next.includes(':')) {
+          throw new Error('--network-probe requires host:port');
+        }
+        const [host, portText] = next.split(':');
+        const port = Number.parseInt(portText ?? '', 10);
+        if (!host || !Number.isFinite(port)) {
+          throw new Error(`Invalid --network-probe '${next}' (expected host:port)`);
+        }
+        args.networkProbes.push({ host, port });
+        i += 1;
+        break;
+      }
       case '--demo':
         args.demo = true;
         break;
@@ -111,38 +139,76 @@ async function loadPersistedConfig(): Promise<{
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const persisted = await loadPersistedConfig();
-  const defaultJournalDir = join(resolvePinoutHome(), 'journal');
+  const pinoutHome = resolvePinoutHome();
+  const defaultJournalDir = join(pinoutHome, 'journal');
   await mkdir(defaultJournalDir, { recursive: true, mode: 0o700 });
   const { runtime, errors } = await createRuntimeFromConfig({
     includeDemoDefaults: args.demo,
     continueOnError: true,
   });
+
+  const journalPath = args.journalPath ?? join(defaultJournalDir, 'pinoutd.jsonl');
+
+  // Awareness runs whenever --discover or --mock-devices is set. Discovery is
+  // read-only; BoardDiscovery (serial open/handshake) remains a separate opt-in
+  // for bridge attachment and is NOT the awareness path.
+  const awareness =
+    args.discover || args.mockDevices
+      ? new AwarenessService({
+          home: pinoutHome,
+          ...(args.mockDevices ? { mockDevices: args.mockDevices } : {}),
+          ...(args.networkProbes.length > 0
+            ? {
+                network: {
+                  enabled: true,
+                  endpoints: args.networkProbes.map((endpoint) => ({
+                    ...endpoint,
+                    probe: 'pinout-daemon' as const,
+                  })),
+                },
+              }
+            : {}),
+          log: (message) => process.stderr.write(`${message}\n`),
+        })
+      : undefined;
+
   const daemon = await startDaemon(runtime, {
     ...(args.host ? { host: args.host } : {}),
     port: args.port,
     ...(args.token ? { token: args.token } : {}),
     ...(!args.token ? { token: persisted.config.token } : {}),
     ...(args.allowRemote ? { allowRemote: true } : {}),
-    journalPath: args.journalPath ?? join(defaultJournalDir, 'pinoutd.jsonl'),
+    journalPath,
     ...(persisted.config.safetyRules ? { safetyRules: persisted.config.safetyRules } : {}),
+    ...(awareness ? { awareness } : {}),
   });
 
   for (const failure of errors)
     process.stderr.write(`Device ${failure.deviceId}: ${String(failure.error)}\n`);
-  const discovery = args.discover
-    ? new BoardDiscovery(runtime, {
-        excludedPaths: readDevicesFile().devices.flatMap((d) =>
-          d.backend?.transport?.path ? [d.backend.transport.path] : [],
-        ),
-        log: (message) => process.stderr.write(`${message}\n`),
-      })
-    : undefined;
-  await discovery?.start();
+
+  // Legacy BoardDiscovery: opens serial and attaches esp32/uno bridges. Kept
+  // behind --discover for compatibility but awareness covers observation.
+  // Skip when --mock-devices is the only goal (no hardware open).
+  const boardDiscovery =
+    args.discover && !args.mockDevices
+      ? new BoardDiscovery(runtime, {
+          excludedPaths: readDevicesFile().devices.flatMap((d) =>
+            d.backend?.transport?.path ? [d.backend.transport.path] : [],
+          ),
+          log: (message) => process.stderr.write(`${message}\n`),
+        })
+      : undefined;
+  await boardDiscovery?.start();
 
   const where = daemon.socketPath ?? `http://${daemon.host}:${daemon.port}`;
   process.stdout.write(
     `pinoutd v${PINOUT_VERSION} listening on ${where}${args.allowRemote ? '' : ' (loopback only)'}\n`,
   );
+  if (awareness) {
+    process.stdout.write(
+      `Awareness enabled (read-only discovery${args.mockDevices ? `; mock=${args.mockDevices}` : ''}). GET /v1/awareness\n`,
+    );
+  }
   if (persisted.generated) {
     process.stdout.write(
       `Generated daemon token in ${persisted.path}; retrieve it from that 0600 file.\n`,
@@ -150,7 +216,7 @@ async function main(): Promise<void> {
   }
 
   const shutdown = async (): Promise<void> => {
-    await discovery?.close();
+    await boardDiscovery?.close();
     await daemon.close();
     process.exit(0);
   };

@@ -14,6 +14,13 @@ All notable changes to this project are documented here. The format follows [Kee
   [docs/evidence-levels.md](docs/evidence-levels.md).
 - **pinoutd board discovery Pico path**: USB VID `2e8a` allowlisted; accepts
   `micropython-bridge` firmware identity (SIMULATED serial tests; never auto-flash).
+- **Device awareness** (`@pinout/awareness` + `pinoutd --discover`, **SIMULATED** by default):
+  - Persistent `AwarenessRegistry` at `~/.pinout/awareness.json` (mode `0600`, atomic writes) with explicit state machine (`SEEN` → `IDENTIFIED` → `PENDING_ENROLL` → `ONLINE` → `STALE` → `OFFLINE`) and configurable staleness timeouts.
+  - Daemon runs read-only discovery plugins on a per-transport schedule; network probing stays opt-in (`--network-probe host:port`). Presence/health/support/transport mirrored onto core `DeviceGraph`.
+  - HTTP API: `GET /v1/awareness`, `GET /v1/awareness/:id`, `GET /v1/awareness/events` (SSE), `POST /v1/awareness/:id/enroll` (auth like other mutating routes; never arms/actuates; never auto-enrolls).
+  - Typed `AwarenessClient` (`list` / `get` / `subscribe` / `enroll`) for MCP and e2e consumers.
+  - `evidenceLevel` uses core `SupportLevel` (PR0). Docs: [docs/awareness.md](docs/awareness.md).
+  - `pinoutd --discover --mock-devices <file|preset>` injects simulated serial/BLE/mDNS/MQTT plus an UNKNOWN device (no matching module).
 - **ESP32 BLE GATT transport** (`@pinout/core`, **SIMULATED**): `bleGattTransport` + injectable `BleGattSession` carrying Pinout NDJSON over a fixed RX-write / TX-notify GATT layout (`pinoutBleGattUuids`). In-process `createSimulatedBleGattBridge()` pairs the host path with `simulatedEsp32` and ATT-sized TX chunking for CI without a radio. Factory type `simulated-ble-gatt`. Docs: [docs/ble-gatt.md](docs/ble-gatt.md).
 - **ESP32 BLE bridge sketch** (`firmware/esp32-ble-bridge`, **COMPILE_TESTED** via `pio run -e esp32dev-ble`; **not** HARDWARE_VERIFIED): minimal GATT server advertising the same UUIDs with a desk bring-up protocol subset (`sys.*`, `gpio.mode` / `write` / `read`). No flash/HIL record. Advertisement-only BLE discovery lives separately in `@pinout/discovery` (never connects or writes GATT).
 - **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):

@@ -29,6 +29,9 @@
       "path": "packages/discovery"
     },
     {
+      "path": "packages/awareness"
+    },
+    {
       "path": "packages/protocols-grbl"
     },
     {

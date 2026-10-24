@@ -31,7 +31,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@pinout/awareness": "0.0.1-alpha.1",
     "@pinout/core": "0.0.1-alpha.1",
+    "@pinout/discovery": "0.0.1-alpha.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {

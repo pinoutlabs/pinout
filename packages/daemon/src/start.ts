@@ -1,6 +1,7 @@
 import type { DaemonConfig } from './httpServer.js';
 import { DaemonContext, DaemonHttpServer } from './httpServer.js';
 import type { PinoutRuntime } from '@pinout/core';
+import type { AwarenessService } from './awareness/service.js';
 
 export interface RunningDaemon {
   host: string;
@@ -8,6 +9,7 @@ export interface RunningDaemon {
   socketPath?: string;
   context: DaemonContext;
   server: DaemonHttpServer;
+  awareness?: AwarenessService;
   close(): Promise<void>;
 }
 
@@ -21,6 +23,10 @@ export async function startDaemon(
 ): Promise<RunningDaemon> {
   const context = new DaemonContext(runtime, config);
   await context.ready;
+  if (config.awareness) {
+    config.awareness.attachJournal(context.journal);
+    await config.awareness.start();
+  }
   const server = new DaemonHttpServer(context);
   const address = await server.listen(config);
 
@@ -28,7 +34,9 @@ export async function startDaemon(
     ...address,
     context,
     server,
+    ...(config.awareness ? { awareness: config.awareness } : {}),
     close: async () => {
+      await config.awareness?.stop();
       await server.close();
       await runtime.close();
     },

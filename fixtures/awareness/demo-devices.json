@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "devices": [
+    {
+      "transport": "serial",
+      "endpoint": "/dev/cu.fixture-esp32",
+      "vid": "303a",
+      "pid": "1001",
+      "vendor": "Espressif",
+      "moduleId": "pinout/esp32",
+      "deviceClass": "microcontroller",
+      "firmware": "esp32-bridge",
+      "version": "0.1.0-fixture",
+      "confidence": 0.5,
+      "interfaces": ["serial"]
+    },
+    {
+      "transport": "ble",
+      "endpoint": "de:ad:be:ef:00:01",
+      "mac": "de:ad:be:ef:00:01",
+      "advertisedName": "Fixture-BLE",
+      "uuids": ["6e700001-b5a3-f393-e0a9-e50e24dcca9e"],
+      "moduleId": "pinout/esp32",
+      "confidence": 0.5,
+      "interfaces": ["ble"]
+    },
+    {
+      "transport": "usb",
+      "endpoint": "usb:abcd:ef01",
+      "vid": "abcd",
+      "pid": "ef01",
+      "moduleId": "unknown/usb",
+      "unknown": true,
+      "advertisedName": "UNKNOWN-Fixture",
+      "confidence": 0.25,
+      "interfaces": ["usb"]
+    }
+  ]
+}

@@ -38,6 +38,7 @@ import {
   type ReconciliationResolution,
   runtimeToAgentTools,
 } from '@pinout/core';
+import type { AwarenessService } from './awareness/service.js';
 
 export interface DaemonConfig {
   host?: string;
@@ -54,6 +55,8 @@ export interface DaemonConfig {
   safetyRules?: SafetyRule[];
   /** Require an exclusive caller lease for physical outputs. Defaults to true. */
   requireLeases?: boolean;
+  /** Optional device-awareness service (discovery + persistent registry). */
+  awareness?: AwarenessService;
 }
 
 export const DEFAULT_DAEMON_PORT = 8787;
@@ -104,6 +107,7 @@ export class DaemonContext {
   readonly journal: Journal;
   readonly streams: StreamBus;
   readonly events: EventHub;
+  readonly awareness: AwarenessService | undefined;
   readonly startedAt: number;
   readonly ready: Promise<void>;
 
@@ -112,6 +116,7 @@ export class DaemonContext {
     this.startedAt = Date.now();
     this.events = new EventHub();
     this.streams = new StreamBus();
+    this.awareness = config.awareness;
 
     this.journal = new Journal(
       config.journalPath ? { storage: new FileJournalStorage(config.journalPath) } : {},
@@ -793,6 +798,56 @@ export class DaemonHttpServer {
       for (const device of c.runtime.devices()) seen.add(device.moduleId);
       sendJson(res, 200, { modules: [...seen].sort().map((id) => ({ id })) });
     });
+
+    // -- Awareness (device observation registry; never actuates) -----------------
+    // Register /events and /:id/enroll before /:id so path params do not steal them.
+    this.route('GET', '/v1/awareness', async (c, _req, res) => {
+      const awareness = requireAwareness(c);
+      sendJson(res, 200, { devices: awareness.list() });
+    });
+
+    this.route('GET', '/v1/awareness/events', async (c, req, res) => {
+      const awareness = requireAwareness(c);
+      res.writeHead(200, {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        connection: 'keep-alive',
+      });
+      res.write(`data: ${JSON.stringify({ type: 'hello', at: Date.now() })}\n\n`);
+      const unsubscribe = awareness.subscribe((event) => {
+        res.write(
+          `data: ${JSON.stringify({
+            type: event.type,
+            record: event.record,
+            at: event.at,
+            ...(event.previousState !== undefined ? { previousState: event.previousState } : {}),
+          })}\n\n`,
+        );
+      });
+      req.on('close', () => {
+        unsubscribe();
+      });
+    });
+
+    this.route('GET', '/v1/awareness/:id', async (c, _req, res, match) => {
+      const awareness = requireAwareness(c);
+      const record = awareness.get(match.params.id!);
+      if (!record) throw notFound(`Awareness device '${match.params.id!}' not found.`);
+      sendJson(res, 200, record);
+    });
+
+    this.route('POST', '/v1/awareness/:id/enroll', async (c, _req, res, match, body) => {
+      const awareness = requireAwareness(c);
+      const result = awareness.enroll(match.params.id!, {
+        ...(typeof body?.moduleId === 'string' ? { moduleId: body.moduleId } : {}),
+        ...(typeof body?.deviceId === 'string' ? { deviceId: body.deviceId } : {}),
+      });
+      sendJson(res, 200, {
+        enrolled: true,
+        record: result.record,
+        device: { id: result.device.id, module: result.device.module },
+      });
+    });
   }
 
   /** Start listening. Returns the resolved address information. */
@@ -938,6 +993,15 @@ function requiredString(body: Record<string, unknown> | undefined, field: string
     throw new ValidationError(`Body field '${field}' is required and must be a non-empty string.`);
   }
   return value;
+}
+
+function requireAwareness(ctx: DaemonContext): AwarenessService {
+  if (!ctx.awareness) {
+    throw new ValidationError(
+      'Device awareness is not enabled on this daemon. Start pinoutd with --discover.',
+    );
+  }
+  return ctx.awareness;
 }
 
 function notFound(message: string): Error {
