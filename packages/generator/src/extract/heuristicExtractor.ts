@@ -1,4 +1,5 @@
 import { evidenceFromMatch, findLineEvidence } from '../ingest/evidence.js';
+import { applyCapabilitySafetyInference } from '../safety/capabilitySafety.js';
 import { detectContradictions } from '../safety/provenance.js';
 import { inferDeviceClass, mapVendorSymbol } from '../semantic/capabilityMapper.js';
 import type {
@@ -68,7 +69,7 @@ export function extractHardwareIr(documents: SourceDocument[]): HardwareInterfac
   if (claims.length > 0) {
     ir.claims = claims;
   }
-  return ir;
+  return applyCapabilitySafetyInference(ir);
 }
 
 function inferDeviceMetadata(documents: SourceDocument[], text: string): HardwareDeviceInference {
@@ -139,12 +140,56 @@ function inferInterfaceList(documents: SourceDocument[], text: string): Hardware
     }
     interfaces.push(tcp);
   }
-  if (/serial|UART|RS-?232|baud/i.test(text)) {
+  if (/BLE|Bluetooth\s*LE|GATT/i.test(text)) {
+    interfaces.push({
+      kind: 'ble-gatt',
+      description: 'Bluetooth LE GATT inferred from documentation',
+      evidence: baseEvidence,
+      confidence: 0.8,
+    });
+  }
+  if (/\bMQTT\b|mosquitto|broker/i.test(text)) {
+    interfaces.push({
+      kind: 'mqtt',
+      description: 'MQTT inferred from documentation',
+      evidence: baseEvidence,
+      confidence: 0.8,
+    });
+  }
+  if (/mDNS|Bonjour|_http\._tcp|_pinout/i.test(text)) {
+    interfaces.push({
+      kind: 'mdns',
+      description: 'mDNS service discovery inferred from documentation',
+      evidence: baseEvidence,
+      confidence: 0.75,
+    });
+  }
+  if (/sys\.hello|serial-bridge|NDJSON.*bridge|pinout.*bridge/i.test(text)) {
+    interfaces.push({
+      kind: 'serial-bridge',
+      description: 'Pinout serial bridge (sys.hello) inferred from documentation',
+      baud: 115200,
+      evidence: baseEvidence,
+      confidence: 0.85,
+    });
+  }
+  if (
+    /serial|UART|RS-?232|baud/i.test(text) &&
+    !interfaces.some((i) => i.kind === 'serial-bridge')
+  ) {
     interfaces.push({
       kind: 'serial',
       baud: 115200,
       evidence: baseEvidence,
       confidence: 0.8,
+    });
+  }
+  if (/OpenAPI|swagger|https?:\/\//i.test(text) && !interfaces.some((i) => i.kind === 'http')) {
+    interfaces.push({
+      kind: 'http',
+      description: 'HTTP/OpenAPI inferred from documentation',
+      evidence: baseEvidence,
+      confidence: 0.7,
     });
   }
   if (interfaces.length === 0) {

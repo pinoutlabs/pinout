@@ -1,0 +1,9 @@
+{
+  "vendor": "Unknown",
+  "model": "weird-device",
+  "notes": "Ambiguous advertisement with no usable capability list or GATT map.",
+  "txt": {
+    "path": "/",
+    "ty": "mystery"
+  }
+}

@@ -17,6 +17,8 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Modules, Protocols & Robotics
 
 - [Modules](modules.md) and [build a module](build-a-module.md).
+- [Generator](generator.md) and [generator connectors](generator-connectors.md) — docs/SDK → IR → candidate modules; `generateConnector` for awareness/GATT/MQTT/mDNS (never auto-install).
+- [Generator safety](generator-safety.md) — untrusted candidates, default-deny, human review.
 - [Module registry](registry.md) — offline-first distribution with content hashes and optional Ed25519 publisher signatures.
 - [Room sensor (BME280 / DHT)](room-sensor.md) — external maker module for temp/humidity/pressure (`SIMULATED`).
 - [Lamp module](lamp.md) — commissioned semantic lamp actuator with explicit arming and evidence model.

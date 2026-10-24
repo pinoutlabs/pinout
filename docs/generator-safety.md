@@ -35,11 +35,16 @@ Sprint 4 modules start at `GENERATED` only. No centralized certification infrast
 
 - Auto-install modules
 - Auto-register devices
-- Open serial/TCP connections to hardware
+- Open serial/TCP/BLE/MQTT connections to hardware
 - Flash firmware
 - Execute generated wire-protocol code against real machines
 - Reverse-engineer arbitrary binaries
 - Claim "verified" or "certified" status
+- Claim evidence higher than `COMPILE_TESTED` (connectors use core `SupportLevel` / `mapFromGeneratorLifecycle` with `generated: true`; typically `SIMULATED`)
+
+## Connector default-deny
+
+For `physicalOutput` capabilities inferred from GATT writes, MQTT publishes, or bridge actuation lists, the generator emits **strict** JSON Schemas (`additionalProperties: false`) and **policy stubs** marked `requiresApproval` until a human supplies documented numeric ranges. Observed sample min/max values are recorded as uncertainties (data), never promoted to hard limits. See [generator-connectors.md](generator-connectors.md).
 
 ## Operator checklist
 

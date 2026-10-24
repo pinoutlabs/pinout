@@ -1,0 +1,19 @@
+{
+  "firmware": "esp32-bridge",
+  "version": "0.0.1-alpha.1",
+  "protocol": 1,
+  "boardId": "esp32-devkit-v1",
+  "vendor": "Espressif",
+  "model": "ESP32 DevKit serial-hello",
+  "capabilities": [
+    "sys.hello",
+    "sys.ping",
+    "sys.info",
+    "sys.arm",
+    "sys.disarm",
+    "gpio.write",
+    "gpio.read",
+    "gpio.mode",
+    "status.read"
+  ]
+}

@@ -117,7 +117,11 @@ export function validateGeneratedModuleLayout(directory: string): GeneratedModul
 
   return {
     directory: root,
-    packable: missingEntries.length === 0 && manifest !== null && manifest.id !== null && manifest.version !== null,
+    packable:
+      missingEntries.length === 0 &&
+      manifest !== null &&
+      manifest.id !== null &&
+      manifest.version !== null,
     requiredEntries,
     missingEntries,
     manifest,
