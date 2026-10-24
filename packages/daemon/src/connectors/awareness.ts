@@ -44,12 +44,16 @@ export function buildIrFromAwareness(record: AwarenessRecord): HardwareInterface
 
   const ifaceKind = mapTransportToInterface(record.transport);
 
+  const model =
+    record.identity.model ?? record.identity.advertisedName ?? record.identity.firmware;
   return {
     device: {
-      vendor: record.identity.vendor,
-      model: record.identity.model ?? record.identity.advertisedName ?? record.identity.firmware,
+      ...(record.identity.vendor !== undefined ? { vendor: record.identity.vendor } : {}),
+      ...(model !== undefined ? { model } : {}),
       deviceClass: record.identity.deviceClass ?? 'device.custom',
-      description: record.identity.endpoint,
+      ...(record.identity.endpoint !== undefined
+        ? { description: record.identity.endpoint }
+        : {}),
       confidence: record.confidence ?? 0.5,
       evidence: [],
     },

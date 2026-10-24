@@ -80,6 +80,11 @@ export class ConnectorPipeline {
     return listConnectorRecords(this.home);
   }
 
+  /** Full records for HTTP/MCP (`GET /v1/connectors` matches PR2 list shape). */
+  listRecords(): ConnectorRecord[] {
+    return listConnectorRecords(this.home).map((item) => this.get(item.id));
+  }
+
   get(connectorId: string): ConnectorRecord {
     const record = readConnectorRecord(connectorId, this.home);
     if (!record) {
@@ -273,7 +278,14 @@ export class ConnectorPipeline {
       contentHash: result.contentHash,
       approvedBy: result.record.approval?.approvedBy,
     });
+    // MCP PR2 watches /v1/events for connector_installed / connector.installed
+    // with connectorId + status (see packages/mcp isConnectorInstallEvent).
     this.publishEvent?.('connector.installed', {
+      connectorId: result.record.id,
+      ...(result.record.awarenessId !== undefined
+        ? { awarenessId: result.record.awarenessId }
+        : {}),
+      status: 'INSTALLED',
       connector: summarize(result.record),
       moduleId: result.record.moduleId,
     });

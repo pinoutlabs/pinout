@@ -47,6 +47,7 @@ import {
   type ConnectorPipelineOptions,
   type GenerateConnectorFn,
 } from './connectors/index.js';
+import { serializeConnectorRecord } from './connectors/serialize.js';
 
 export interface DaemonConfig {
   host?: string;
@@ -93,7 +94,13 @@ export interface DaemonEvent {
     | 'lease'
     | 'stream.opened'
     | 'stream.closed'
-    | 'connector';
+    | 'connector'
+    | 'connector.generated'
+    | 'connector.quarantined'
+    | 'connector.approved'
+    | 'connector.installed'
+    | 'connector.rejected'
+    | 'connector_installed';
   at: number;
   data: Record<string, unknown>;
 }
@@ -152,11 +159,41 @@ export class DaemonContext {
       home: this.pinoutHome,
       journal: this.journal,
       publishEvent: (kind, data) => {
+        // MCP watches /v1/events for kind `connector.installed` / `connector_installed`
+        // (see packages/mcp awarenessSurface startConnectorBusWatcher).
+        const eventKind =
+          kind === 'connector.installed'
+            ? ('connector.installed' as const)
+            : (kind as DaemonEvent['kind']);
+        const connectorStatus =
+          typeof data.status === 'string'
+            ? data.status
+            : kind === 'connector.installed'
+              ? 'INSTALLED'
+              : typeof (data.connector as { status?: string } | undefined)?.status === 'string'
+                ? (data.connector as { status: string }).status
+                : undefined;
         this.events.publish({
-          kind: 'connector',
+          kind: eventKind,
           at: Date.now(),
-          data: { event: kind, ...data },
+          data: {
+            event: kind,
+            ...data,
+            ...(connectorStatus !== undefined ? { status: connectorStatus } : {}),
+          },
         });
+        if (kind === 'connector.installed') {
+          // Alias matching MCP mock contract: kind connector_installed + status INSTALLED.
+          this.events.publish({
+            kind: 'connector_installed',
+            at: Date.now(),
+            data: {
+              event: 'connector_installed',
+              ...data,
+              status: 'INSTALLED',
+            },
+          });
+        }
       },
     };
     if (config.awarenessLookup !== undefined) {
@@ -900,38 +937,25 @@ export class DaemonHttpServer {
     });
 
     // -- Connectors (generate → quarantine → approve → install) -----------------
+    // Response shapes match packages/mcp GeneratedConnectorRecord /
+    // normalizeGeneratedConnector (PR2): { connector: { id, status, evidenceLevel, ... } }.
     this.route('POST', '/v1/connectors/generate', async (c, _req, res, _match, body) => {
       const awarenessId = requiredString(body, 'awarenessId');
       const connector = await c.connectors.generate(awarenessId);
-      sendJson(res, 201, { connector });
+      sendJson(res, 201, { connector: serializeConnectorRecord(connector) });
     });
 
     this.route('GET', '/v1/connectors', async (c, _req, res) => {
-      sendJson(res, 200, { connectors: c.connectors.list() });
+      // Full GeneratedConnectorRecord objects — MCP list_connectors maps
+      // payload.connectors through normalizeGeneratedConnector (PR2).
+      sendJson(res, 200, {
+        connectors: c.connectors.listRecords().map(serializeConnectorRecord),
+      });
     });
 
     this.route('GET', '/v1/connectors/:id', async (c, _req, res, match) => {
       const connector = c.connectors.get(match.params.id!);
-      sendJson(res, 200, {
-        connector: {
-          id: connector.id,
-          moduleId: connector.moduleId,
-          version: connector.version,
-          status: connector.status,
-          evidenceLevel: connector.evidenceLevel,
-          awarenessId: connector.awarenessId,
-          capabilities: connector.capabilities,
-          safety: connector.safety,
-          report: connector.report,
-          approval: connector.approval,
-          rejection: connector.rejection,
-          contentHash: connector.contentHash,
-          manifestHash: connector.manifestHash,
-          createdAt: connector.createdAt,
-          updatedAt: connector.updatedAt,
-          installPath: connector.installPath,
-        },
-      });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
     });
 
     this.route('POST', '/v1/connectors/:id/approve', async (c, _req, res, match, body) => {
@@ -952,12 +976,12 @@ export class DaemonHttpServer {
         ranges: ranges as Record<string, Record<string, { min: number; max: number }>>,
         ...(typeof body?.approvedBy === 'string' ? { approvedBy: body.approvedBy } : {}),
       });
-      sendJson(res, 200, { connector });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
     });
 
     this.route('POST', '/v1/connectors/:id/install', async (c, _req, res, match) => {
       const connector = await c.connectors.install(match.params.id!);
-      sendJson(res, 200, { connector });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
     });
 
     this.route('POST', '/v1/connectors/:id/reject', async (c, _req, res, match, body) => {
@@ -965,7 +989,7 @@ export class DaemonHttpServer {
         ...(typeof body?.reason === 'string' ? { reason: body.reason } : {}),
         ...(typeof body?.rejectedBy === 'string' ? { rejectedBy: body.rejectedBy } : {}),
       });
-      sendJson(res, 200, { connector });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
     });
   }
 

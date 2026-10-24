@@ -41,6 +41,11 @@ export {
 export { installConnectorModule, uninstallConnectorModule } from './install.js';
 
 export {
+  serializeConnectorRecord,
+  serializeConnectorListItem,
+} from './serialize.js';
+
+export {
   connectorsRoot,
   connectorDirectory,
   connectorModuleDirectory,

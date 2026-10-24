@@ -39,8 +39,8 @@ All mutating routes require the daemon bearer token when configured.
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | `POST` | `/v1/connectors/generate` | `{ awarenessId }` | Builds IR from the awareness record, calls `generateConnector`, stores result |
-| `GET` | `/v1/connectors` | — | List summaries |
-| `GET` | `/v1/connectors/:id` | — | Capabilities, safety flags, report, status, evidenceLevel |
+| `GET` | `/v1/connectors` | — | Full records (`id`, `status`, `evidenceLevel`, `capabilities`, `safetyFlags`, …) for MCP `list_connectors` |
+| `GET` | `/v1/connectors/:id` | — | Same shape wrapped as `{ connector }` |
 | `POST` | `/v1/connectors/:id/approve` | `{ capabilities, ranges, approvedBy? }` | Human step; journals who/when |
 | `POST` | `/v1/connectors/:id/install` | `{}` | Persist + hot-register |
 | `POST` | `/v1/connectors/:id/reject` | `{ reason?, rejectedBy? }` | Uninstalls if needed |

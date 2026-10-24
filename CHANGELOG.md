@@ -8,7 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - **Connector pipeline (PR4)** (`@pinout/daemon`, `@pinout/cli`): human-gated
   generate → conformance quarantine → approve → install path for generated
-  modules. Daemon routes `POST/GET /v1/connectors…`, storage under
+  modules. Daemon routes `POST/GET /v1/connectors…` match MCP PR2
+  `GeneratedConnectorRecord` shapes (`safetyFlags`, capability `safety`,
+  `{ connector }` / `{ connectors }`); SSE emits `connector.installed` and
+  `connector_installed` for tool-cache invalidation. Storage under
   `~/.pinout/connectors/`, integrity-checked install into `~/.pinout/modules`
   with hot `runtimeModules` registration and `connector.*` journal events.
   CLI: `pinout connector list|show|generate|approve|install|reject`. Malicious

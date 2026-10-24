@@ -109,22 +109,49 @@ describe('connector pipeline', () => {
         id: string;
         status: string;
         evidenceLevel: SupportLevel;
-        capabilities: Array<{ name: string; physicalOutput: boolean; enabled: boolean }>;
+        awarenessId?: string;
+        capabilities: Array<{
+          name: string;
+          physicalOutput: boolean;
+          enabled: boolean;
+          safety?: { physicalOutput: boolean; reversible: boolean };
+        }>;
         safety: { physicalOutputsDisabled: boolean };
+        safetyFlags: { physicalOutputBlockedUntilHumanApproval: boolean };
+        report: Record<string, unknown>;
       };
     };
     expect(generated.connector.status).toBe('QUARANTINED');
     expect(generated.connector.evidenceLevel).not.toBe('HARDWARE_VERIFIED');
+    expect(generated.connector.awarenessId).toBe('aware-sensor');
     expect(generated.connector.safety.physicalOutputsDisabled).toBe(true);
+    expect(generated.connector.safetyFlags.physicalOutputBlockedUntilHumanApproval).toBe(true);
+    expect(generated.connector.report).toEqual(expect.objectContaining({ passed: true }));
     const heater = generated.connector.capabilities.find(
       (capability) => capability.name === 'heater.set',
     );
     expect(heater?.physicalOutput).toBe(true);
     expect(heater?.enabled).toBe(false);
+    expect(heater?.safety).toEqual({ physicalOutput: true, reversible: expect.any(Boolean) });
 
     const list = await fetch(`${base}/v1/connectors`);
     expect(list.status).toBe(200);
-    expect(((await list.json()) as { connectors: unknown[] }).connectors.length).toBe(1);
+    const listed = (await list.json()) as {
+      connectors: Array<{
+        id: string;
+        status: string;
+        evidenceLevel: SupportLevel;
+        safetyFlags?: { physicalOutputBlockedUntilHumanApproval: boolean };
+        capabilities?: unknown[];
+      }>;
+    };
+    expect(listed.connectors).toHaveLength(1);
+    expect(listed.connectors[0]).toMatchObject({
+      id: generated.connector.id,
+      status: 'QUARANTINED',
+      safetyFlags: { physicalOutputBlockedUntilHumanApproval: true },
+    });
+    expect(Array.isArray(listed.connectors[0]?.capabilities)).toBe(true);
 
     const approve = await fetch(`${base}/v1/connectors/${generated.connector.id}/approve`, {
       method: 'POST',
