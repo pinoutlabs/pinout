@@ -26,6 +26,8 @@ export interface GenerateConnectorInput {
   overwrite?: boolean;
   compileCheck?: boolean;
   deviceClass?: string;
+  /** Awareness record id that triggered generation (demo fixtures / overrides). */
+  awarenessId?: string;
 }
 
 export interface GenerateConnectorCapability {

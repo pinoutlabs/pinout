@@ -1,6 +1,6 @@
 /**
- * Boots real pinoutd awareness (--mock-devices), PR3 generateConnector lifecycle
- * stub, and a unified HTTP facade so createDaemonMcpServer (PR2) can use one baseUrl.
+ * Boots real pinoutd with --mock-devices awareness + PR4 ConnectorPipeline on
+ * the same baseUrl (generate → quarantine → approve → install).
  */
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -10,8 +10,11 @@ import { randomBytes } from 'node:crypto';
 import { PinoutRuntime } from '@pinout/core';
 import { AwarenessClient } from '@pinout/awareness';
 import { AwarenessService, startDaemon, type RunningDaemon } from '@pinout/daemon';
-import { startConnectorStub, type RunningConnectorStub } from './connectorStub.js';
-import { startDemoFacade, type RunningDemoFacade } from './demoFacade.js';
+import { ConnectorApi } from './connectorApi.js';
+import {
+  createFixtureGenerateConnectorFn,
+  loadConnectorEvidence,
+} from './fixtureGenerate.js';
 
 const demoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,17 +28,17 @@ export function defaultConnectorEvidencePath(): string {
 
 export interface DemoStack {
   label: 'SIMULATED';
-  mode: 'real-awareness+generator+real-mcp+stub-lifecycle';
+  mode: 'real-awareness+generator+real-mcp+real-connectors';
   home: string;
   token: string;
   daemon: RunningDaemon;
-  /** Unified base URL for createDaemonMcpServer (awareness + connectors). */
+  /** Single pinoutd base URL for awareness, connectors, devices, and MCP. */
   baseUrl: string;
   awarenessBaseUrl: string;
   connectorsBaseUrl: string;
   awareness: AwarenessClient;
-  connectors: RunningConnectorStub;
-  facade: RunningDemoFacade;
+  connectors: ConnectorApi;
+  runtime: PinoutRuntime;
   close(): Promise<void>;
 }
 
@@ -50,6 +53,9 @@ export async function startDemoStack(options: StartDemoStackOptions = {}): Promi
   const token = options.token ?? `demo-${randomBytes(8).toString('hex')}`;
   const mockDevicesPath = options.mockDevicesPath ?? defaultMockDevicesPath();
   const connectorEvidencePath = options.connectorEvidencePath ?? defaultConnectorEvidencePath();
+
+  const evidence = await loadConnectorEvidence(connectorEvidencePath);
+  const generateConnectorFn = createFixtureGenerateConnectorFn(evidence);
 
   const runtime = new PinoutRuntime();
   const awarenessService = new AwarenessService({
@@ -68,38 +74,31 @@ export async function startDemoStack(options: StartDemoStackOptions = {}): Promi
   const daemon = await startDaemon(runtime, {
     port: 0,
     token,
-    journalPath: join(home, 'journal.jsonl'),
+    pinoutHome: home,
+    journalPath: join(home, 'journal', 'pinoutd.jsonl'),
     requireLeases: false,
     awareness: awarenessService,
+    generateConnectorFn,
+    // Demo/CI: in-process conformance (sandbox worker still exists for production).
+    connectorConformance: { skipSandbox: true },
   });
 
-  const connectors = await startConnectorStub({
-    evidencePath: connectorEvidencePath,
-    token,
-  });
-
-  const awarenessBaseUrl = `http://127.0.0.1:${daemon.port}`;
-  const facade = await startDemoFacade({
-    awarenessBaseUrl,
-    connectorsBaseUrl: connectors.baseUrl,
-    token,
-  });
+  const baseUrl = `http://127.0.0.1:${daemon.port}`;
+  const connectors = new ConnectorApi({ baseUrl, token, runtime });
 
   return {
     label: 'SIMULATED',
-    mode: 'real-awareness+generator+real-mcp+stub-lifecycle',
+    mode: 'real-awareness+generator+real-mcp+real-connectors',
     home,
     token,
     daemon,
-    baseUrl: facade.baseUrl,
-    awarenessBaseUrl,
-    connectorsBaseUrl: connectors.baseUrl,
-    awareness: new AwarenessClient({ baseUrl: awarenessBaseUrl, token }),
+    baseUrl,
+    awarenessBaseUrl: baseUrl,
+    connectorsBaseUrl: baseUrl,
+    awareness: new AwarenessClient({ baseUrl, token }),
     connectors,
-    facade,
+    runtime,
     close: async () => {
-      await facade.close();
-      await connectors.close();
       await daemon.close();
       await rm(home, { recursive: true, force: true });
     },

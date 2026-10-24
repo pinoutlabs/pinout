@@ -4,6 +4,7 @@ import {
   ensurePinoutHome,
   installModuleFromPath,
   loadModuleFromDirectory,
+  mergeModulePolicies,
   moduleInstallDirectory,
   policiesFromDeclarative,
   readModulesIndex,
@@ -80,7 +81,16 @@ export async function installConnectorModule(
   writeModulesIndex({ schemaVersion: 1, modules: nextModules }, home);
 
   const { module } = await loadModuleFromDirectory(installed.installPath);
-  registerModule(module);
+  // Merge human-approved numericRange rules into the registered module even when
+  // the generator entrypoint is dist/index.js (sidecar alone is not loaded).
+  const approvalRules = policiesFromDeclarative(
+    declarativePoliciesFromApproval(connector.approval),
+  );
+  const moduleWithApproval: PinoutModuleDefinition = {
+    ...module,
+    policies: mergeModulePolicies(module.policies ?? [], approvalRules),
+  };
+  registerModule(moduleWithApproval);
 
   const updated: ConnectorRecord = {
     ...connector,
@@ -93,11 +103,24 @@ export async function installConnectorModule(
 
   return {
     record: updated,
-    module,
+    module: moduleWithApproval,
     installPath: installed.installPath,
     contentHash: hashes.contentHash,
     manifestHash: hashes.manifestHash,
   };
+}
+
+function declarativePoliciesFromApproval(approval: ConnectorApproval): DeclarativePolicyMap {
+  const declarative: DeclarativePolicyMap = {};
+  for (const capability of approval.capabilities) {
+    const ranges = approval.ranges[capability] ?? {};
+    const constraints: DeclarativePolicyMap[string]['constraints'] = {};
+    for (const [param, bounds] of Object.entries(ranges)) {
+      constraints[param] = { min: bounds.min, max: bounds.max };
+    }
+    declarative[capability] = { constraints };
+  }
+  return declarative;
 }
 
 export function uninstallConnectorModule(
@@ -130,15 +153,7 @@ export function applyApprovalPoliciesToModuleDir(
   modulePath: string,
   approval: ConnectorApproval,
 ): PolicyRule[] {
-  const declarative: DeclarativePolicyMap = {};
-  for (const capability of approval.capabilities) {
-    const ranges = approval.ranges[capability] ?? {};
-    const constraints: DeclarativePolicyMap[string]['constraints'] = {};
-    for (const [param, bounds] of Object.entries(ranges)) {
-      constraints[param] = { min: bounds.min, max: bounds.max };
-    }
-    declarative[capability] = { constraints };
-  }
+  const declarative = declarativePoliciesFromApproval(approval);
   const rules = policiesFromDeclarative(declarative);
   const sidecarPath = join(modulePath, 'pinout.connector.approval.json');
   mkdirSync(dirname(sidecarPath), { recursive: true });

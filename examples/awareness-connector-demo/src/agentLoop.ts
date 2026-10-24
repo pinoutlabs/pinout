@@ -39,7 +39,7 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
   const transcript: string[] = [
     '# Awareness → connector MCP agent transcript',
     '',
-    '> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices + generateConnector fixtures. Pinout has never run on real hardware in this repository.',
+    '> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices, generateConnector fixtures, and real `/v1/connectors*` (PR4). Pinout has never run on real hardware in this repository.',
     '',
     `Generated: ${new Date().toISOString()}`,
     '',
@@ -132,7 +132,7 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
     transcript.push('- Awareness from real pinoutd `--mock-devices` (PR1).');
     transcript.push('- MCP tools from real `createDaemonMcpServer` (PR2).');
     transcript.push('- Connectors from `@pinout/generator` `generateConnector` + fixtures (PR3).');
-    transcript.push('- Approve/install HTTP still facade-stubbed until PR4.');
+    transcript.push('- Lifecycle via real pinoutd `/v1/connectors*` (PR4) — generate → quarantine → approve → install.');
     transcript.push('- Evidence level for generated connectors ≤ `COMPILE_TESTED`.');
     transcript.push('- Nothing auto-armed.');
   } finally {

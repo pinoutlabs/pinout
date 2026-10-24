@@ -1,5 +1,5 @@
 {
-  "$schemaComment": "Maps awareness mock ids → PR3 generator fixtures (repo-root relative). Used by the demo connector stub until PR4 installs the daemon /v1/connectors pipeline.",
+  "$schemaComment": "Maps awareness mock ids → PR3 generator fixtures (repo-root relative). Consumed by startDemoStack generateConnectorFn when calling real pinoutd /v1/connectors/generate.",
   "byAwarenessId": {
     "mock-ble-unknown-lamp": {
       "source": "gatt",

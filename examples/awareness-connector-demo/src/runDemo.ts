@@ -3,22 +3,16 @@
  *
  *   npm run demo:awareness
  *
- * Real pinoutd awareness (--mock-devices) + PR3 generateConnector fixtures.
- * Connector approve/install HTTP remains a labeled stub until PR4.
+ * Real pinoutd awareness (--mock-devices) + PR3 generateConnector fixtures +
+ * PR4 /v1/connectors* pipeline on the same daemon.
  */
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runScriptedAgentLoop } from './agentLoop.js';
-import {
-  approveStubConnector,
-  generateStubConnector,
-  installStubConnector,
-  invokeStubConnector,
-} from './connectorStub.js';
+import type { DaemonConnectorRecord } from './connectorApi.js';
 import { startDemoStack, type DemoStack } from './startDemoStack.js';
-import type { StubConnectorRecord, SupportLevel } from './types.js';
-import { evidenceExceeds } from './types.js';
+import { evidenceExceeds, type SupportLevel } from './types.js';
 
 const demoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,6 +43,21 @@ function assertEvidenceNotAboveCompile(level: SupportLevel): void {
   }
 }
 
+function usedPr3Generator(connector: DaemonConnectorRecord): boolean {
+  const generator = connector.report.generator;
+  if (!generator || typeof generator !== 'object') return false;
+  const blob = JSON.stringify(generator);
+  return blob.includes('generateConnector') || blob.includes('moduleId');
+}
+
+function notAutoArmed(connector: DaemonConnectorRecord): boolean {
+  return (
+    connector.safety.autoActuateForbidden === true &&
+    connector.safety.autoFlashForbidden === true &&
+    connector.safety.autoInstallForbidden === true
+  );
+}
+
 export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
   const scenario = JSON.parse(await readFile(join(demoRoot, 'scenario.json'), 'utf8')) as {
     honesty: string[];
@@ -57,19 +66,16 @@ export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
 
   const stack = await startDemoStack();
   const assertions: Record<string, boolean> = {};
-  const stubbed = [
-    'daemon /v1/connectors* approve|install|reject (PR4) — lifecycle stub behind demo facade',
-  ];
+  const stubbed: string[] = [];
 
   try {
     log(
       'BOOT',
       [
-        `Real pinoutd awareness @ ${stack.awarenessBaseUrl}`,
-        `Connector stub (generateConnector + lifecycle) @ ${stack.connectorsBaseUrl}`,
-        `Unified MCP facade @ ${stack.baseUrl}`,
+        `Real pinoutd @ ${stack.baseUrl}`,
         `mode=${stack.mode} label=${stack.label}`,
         `mock-devices=${join(demoRoot, 'fixtures', 'mock-devices.json')}`,
+        'Routes: /v1/awareness* + /v1/connectors* (PR4) + /v1/devices*',
       ].join('\n'),
     );
 
@@ -78,19 +84,18 @@ export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
     const unknown = devices.find((d) => d.id === UNKNOWN_BLE_ID);
     const unknownModule = unknown?.moduleId ?? unknown?.identity.guessedModuleId ?? '';
 
-    // Known modules land in PENDING_ENROLL (never auto-enroll).
     assertions.knownAutoRecognized = Boolean(
       known &&
-      known.moduleId === 'pinout/esp32' &&
-      (known.state === 'PENDING_ENROLL' || known.state === 'IDENTIFIED') &&
-      known.evidenceLevel === 'SIMULATED' &&
-      known.mock === true,
+        known.moduleId === 'pinout/esp32' &&
+        (known.state === 'PENDING_ENROLL' || known.state === 'IDENTIFIED') &&
+        known.evidenceLevel === 'SIMULATED' &&
+        known.mock === true,
     );
     assertions.unknownAppeared = Boolean(
       unknown &&
-      unknown.mock === true &&
-      unknownModule.startsWith('unknown/') &&
-      (unknown.state === 'IDENTIFIED' || unknown.state === 'SEEN'),
+        unknown.mock === true &&
+        unknownModule.startsWith('unknown/') &&
+        (unknown.state === 'IDENTIFIED' || unknown.state === 'SEEN'),
     );
 
     log(
@@ -103,24 +108,26 @@ export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
         .join('\n'),
     );
 
-    const connector = await generateStubConnector(stack.connectors.store, UNKNOWN_BLE_ID);
+    const connector = await stack.connectors.generate(UNKNOWN_BLE_ID);
     assertEvidenceNotAboveCompile(connector.evidenceLevel);
     assertions.generatedQuarantined = connector.status === 'QUARANTINED';
     assertions.evidenceCapped = !evidenceExceeds(connector.evidenceLevel, 'COMPILE_TESTED');
-    assertions.notAutoArmed = connector.armed === false;
-    assertions.usedPr3Generator = connector.report.notes.some((n) =>
-      n.includes('generateConnector'),
-    );
+    assertions.notAutoArmed = notAutoArmed(connector);
+    assertions.usedPr3Generator = usedPr3Generator(connector);
+    assertions.physicalOutputsBlocked =
+      connector.safety.physicalOutputsDisabled === true &&
+      connector.safetyFlags?.physicalOutputBlockedUntilHumanApproval === true;
+
     log(
-      'GENERATE CONNECTOR (PR3 generateConnector)',
-      `id=${connector.id} moduleId=${connector.moduleId} status=${connector.status} evidence=${connector.evidenceLevel}\npendingApprovals=${connector.pendingApprovals.join(', ')}\n${connector.report.notes.join('\n')}`,
+      'GENERATE CONNECTOR (POST /v1/connectors/generate)',
+      `id=${connector.id} moduleId=${connector.moduleId} status=${connector.status} evidence=${connector.evidenceLevel}\n${JSON.stringify(connector.report.generator ?? {}, null, 2)}`,
     );
 
-    const statusOk = invokeStubConnector(stack.connectors.store, connector.id, READ_CAP, {});
+    const statusOk = await stack.connectors.invokeCapability(connector.id, READ_CAP, {});
     assertions.readOnlyStatusOk = statusOk.ok === true;
     log('READ-ONLY USE', JSON.stringify(statusOk, null, 2));
 
-    const beforeApprove = invokeStubConnector(stack.connectors.store, connector.id, WRITE_CAP, {
+    const beforeApprove = await stack.connectors.invokeCapability(connector.id, WRITE_CAP, {
       value: '28',
     });
     assertions.physicalBeforeApproveRejected =
@@ -131,31 +138,36 @@ export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
       'HUMAN APPROVES',
       [
         '>>> HUMAN APPROVES <<<',
-        'Operator reviews quarantine report and unlocks physical-output ranges:',
+        'Operator reviews quarantine report and unlocks physical-output ranges via POST /v1/connectors/:id/approve:',
         `  ${NOTIFY_CAP}.value: { min: 0, max: 80 }`,
-        `  also unlock: ${WRITE_CAP}, ${READ_CAP}`,
+        `  also unlock read-only: ${READ_CAP}`,
         'Nothing is auto-armed. Approval is explicit and scripted for this demo.',
       ].join('\n'),
     );
-    approveStubConnector(stack.connectors.store, connector.id, {
-      capabilities: [READ_CAP, WRITE_CAP, NOTIFY_CAP],
+    const approved = await stack.connectors.approve(connector.id, {
+      capabilities: [READ_CAP, NOTIFY_CAP],
       ranges: { [NOTIFY_CAP]: { value: { min: 0, max: 80 } } },
+      approvedBy: 'demo-operator',
     });
-    assertions.approved = connector.status === 'APPROVED';
+    assertions.approved = approved.status === 'APPROVED';
+    assertions.stillNotArmedAfterApprove = notAutoArmed(approved);
 
-    installStubConnector(stack.connectors.store, connector.id);
-    assertions.installed = connector.status === 'INSTALLED';
-    assertions.stillNotArmed = connector.armed === false;
-    log('INSTALL (stub until PR4)', `status=${connector.status} armed=${connector.armed}`);
+    const installed = await stack.connectors.install(connector.id);
+    assertions.installed = installed.status === 'INSTALLED';
+    assertions.stillNotArmed = notAutoArmed(installed);
+    log(
+      'INSTALL (POST /v1/connectors/:id/install)',
+      `status=${installed.status} moduleId=${installed.moduleId} autoActuateForbidden=${installed.safety.autoActuateForbidden}`,
+    );
 
-    const outOfRange = invokeStubConnector(stack.connectors.store, connector.id, NOTIFY_CAP, {
+    const outOfRange = await stack.connectors.invokeCapability(connector.id, NOTIFY_CAP, {
       value: 95,
     });
     assertions.outOfRangeRejected =
       outOfRange.ok === false && outOfRange.code === 'POLICY_CONSTRAINT_VIOLATION';
     log('OUT-OF-RANGE (must reject)', JSON.stringify(outOfRange, null, 2));
 
-    const inRange = invokeStubConnector(stack.connectors.store, connector.id, NOTIFY_CAP, {
+    const inRange = await stack.connectors.invokeCapability(connector.id, NOTIFY_CAP, {
       value: 40,
     });
     assertions.inRangeOk = inRange.ok === true && inRange.result?.armed === false;
@@ -183,8 +195,8 @@ export async function runAwarenessConnectorDemo(): Promise<DemoRunResult> {
       'DONE',
       [
         'All scenario assertions passed (SIMULATED).',
-        `Stubbed pending upstream merge:\n- ${stubbed.join('\n- ')}`,
         'Evidence never above COMPILE_TESTED. Nothing auto-armed.',
+        'Lifecycle via real pinoutd /v1/connectors* (no stub/facade).',
       ].join('\n'),
     );
 
@@ -230,5 +242,3 @@ if (isDirect) {
     process.exitCode = 1;
   });
 }
-
-export type { StubConnectorRecord };

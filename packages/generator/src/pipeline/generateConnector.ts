@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { dirname, join } from 'node:path';
 import { PINOUT_VERSION } from '@pinout/core';
 import { loadGeneratorConfig } from '../config.js';
+import { buildCandidateModule } from '../emit/buildModule.js';
 import { buildConnectorFiles } from '../emit/connectorTemplates.js';
 import { GENERATOR_VERSION } from '../emit/moduleEmitter.js';
 import { ingestSysHello } from '../ingest/helloIngest.js';
@@ -80,12 +81,29 @@ export async function generateConnector(
   let outputPath: string | undefined;
   if (options.outDir) {
     outputPath = writeConnectorFiles(options.outDir, files, options.overwrite === true);
-    if (options.compileCheck) {
-      const compiled = await tryCompileCheck(outputPath);
-      lifecycle = compiled ? 'HUMAN_REVIEWED' : 'SIMULATION_TESTED';
+    // Disk emits must produce a loadable ./dist/index.js for the daemon
+    // conformance gate / install path (npm install + tsc via buildCandidateModule).
+    // Soft compileCheck (--noEmit) remains available for callers that only want
+    // a syntax probe without a full build.
+    const shouldBuild = options.compileCheck !== false;
+    let compiled = false;
+    if (shouldBuild) {
+      try {
+        buildCandidateModule(outputPath);
+        compiled = existsSync(join(outputPath, 'dist', 'index.js'));
+      } catch {
+        compiled = false;
+        if (options.compileCheck) {
+          compiled = await tryCompileCheck(outputPath);
+        }
+      }
+    } else if (options.compileCheck) {
+      compiled = await tryCompileCheck(outputPath);
+    }
+    if (compiled) {
+      lifecycle = 'HUMAN_REVIEWED';
       evidenceLevel = resolveConnectorEvidence(lifecycle);
-      provenance.status = compiled ? 'CONFORMANCE_PASSED' : 'GENERATED';
-      // Refresh evidence level in emitted artifacts when compile succeeds.
+      provenance.status = 'CONFORMANCE_PASSED';
       if (evidenceLevel === 'COMPILE_TESTED') {
         const refreshed = buildConnectorFiles({
           moduleId,
@@ -95,7 +113,20 @@ export async function generateConnector(
           evidenceLevel,
           transportKinds,
         });
-        writeConnectorFiles(options.outDir, refreshed, true);
+        // Preserve built dist/; only refresh non-entrypoint review artifacts.
+        for (const [relativePath, content] of Object.entries(refreshed)) {
+          if (relativePath === 'pinout.module.json') {
+            // Keep entrypoint pointing at the built dist artifact.
+            writeFileSync(join(outputPath, relativePath), content, 'utf8');
+          } else if (
+            relativePath.endsWith('.md') ||
+            relativePath.endsWith('.json') ||
+            relativePath.startsWith('evidence/') ||
+            relativePath.startsWith('docs/')
+          ) {
+            writeFileSync(join(outputPath, relativePath), content, 'utf8');
+          }
+        }
         Object.assign(files, refreshed);
       }
     }

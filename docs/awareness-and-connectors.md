@@ -1,6 +1,6 @@
 # Device awareness and automatic connectors
 
-**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses **real** pinoutd awareness (`--mock-devices`, PR1), **real** MCP tools via `createDaemonMcpServer` ([mcp-awareness.md](mcp-awareness.md), PR2), and **real** [`generateConnector`](generator-connectors.md) (PR3) against `fixtures/generator/*`. Connector approve/install HTTP is still a labeled stub behind a demo facade until PR4. Nothing here is `HARDWARE_VERIFIED`. Evidence vocabulary is the canonical [`SupportLevel`](evidence-levels.md) from `@pinout/core`.
+**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses **real** pinoutd awareness (`--mock-devices`, PR1), **real** MCP tools via `createDaemonMcpServer` ([mcp-awareness.md](mcp-awareness.md), PR2), **real** [`generateConnector`](generator-connectors.md) (PR3) against `fixtures/generator/*`, and **real** [`/v1/connectors*`](connectors.md) (PR4). Nothing here is `HARDWARE_VERIFIED`. Evidence vocabulary is the canonical [`SupportLevel`](evidence-levels.md) from `@pinout/core`.
 
 ## Product story
 
@@ -120,7 +120,7 @@ Full mapping tables and honesty rules: [evidence-levels.md](evidence-levels.md).
 | Risk | Mitigation |
 | --- | --- |
 | Agent invents actuator ranges | Physical-output caps stay `SAFETY_APPROVAL_REQUIRED` until **HUMAN APPROVES** |
-| Auto-arm on install | Install leaves `armed: false`; arm remains an explicit governed action |
+| Auto-arm on install | Install keeps `autoActuateForbidden`; arm remains an explicit governed action |
 | Spoofed BLE name / MQTT topic | Awareness confidence is heuristic; evidence stays ≤ `COMPILE_TESTED` |
 | Generated code as trusted driver | Quarantine + sandbox conformance; human review before install |
 | Out-of-range after approve | `POLICY_CONSTRAINT_VIOLATION` on approved numeric ranges |
@@ -155,14 +155,14 @@ npm test -- examples/awareness-connector-demo/test/e2e.test.ts
 
 Fixtures: `examples/awareness-connector-demo/fixtures/mock-devices.json` (PR1 schema) and `fixtures/generator/ble-gatt-lamp` / `mqtt-sensor-relay` (PR3).
 
-### Still stubbed / pending
+### Pipeline status
 
 | Piece | Status |
 | --- | --- |
 | Awareness `/v1/awareness*` | **Live** — see [awareness.md](awareness.md) |
 | MCP awareness/connector tools | **Live** — see [mcp-awareness.md](mcp-awareness.md) |
 | `generateConnector` | **Live** — see [generator-connectors.md](generator-connectors.md) |
-| Daemon `/v1/connectors*` approve/install | Stub (+ demo facade) until PR4 |
+| Daemon `/v1/connectors*` approve/install | **Live** — see [connectors.md](connectors.md) |
 
 ```bash
 # awareness-only exploration without the full demo:
@@ -196,16 +196,18 @@ This overview stays the product-story entry point alongside [awareness.md](aware
 {
   "capabilities": [
     "ble.gatt.00001800.00002a00.read",
-    "ble.gatt.0000ff10.0000ff12.write",
     "ble.gatt.0000ff10.0000ff13.notify"
   ],
   "ranges": {
     "ble.gatt.0000ff10.0000ff13.notify": {
       "value": { "min": 0, "max": 80 }
     }
-  }
+  },
+  "approvedBy": "operator"
 }
 ```
+
+Physical-output capabilities omitted from `capabilities` stay disabled. Every approved physical-output name must include numeric `ranges`.
 
 ## What remains for HIL
 

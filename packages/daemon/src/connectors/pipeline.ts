@@ -108,6 +108,7 @@ export class ConnectorPipeline {
         ir,
         outDir: moduleDir,
         overwrite: true,
+        awarenessId,
       });
     } catch (error) {
       const failed = buildFailedCandidate({

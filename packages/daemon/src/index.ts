@@ -21,5 +21,7 @@ export {
   type ConnectorRecord,
   type ConnectorStatus,
   type GenerateConnectorFn,
+  type GenerateConnectorInput,
+  type GenerateConnectorResult,
   type AwarenessLookup,
 } from './connectors/index.js';

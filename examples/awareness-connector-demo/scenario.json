@@ -4,7 +4,7 @@
   "evidenceLabel": "SIMULATED",
   "honesty": [
     "All devices in this scenario are fixtures. Pinout has never run on real hardware in this repository.",
-    "Awareness uses real pinoutd --mock-devices (PR1). Connectors use generateConnector + fixtures/generator (PR3).",
+    "Awareness uses real pinoutd --mock-devices (PR1). Connectors use generateConnector + fixtures/generator (PR3) via real /v1/connectors* (PR4).",
     "Evidence for generated connectors must never exceed COMPILE_TESTED without a dated hardware/records entry.",
     "Nothing is auto-armed. Physical-output capabilities stay rejected until a human approves ranges."
   ],
@@ -13,7 +13,7 @@
       "id": "boot",
       "action": "boot_pinoutd_mock_discovery",
       "mockDevices": "fixtures/mock-devices.json",
-      "expect": { "mode": "real-awareness+generator+stub-lifecycle", "label": "SIMULATED" }
+      "expect": { "mode": "real-awareness+generator+real-mcp+real-connectors", "label": "SIMULATED" }
     },
     {
       "id": "known-recognized",
@@ -38,10 +38,11 @@
       "action": "generate_connector",
       "awarenessId": "mock-ble-unknown-lamp",
       "fixture": "fixtures/generator/ble-gatt-lamp/gatt-dump.json",
+      "route": "POST /v1/connectors/generate",
       "expect": {
         "status": "QUARANTINED",
         "evidenceLevelMax": "COMPILE_TESTED",
-        "mode": "read-only"
+        "physicalOutputsDisabled": true
       }
     },
     {
@@ -61,6 +62,7 @@
     {
       "id": "human-approves",
       "action": "approve_connector",
+      "route": "POST /v1/connectors/:id/approve",
       "marker": "HUMAN APPROVES",
       "ranges": {
         "ble.gatt.0000ff10.0000ff13.notify": {
@@ -72,7 +74,8 @@
     {
       "id": "install",
       "action": "install_connector",
-      "expect": { "status": "INSTALLED", "armed": false }
+      "route": "POST /v1/connectors/:id/install",
+      "expect": { "status": "INSTALLED", "autoActuateForbidden": true }
     },
     {
       "id": "out-of-range-rejected",

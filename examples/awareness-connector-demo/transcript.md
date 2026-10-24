@@ -1,8 +1,8 @@
 # Awareness → connector MCP agent transcript
 
-> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices + generateConnector fixtures. Pinout has never run on real hardware in this repository.
+> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices, generateConnector fixtures, and real `/v1/connectors*` (PR4). Pinout has never run on real hardware in this repository.
 
-Generated: 2026-10-24T20:42:34.358Z
+Generated: 2026-10-24T20:58:21.786Z
 
 [system] MCP awareness/connector tools: pinout__nearby_devices, pinout__awareness_events, pinout__describe_nearby, pinout__request_enroll, pinout__generate_connector, pinout__connector_status, pinout__list_connectors
 
@@ -26,12 +26,12 @@ Generated: 2026-10-24T20:42:34.358Z
         "version": "0.0.1-alpha.1"
       },
       "state": "PENDING_ENROLL",
-      "firstSeen": 1792874554332,
-      "lastSeen": 1792874554332,
+      "firstSeen": 1792875498681,
+      "lastSeen": 1792875498681,
       "health": {
         "status": "CONNECTED",
         "lifecycle": "ready",
-        "lastUpdated": 1792874554332
+        "lastUpdated": 1792875498681
       },
       "evidenceLevel": "SIMULATED",
       "confidence": 0.5,
@@ -57,12 +57,12 @@ Generated: 2026-10-24T20:42:34.358Z
         "macHash": "077a24919e64dcdb"
       },
       "state": "IDENTIFIED",
-      "firstSeen": 1792874554333,
-      "lastSeen": 1792874554333,
+      "firstSeen": 1792875498683,
+      "lastSeen": 1792875498683,
       "health": {
         "status": "CONNECTED",
         "lifecycle": "ready",
-        "lastUpdated": 1792874554333
+        "lastUpdated": 1792875498683
       },
       "evidenceLevel": "SIMULATED",
       "confidence": 0.25,
@@ -82,12 +82,12 @@ Generated: 2026-10-24T20:42:34.358Z
         "advertisedName": "sim-room-sensor"
       },
       "state": "IDENTIFIED",
-      "firstSeen": 1792874554334,
-      "lastSeen": 1792874554334,
+      "firstSeen": 1792875498683,
+      "lastSeen": 1792875498683,
       "health": {
         "status": "CONNECTED",
         "lifecycle": "ready",
-        "lastUpdated": 1792874554334
+        "lastUpdated": 1792875498683
       },
       "evidenceLevel": "SIMULATED",
       "confidence": 0.25,
@@ -121,12 +121,12 @@ Generated: 2026-10-24T20:42:34.358Z
     "macHash": "077a24919e64dcdb"
   },
   "state": "IDENTIFIED",
-  "firstSeen": 1792874554333,
-  "lastSeen": 1792874554333,
+  "firstSeen": 1792875498683,
+  "lastSeen": 1792875498683,
   "health": {
     "status": "CONNECTED",
     "lifecycle": "ready",
-    "lastUpdated": 1792874554333
+    "lastUpdated": 1792875498683
   },
   "evidenceLevel": "SIMULATED",
   "confidence": 0.25,
@@ -139,92 +139,203 @@ Generated: 2026-10-24T20:42:34.358Z
 }
 ```
 
-[agent] Check connector status for conn-mock-ble-unknown-lamp.
+[agent] Check connector status for 1736bd73-4deb-4299-8709-f8143a7e67c2.
 [tool] pinout__connector_status
 ```json
 {
-  "id": "conn-mock-ble-unknown-lamp",
-  "awarenessId": "mock-ble-unknown-lamp",
+  "id": "1736bd73-4deb-4299-8709-f8143a7e67c2",
+  "moduleId": "ble-lamp-proto/connector",
+  "version": "0.1.0",
   "status": "INSTALLED",
-  "evidenceLevel": "SIMULATED",
-  "mode": "installed",
+  "evidenceLevel": "COMPILE_TESTED",
   "capabilities": [
     {
-      "id": "ble.gatt.00001800.00002a00.read",
+      "name": "ble.gatt.00001800.00002a00.read",
       "physicalOutput": false,
-      "requiresApproval": false
-    },
-    {
-      "id": "ble.gatt.0000ff10.0000ff11.write",
-      "physicalOutput": true,
-      "requiresApproval": true,
-      "args": {
-        "value": {
-          "type": "string",
-          "required": true
-        }
+      "enabled": true,
+      "description": "Device Name",
+      "reversible": true,
+      "safety": {
+        "physicalOutput": false,
+        "reversible": true
       }
     },
     {
-      "id": "ble.gatt.0000ff10.0000ff12.write",
+      "name": "ble.gatt.0000ff10.0000ff11.write",
       "physicalOutput": true,
-      "requiresApproval": true,
-      "args": {
-        "value": {
-          "type": "string",
-          "required": true
-        }
+      "enabled": false,
+      "description": "Power / on-off",
+      "reversible": true,
+      "safety": {
+        "physicalOutput": true,
+        "reversible": true
       }
     },
     {
-      "id": "ble.gatt.0000ff10.0000ff13.notify",
+      "name": "ble.gatt.0000ff10.0000ff12.write",
       "physicalOutput": true,
-      "requiresApproval": true,
-      "args": {
-        "value": {
-          "type": "number",
-          "required": true
-        }
+      "enabled": false,
+      "description": "Brightness",
+      "reversible": true,
+      "safety": {
+        "physicalOutput": true,
+        "reversible": true
+      }
+    },
+    {
+      "name": "ble.gatt.0000ff10.0000ff13.notify",
+      "physicalOutput": true,
+      "enabled": true,
+      "description": "Fault notifications",
+      "reversible": true,
+      "safety": {
+        "physicalOutput": true,
+        "reversible": true
       }
     }
   ],
-  "approvedCapabilities": [
-    "ble.gatt.00001800.00002a00.read",
-    "ble.gatt.0000ff10.0000ff12.write",
-    "ble.gatt.0000ff10.0000ff13.notify"
-  ],
-  "ranges": {
-    "ble.gatt.0000ff10.0000ff13.notify": {
-      "value": {
-        "min": 0,
-        "max": 80
-      }
-    }
+  "safety": {
+    "physicalOutputsDisabled": false,
+    "requiresHumanApproval": true,
+    "autoInstallForbidden": true,
+    "autoFlashForbidden": true,
+    "autoActuateForbidden": true
   },
-  "armed": false,
-  "generated": true,
-  "source": "gatt",
-  "moduleId": "ble-lamp-proto/connector",
-  "pendingApprovals": [
-    "ble.gatt.0000ff10.0000ff11.write",
-    "ble.gatt.0000ff10.0000ff12.write",
-    "ble.gatt.0000ff10.0000ff13.notify"
-  ],
+  "safetyFlags": {
+    "physicalOutputBlockedUntilHumanApproval": false,
+    "requiresHumanApproval": true,
+    "autoInstallForbidden": true,
+    "autoFlashForbidden": true,
+    "autoActuateForbidden": true
+  },
   "report": {
-    "quarantine": true,
-    "conformanceGate": "passed",
-    "neverInstalls": true,
-    "neverRegisters": true,
-    "notes": [
-      "Generated via @pinout/generator generateConnector (source=gatt).",
-      "Fixture: fixtures/generator/ble-gatt-lamp/gatt-dump.json",
-      "Evidence SIMULATED (capped ≤ COMPILE_TESTED; never HARDWARE_VERIFIED here).",
-      "Physical-output capabilities blocked until HUMAN APPROVES ranges.",
-      "Install/register deferred to PR4 daemon routes — this stub only simulates lifecycle.",
-      "Nothing was auto-armed."
-    ]
+    "passed": true,
+    "checks": [
+      {
+        "name": "manifest",
+        "passed": true
+      },
+      {
+        "name": "manifest",
+        "passed": true,
+        "detail": "pinout.module.json missing"
+      },
+      {
+        "name": "compatibility",
+        "passed": true
+      },
+      {
+        "name": "module id",
+        "passed": true,
+        "detail": "ble-lamp-proto/connector"
+      },
+      {
+        "name": "entrypoint",
+        "passed": true
+      },
+      {
+        "name": "manifest capability parity",
+        "passed": true,
+        "detail": "manifest and module capability declarations must match"
+      },
+      {
+        "name": "simulation declaration",
+        "passed": true
+      },
+      {
+        "name": "4 capabilities",
+        "passed": true
+      },
+      {
+        "name": "schemas",
+        "passed": true
+      },
+      {
+        "name": "policy references",
+        "passed": true
+      },
+      {
+        "name": "backend flag parity",
+        "passed": true,
+        "detail": "backend factories must honor simulated=false"
+      },
+      {
+        "name": "backend lifecycle",
+        "passed": true
+      },
+      {
+        "name": "simulator parity",
+        "passed": true
+      },
+      {
+        "name": "unknown action rejection",
+        "passed": true
+      },
+      {
+        "name": "backend close",
+        "passed": true
+      },
+      {
+        "name": "integrity",
+        "passed": true,
+        "detail": "UNSIGNED"
+      }
+    ],
+    "reasons": [],
+    "generator": {
+      "generator": "generateConnector",
+      "moduleId": "ble-lamp-proto/connector",
+      "evidenceLevel": "COMPILE_TESTED",
+      "pendingApprovals": [
+        "ble.gatt.0000ff10.0000ff11.write",
+        "ble.gatt.0000ff10.0000ff12.write",
+        "ble.gatt.0000ff10.0000ff13.notify"
+      ],
+      "neverInstalls": true,
+      "neverRegisters": true,
+      "uncertainties": [],
+      "transportKinds": [
+        "simulated",
+        "ble-gatt"
+      ],
+      "provenance": {
+        "pinoutVersion": "0.0.1-alpha.1",
+        "generatorVersion": "0.2.0",
+        "provider": "template",
+        "model": "deterministic-v1",
+        "timestamp": "2026-10-24T20:58:18.711Z",
+        "sourceHashes": {
+          "raw": "e22382ad32aaf0e0e85ed3ec494937940d1efd4da4952f3f7463158d59a7ec06"
+        },
+        "status": "CONFORMANCE_PASSED"
+      }
+    },
+    "level": "L2",
+    "integrityStatus": "UNSIGNED"
   },
-  "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect.",
+  "contentHash": "d1fad07969ee69aff9dbafefbc39c2cb7dc24f7eddcbc5617e24a7547ae560ef",
+  "manifestHash": "3563667100900e55a41ff659b1bd013902ba94f3c77adf2b016e033e38181cd5",
+  "createdAt": "2026-10-24T20:58:21.713Z",
+  "updatedAt": "2026-10-24T20:58:21.772Z",
+  "installPath": "/tmp/pinout-awareness-demo-5tCzGV/modules/ble-lamp-proto--connector",
+  "awarenessId": "mock-ble-unknown-lamp",
+  "approval": {
+    "approvedAt": "2026-10-24T20:58:21.724Z",
+    "approvedBy": "demo-operator",
+    "capabilities": [
+      "ble.gatt.00001800.00002a00.read",
+      "ble.gatt.0000ff10.0000ff13.notify"
+    ],
+    "ranges": {
+      "ble.gatt.0000ff10.0000ff13.notify": {
+        "value": {
+          "min": 0,
+          "max": 80
+        }
+      }
+    }
+  },
+  "honesty": "evidenceLevel=COMPILE_TESTED — firmware/module compiled in CI; not a hardware claim.",
   "guidance": "INSTALLED: capabilities follow normal lease/arm/safety rules. Always surface evidenceLevel (SupportLevel) honestly; SIMULATED/UNKNOWN are not hardware.",
   "humanApprovalRequiredForPhysicalOutput": false
 }
@@ -236,88 +347,199 @@ Generated: 2026-10-24T20:42:34.358Z
 {
   "connectors": [
     {
-      "id": "conn-mock-ble-unknown-lamp",
-      "awarenessId": "mock-ble-unknown-lamp",
+      "id": "1736bd73-4deb-4299-8709-f8143a7e67c2",
+      "moduleId": "ble-lamp-proto/connector",
+      "version": "0.1.0",
       "status": "INSTALLED",
-      "evidenceLevel": "SIMULATED",
-      "mode": "installed",
+      "evidenceLevel": "COMPILE_TESTED",
       "capabilities": [
         {
-          "id": "ble.gatt.00001800.00002a00.read",
+          "name": "ble.gatt.00001800.00002a00.read",
           "physicalOutput": false,
-          "requiresApproval": false
-        },
-        {
-          "id": "ble.gatt.0000ff10.0000ff11.write",
-          "physicalOutput": true,
-          "requiresApproval": true,
-          "args": {
-            "value": {
-              "type": "string",
-              "required": true
-            }
+          "enabled": true,
+          "description": "Device Name",
+          "reversible": true,
+          "safety": {
+            "physicalOutput": false,
+            "reversible": true
           }
         },
         {
-          "id": "ble.gatt.0000ff10.0000ff12.write",
+          "name": "ble.gatt.0000ff10.0000ff11.write",
           "physicalOutput": true,
-          "requiresApproval": true,
-          "args": {
-            "value": {
-              "type": "string",
-              "required": true
-            }
+          "enabled": false,
+          "description": "Power / on-off",
+          "reversible": true,
+          "safety": {
+            "physicalOutput": true,
+            "reversible": true
           }
         },
         {
-          "id": "ble.gatt.0000ff10.0000ff13.notify",
+          "name": "ble.gatt.0000ff10.0000ff12.write",
           "physicalOutput": true,
-          "requiresApproval": true,
-          "args": {
-            "value": {
-              "type": "number",
-              "required": true
-            }
+          "enabled": false,
+          "description": "Brightness",
+          "reversible": true,
+          "safety": {
+            "physicalOutput": true,
+            "reversible": true
+          }
+        },
+        {
+          "name": "ble.gatt.0000ff10.0000ff13.notify",
+          "physicalOutput": true,
+          "enabled": true,
+          "description": "Fault notifications",
+          "reversible": true,
+          "safety": {
+            "physicalOutput": true,
+            "reversible": true
           }
         }
       ],
-      "approvedCapabilities": [
-        "ble.gatt.00001800.00002a00.read",
-        "ble.gatt.0000ff10.0000ff12.write",
-        "ble.gatt.0000ff10.0000ff13.notify"
-      ],
-      "ranges": {
-        "ble.gatt.0000ff10.0000ff13.notify": {
-          "value": {
-            "min": 0,
-            "max": 80
-          }
-        }
+      "safety": {
+        "physicalOutputsDisabled": false,
+        "requiresHumanApproval": true,
+        "autoInstallForbidden": true,
+        "autoFlashForbidden": true,
+        "autoActuateForbidden": true
       },
-      "armed": false,
-      "generated": true,
-      "source": "gatt",
-      "moduleId": "ble-lamp-proto/connector",
-      "pendingApprovals": [
-        "ble.gatt.0000ff10.0000ff11.write",
-        "ble.gatt.0000ff10.0000ff12.write",
-        "ble.gatt.0000ff10.0000ff13.notify"
-      ],
+      "safetyFlags": {
+        "physicalOutputBlockedUntilHumanApproval": false,
+        "requiresHumanApproval": true,
+        "autoInstallForbidden": true,
+        "autoFlashForbidden": true,
+        "autoActuateForbidden": true
+      },
       "report": {
-        "quarantine": true,
-        "conformanceGate": "passed",
-        "neverInstalls": true,
-        "neverRegisters": true,
-        "notes": [
-          "Generated via @pinout/generator generateConnector (source=gatt).",
-          "Fixture: fixtures/generator/ble-gatt-lamp/gatt-dump.json",
-          "Evidence SIMULATED (capped ≤ COMPILE_TESTED; never HARDWARE_VERIFIED here).",
-          "Physical-output capabilities blocked until HUMAN APPROVES ranges.",
-          "Install/register deferred to PR4 daemon routes — this stub only simulates lifecycle.",
-          "Nothing was auto-armed."
-        ]
+        "passed": true,
+        "checks": [
+          {
+            "name": "manifest",
+            "passed": true
+          },
+          {
+            "name": "manifest",
+            "passed": true,
+            "detail": "pinout.module.json missing"
+          },
+          {
+            "name": "compatibility",
+            "passed": true
+          },
+          {
+            "name": "module id",
+            "passed": true,
+            "detail": "ble-lamp-proto/connector"
+          },
+          {
+            "name": "entrypoint",
+            "passed": true
+          },
+          {
+            "name": "manifest capability parity",
+            "passed": true,
+            "detail": "manifest and module capability declarations must match"
+          },
+          {
+            "name": "simulation declaration",
+            "passed": true
+          },
+          {
+            "name": "4 capabilities",
+            "passed": true
+          },
+          {
+            "name": "schemas",
+            "passed": true
+          },
+          {
+            "name": "policy references",
+            "passed": true
+          },
+          {
+            "name": "backend flag parity",
+            "passed": true,
+            "detail": "backend factories must honor simulated=false"
+          },
+          {
+            "name": "backend lifecycle",
+            "passed": true
+          },
+          {
+            "name": "simulator parity",
+            "passed": true
+          },
+          {
+            "name": "unknown action rejection",
+            "passed": true
+          },
+          {
+            "name": "backend close",
+            "passed": true
+          },
+          {
+            "name": "integrity",
+            "passed": true,
+            "detail": "UNSIGNED"
+          }
+        ],
+        "reasons": [],
+        "generator": {
+          "generator": "generateConnector",
+          "moduleId": "ble-lamp-proto/connector",
+          "evidenceLevel": "COMPILE_TESTED",
+          "pendingApprovals": [
+            "ble.gatt.0000ff10.0000ff11.write",
+            "ble.gatt.0000ff10.0000ff12.write",
+            "ble.gatt.0000ff10.0000ff13.notify"
+          ],
+          "neverInstalls": true,
+          "neverRegisters": true,
+          "uncertainties": [],
+          "transportKinds": [
+            "simulated",
+            "ble-gatt"
+          ],
+          "provenance": {
+            "pinoutVersion": "0.0.1-alpha.1",
+            "generatorVersion": "0.2.0",
+            "provider": "template",
+            "model": "deterministic-v1",
+            "timestamp": "2026-10-24T20:58:18.711Z",
+            "sourceHashes": {
+              "raw": "e22382ad32aaf0e0e85ed3ec494937940d1efd4da4952f3f7463158d59a7ec06"
+            },
+            "status": "CONFORMANCE_PASSED"
+          }
+        },
+        "level": "L2",
+        "integrityStatus": "UNSIGNED"
       },
-      "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect.",
+      "contentHash": "d1fad07969ee69aff9dbafefbc39c2cb7dc24f7eddcbc5617e24a7547ae560ef",
+      "manifestHash": "3563667100900e55a41ff659b1bd013902ba94f3c77adf2b016e033e38181cd5",
+      "createdAt": "2026-10-24T20:58:21.713Z",
+      "updatedAt": "2026-10-24T20:58:21.772Z",
+      "installPath": "/tmp/pinout-awareness-demo-5tCzGV/modules/ble-lamp-proto--connector",
+      "awarenessId": "mock-ble-unknown-lamp",
+      "approval": {
+        "approvedAt": "2026-10-24T20:58:21.724Z",
+        "approvedBy": "demo-operator",
+        "capabilities": [
+          "ble.gatt.00001800.00002a00.read",
+          "ble.gatt.0000ff10.0000ff13.notify"
+        ],
+        "ranges": {
+          "ble.gatt.0000ff10.0000ff13.notify": {
+            "value": {
+              "min": 0,
+              "max": 80
+            }
+          }
+        }
+      },
+      "honesty": "evidenceLevel=COMPILE_TESTED — firmware/module compiled in CI; not a hardware claim.",
       "guidance": "INSTALLED: capabilities follow normal lease/arm/safety rules. Always surface evidenceLevel (SupportLevel) honestly; SIMULATED/UNKNOWN are not hardware.",
       "humanApprovalRequiredForPhysicalOutput": false
     }
@@ -336,6 +558,6 @@ Generated: 2026-10-24T20:42:34.358Z
 - Awareness from real pinoutd `--mock-devices` (PR1).
 - MCP tools from real `createDaemonMcpServer` (PR2).
 - Connectors from `@pinout/generator` `generateConnector` + fixtures (PR3).
-- Approve/install HTTP still facade-stubbed until PR4.
+- Lifecycle via real pinoutd `/v1/connectors*` (PR4) — generate → quarantine → approve → install.
 - Evidence level for generated connectors ≤ `COMPILE_TESTED`.
 - Nothing auto-armed.

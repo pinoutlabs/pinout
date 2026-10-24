@@ -51,11 +51,11 @@ function buildManifest(ctx: ConnectorEmitContext) {
     capabilities: ctx.ir.capabilities.map((capability) => capability.id),
     simulation: { provided: true, simulator: 'generated-connector-simulator' },
     status: 'CANDIDATE',
-    supportLevel: ctx.evidenceLevel,
     provenance: {
       generated: true,
       source: 'pinout generateConnector',
       generatorVersion: GENERATOR_VERSION,
+      supportLevel: ctx.evidenceLevel,
       neverAutoInstall: true,
       neverAutoRegister: true,
     },
@@ -320,33 +320,35 @@ function simulatorCase(cap: CandidateCapability): string {
       return `${review}      case '${cap.id}':
         return { temperatureC: this.temperatureC, unit: 'C', provenance: 'simulated', source: 'simulated' };`;
     }
+    // Match default sensorRead output schema: { value: number } (additionalProperties: false).
     return `${review}      case '${cap.id}':
-        return { ok: true, capability: '${cap.id}', provenance: 'simulated', armed: this.armed };`;
+        return { value: 0 };`;
   }
   if (/arm/i.test(cap.id) && !/disarm/i.test(cap.id)) {
     return `${review}      case '${cap.id}':
         this.armed = 'armed';
-        return { armed: 'armed' };`;
+        return { ok: true };`;
   }
   if (/disarm/i.test(cap.id)) {
     return `${review}      case '${cap.id}':
         this.armed = 'disarmed';
         this.energized = false;
-        return { armed: 'disarmed' };`;
+        return { ok: true };`;
   }
   if (/\.on$|relay\.on|power\.on/i.test(cap.id)) {
     return `${review}      case '${cap.id}':
         this.energized = true;
-        return { on: true, ok: true };`;
+        return { ok: true };`;
   }
   if (/\.off$|relay\.off|power\.off/i.test(cap.id)) {
     return `${review}      case '${cap.id}':
         this.energized = false;
-        return { on: false, ok: true };`;
+        return { ok: true };`;
   }
   return `${review}      case '${cap.id}':
         // PINOUT_REVIEW_REQUIRED: verify semantics for ${cap.id}
-        return { ok: true, capability: '${cap.id}', payload };`;
+        // Output schema is { ok: boolean } with additionalProperties: false.
+        return { ok: true };`;
 }
 
 function buildBackendSkeleton(ctx: ConnectorEmitContext): string {
@@ -373,9 +375,28 @@ export class GeneratedConnectorBackend implements DeviceBackend {
     this.config = validateGeneratedConnectorConfig(config);
     const forceSim = this.config.simulated !== false;
     if (!forceSim) {
-      throw new Error(
-        'Generated connector protocol backend is a skeleton — physical transport is disabled until human install/review (never auto-connect).',
-      );
+      // Conformance expects kind !== 'simulated' for protocol factories, but
+      // generated connectors must never open hardware. Use a refuse-closed stub.
+      this.kind = 'protocol';
+      this.inner = {
+        kind: 'protocol',
+        async invoke() {
+          throw new Error(
+            'Generated connector protocol backend is a skeleton — physical transport is disabled until human install/review (never auto-connect).',
+          );
+        },
+        subscribe() {
+          return () => {};
+        },
+        getOperationalState() {
+          return { status: 'unavailable', reason: 'protocol-skeleton' };
+        },
+        async close() {},
+        async safeState() {
+          return { ok: true };
+        },
+      };
+      return;
     }
     this.kind = 'simulated';
     this.inner = new GeneratedConnectorSimulator(this.config);
