@@ -29,3 +29,7 @@ Physical backend for `@pinout/protocols-modbus`: coil write + separate discrete-
 | 1.5 | `lamp.off` -> `disarm` | coil safe level | DI safe level | lamp dark, meter at 0 |
 
 Refs: `docs/lamp-modbus.md`, `packages/protocols-modbus/tests/lampBackend.test.ts`, `hardware/records/2026-09-05-modbus-lamp-pending.md`.
+
+## Awareness / connector HIL (PENDING — not verified)
+
+If a Modbus endpoint is first seen through device awareness / automatic connector generation, also complete [`awareness-connectors.md`](./awareness-connectors.md) before any `HARDWARE_VERIFIED` claim. Software `demo:awareness` remains **SIMULATED** only.

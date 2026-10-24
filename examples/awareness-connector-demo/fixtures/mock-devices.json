@@ -1,0 +1,55 @@
+{
+  "$schemaComment": "SIMULATED mock-devices fixture for pinoutd --mock-devices (PR1) and the PR5 demo stub. Not real hardware.",
+  "preset": "awareness-demo",
+  "label": "SIMULATED — awareness + connector demo (no radio, no broker, no USB)",
+  "devices": [
+    {
+      "id": "mock-serial-esp32-known",
+      "transport": "serial",
+      "identity": {
+        "advertisedName": "pinout-esp32-bridge",
+        "vid": "303A",
+        "pid": "1001",
+        "firmware": "esp32-bridge",
+        "version": "0.0.1-alpha.1",
+        "protocol": 1
+      },
+      "moduleId": "pinout/esp32",
+      "stateHint": "IDENTIFIED",
+      "capabilitiesHint": ["sys.hello", "sys.arm", "sys.disarm", "gpio.write", "gpio.read"],
+      "evidenceLevel": "SIMULATED",
+      "label": "known ESP32 bridge (auto-recognized module)"
+    },
+    {
+      "id": "mock-ble-unknown-lamp",
+      "transport": "ble",
+      "identity": {
+        "advertisedName": "DeskLamp-GATT-Unknown",
+        "macHash": "sim-aa:bb:cc:dd:ee:01",
+        "uuids": ["0000fff0-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"],
+        "rssi": -62
+      },
+      "moduleId": null,
+      "stateHint": "SEEN",
+      "capabilitiesHint": [],
+      "gattDumpPath": "./unknown-ble-lamp.gatt.json",
+      "evidenceLevel": "UNKNOWN",
+      "label": "UNKNOWN BLE/GATT lamp-like device (no module match → connector generation)"
+    },
+    {
+      "id": "mock-mqtt-room-sensor",
+      "transport": "mqtt",
+      "identity": {
+        "advertisedName": "sim-room-sensor",
+        "topics": ["tele/sim-room/SENSOR", "cmnd/sim-room/STATUS"],
+        "broker": "mqtt://127.0.0.1:1883"
+      },
+      "moduleId": null,
+      "stateHint": "SEEN",
+      "capabilitiesHint": [],
+      "mqttSamplesPath": "./mqtt-sensor-samples.json",
+      "evidenceLevel": "UNKNOWN",
+      "label": "UNKNOWN MQTT sensor (samples only; SIMULATED)"
+    }
+  ]
+}

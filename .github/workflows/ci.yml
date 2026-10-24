@@ -47,6 +47,9 @@ jobs:
       - name: Governed coffee-machine demo (Linux, Node 20 only)
         if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
         run: npm run demo:coffee
+      - name: Awareness + connector demo SIMULATED (Linux, Node 20 only)
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
+        run: npm run demo:awareness
       - name: Documentation and catalog gate (Linux, Node 20 only)
         if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
         run: npm run docs:check

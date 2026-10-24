@@ -518,6 +518,16 @@ npm run demo:robotics
 
 No board is needed: `--mock`, `demo:lamp`, and `demo:robotics` run locally over simulators. Simulators share the real device contracts, but their readings and policy denials are integration aids, not evidence of physical performance. See [`docs/setup.md`](docs/setup.md) for the 15-minute hardware setup guide.
 
+### Device awareness + automatic connectors (SIMULATED)
+
+Pinout can notice nearby endpoints, recognize known modules, and — when nothing matches — generate a **quarantined, read-only** connector until a human approves physical-output ranges. An MCP agent can then use the installed connector. **This path is software-only today.** The demo uses fixtures (fake serial / BLE / MQTT); Pinout has never run it on real hardware here. Evidence for generated connectors stays ≤ `COMPILE_TESTED`. Nothing auto-arms.
+
+```bash
+npm run demo:awareness
+```
+
+See [`docs/awareness-and-connectors.md`](docs/awareness-and-connectors.md) and [`examples/awareness-connector-demo`](examples/awareness-connector-demo/).
+
 Use the SDK directly (explicit arming required for actuation):
 
 ```ts
