@@ -165,6 +165,7 @@ export class ConnectorPipeline {
       moduleId: record.moduleId,
       status: record.status,
       evidenceLevel: record.evidenceLevel,
+      // Avoid keys matching the journal secret redactor (`pass…`).
       gatePassed: gate.passed,
     });
     if (gate.passed) {
