@@ -84,6 +84,7 @@ for (const board of builtinBoards)
     const server = createDaemonMcpServer({
       baseUrl: `http://127.0.0.1:${daemon.port}`,
       token: 'test',
+      awarenessWatch: false,
     });
     const client = new Client({ name: 'three-boards', version: '1' });
     const [ct, st] = InMemoryTransport.createLinkedPair();

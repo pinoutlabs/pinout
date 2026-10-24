@@ -14,6 +14,7 @@ describe('daemon-backed MCP governed flow', () => {
       baseUrl: `http://127.0.0.1:${daemon.port}`,
       token: 'mcp-token',
       owner: 'mcp-agent',
+      awarenessWatch: false,
     });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: 'pinout-mcp-e2e', version: '0.0.1-alpha.1' });

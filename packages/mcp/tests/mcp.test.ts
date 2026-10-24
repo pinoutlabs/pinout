@@ -81,6 +81,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       owner: 'agent-fixed',
       fetch: fetchStub,
@@ -186,6 +187,7 @@ describe('@pinout/mcp daemon client', () => {
 
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });
@@ -253,6 +255,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       owner: 'agent-fixed',
       fetch: fetchStub,
@@ -310,6 +313,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });
@@ -351,6 +355,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });
@@ -401,6 +406,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });
@@ -451,6 +457,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });
@@ -500,6 +507,7 @@ describe('@pinout/mcp daemon client', () => {
     };
     const server = createDaemonMcpServer({
       dynamicTools: true,
+      awarenessWatch: false,
       baseUrl: 'http://pinoutd.test',
       fetch: fetchStub,
     });

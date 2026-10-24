@@ -22,6 +22,17 @@ All notable changes to this project are documented here. The format follows [Kee
   - Typed `AwarenessClient` (`list` / `get` / `subscribe` / `enroll`) for MCP and e2e consumers.
   - `evidenceLevel` uses core `SupportLevel` (PR0). Docs: [docs/awareness.md](docs/awareness.md).
   - `pinoutd --discover --mock-devices <file|preset>` injects simulated serial/BLE/mDNS/MQTT plus an UNKNOWN device (no matching module).
+- **MCP awareness + connector surface** (`@pinout/mcp`): daemon-backed tools
+  `pinout__nearby_devices`, `pinout__awareness_events`, `pinout__describe_nearby`,
+  `pinout__request_enroll`, `pinout__generate_connector`, `pinout__connector_status`,
+  and `pinout__list_connectors`. Awareness tools use `@pinout/awareness`
+  `AwarenessClient` + record types against live `/v1/awareness*`. Enrollment
+  returns a pending human-approval handle (never silently approves
+  physical-output). Quarantined connectors: read-only may be usable;
+  physical-output blocked until human approve/install. `evidenceLevel` is core
+  `SupportLevel` (defaults to `SIMULATED`). SSE watchers emit MCP
+  tools/resources list-changed updates and invalidate the `/v1/tools` cache on
+  connector install. Docs: [docs/mcp-awareness.md](docs/mcp-awareness.md).
 - **ESP32 BLE GATT transport** (`@pinout/core`, **SIMULATED**): `bleGattTransport` + injectable `BleGattSession` carrying Pinout NDJSON over a fixed RX-write / TX-notify GATT layout (`pinoutBleGattUuids`). In-process `createSimulatedBleGattBridge()` pairs the host path with `simulatedEsp32` and ATT-sized TX chunking for CI without a radio. Factory type `simulated-ble-gatt`. Docs: [docs/ble-gatt.md](docs/ble-gatt.md).
 - **ESP32 BLE bridge sketch** (`firmware/esp32-ble-bridge`, **COMPILE_TESTED** via `pio run -e esp32dev-ble`; **not** HARDWARE_VERIFIED): minimal GATT server advertising the same UUIDs with a desk bring-up protocol subset (`sys.*`, `gpio.mode` / `write` / `read`). No flash/HIL record. Advertisement-only BLE discovery lives separately in `@pinout/discovery` (never connects or writes GATT).
 - **Raspberry Pi Pico MicroPython path** (`firmware/micropython-bridge`):
