@@ -5,7 +5,8 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Platform & Architecture
 
 - [Architecture](architecture.md) — the runtime, module, and daemon boundaries.
-- [Device awareness](awareness.md) — persistent observation registry, SSE events, and approved enroll (`SIMULATED` unless a dated hardware record exists).
+- [Device awareness](awareness.md) — registry, `--mock-devices`, `/v1/awareness*` (**SIMULATED** unless a dated hardware record exists).
+- [Device awareness and automatic connectors](awareness-and-connectors.md) — end-to-end product story + demo (**SIMULATED**; no HIL).
 - [BLE GATT transport](ble-gatt.md) — NDJSON over BLE (host SIMULATED; firmware COMPILE_TESTED when PlatformIO succeeds; no HIL).
 - [Hardware support](hardware-support.md) — statuses generated from `hardware/catalog.json`.
 - [Evidence levels](evidence-levels.md) — canonical SupportLevel mapping (`UNKNOWN` → `HARDWARE_VERIFIED`).

@@ -1,0 +1,13 @@
+{
+  "$schemaComment": "Maps awareness mock ids → PR3 generator fixtures (repo-root relative). Consumed by startDemoStack generateConnectorFn when calling real pinoutd /v1/connectors/generate.",
+  "byAwarenessId": {
+    "mock-ble-unknown-lamp": {
+      "source": "gatt",
+      "fixturePath": "fixtures/generator/ble-gatt-lamp/gatt-dump.json"
+    },
+    "mock-mqtt-room-sensor": {
+      "source": "mqtt",
+      "fixturePath": "fixtures/generator/mqtt-sensor-relay/topics.json"
+    }
+  }
+}

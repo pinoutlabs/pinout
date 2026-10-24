@@ -15,6 +15,7 @@ const required = [
   'docs/troubleshooting.md',
   'docs/mcp.md',
   'docs/mcp-awareness.md',
+  'docs/awareness-and-connectors.md',
   'docs/coffee-machine.md',
   'docs/maintainers.md',
   'docs/adr/0001-governed-runtime.md',

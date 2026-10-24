@@ -21,7 +21,7 @@ export default defineConfig({
         new URL('./packages/module-host/src/index.ts', import.meta.url),
       ),
       '@pinout/daemon': fileURLToPath(new URL('./packages/daemon/src/index.ts', import.meta.url)),
-
+      '@pinout/mcp': fileURLToPath(new URL('./packages/mcp/src/index.ts', import.meta.url)),
       '@pinout/protocols-scpi': fileURLToPath(
         new URL('./packages/protocols-scpi/src/index.ts', import.meta.url),
       ),
@@ -46,6 +46,7 @@ export default defineConfig({
     include: [
       'packages/*/tests/**/*.test.ts',
       'examples/external-module/*/test/**/*.test.ts',
+      'examples/awareness-connector-demo/test/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',

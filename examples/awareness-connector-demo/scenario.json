@@ -1,0 +1,100 @@
+{
+  "id": "awareness-connector-e2e",
+  "title": "Plug in anything → awareness → connector → human approve → MCP agent",
+  "evidenceLabel": "SIMULATED",
+  "honesty": [
+    "All devices in this scenario are fixtures. Pinout has never run on real hardware in this repository.",
+    "Awareness uses real pinoutd --mock-devices (PR1). Connectors use generateConnector + fixtures/generator (PR3) via real /v1/connectors* (PR4).",
+    "Evidence for generated connectors must never exceed COMPILE_TESTED without a dated hardware/records entry.",
+    "Nothing is auto-armed. Physical-output capabilities stay rejected until a human approves ranges."
+  ],
+  "steps": [
+    {
+      "id": "boot",
+      "action": "boot_pinoutd_mock_discovery",
+      "mockDevices": "fixtures/mock-devices.json",
+      "expect": { "mode": "real-awareness+generator+real-mcp+real-connectors", "label": "SIMULATED" }
+    },
+    {
+      "id": "known-recognized",
+      "action": "list_awareness",
+      "expect": {
+        "deviceId": "mock-serial-esp32-known",
+        "state": "PENDING_ENROLL",
+        "moduleId": "pinout/esp32"
+      }
+    },
+    {
+      "id": "unknown-appears",
+      "action": "list_awareness",
+      "expect": {
+        "deviceId": "mock-ble-unknown-lamp",
+        "moduleIdPrefix": "unknown/",
+        "evidenceLevel": "SIMULATED"
+      }
+    },
+    {
+      "id": "generate-connector",
+      "action": "generate_connector",
+      "awarenessId": "mock-ble-unknown-lamp",
+      "fixture": "fixtures/generator/ble-gatt-lamp/gatt-dump.json",
+      "route": "POST /v1/connectors/generate",
+      "expect": {
+        "status": "QUARANTINED",
+        "evidenceLevelMax": "COMPILE_TESTED",
+        "physicalOutputsDisabled": true
+      }
+    },
+    {
+      "id": "readonly-ok",
+      "action": "invoke_connector_capability",
+      "capability": "ble.gatt.00001800.00002a00.read",
+      "args": {},
+      "expect": { "ok": true }
+    },
+    {
+      "id": "physical-before-approve-rejected",
+      "action": "invoke_connector_capability",
+      "capability": "ble.gatt.0000ff10.0000ff12.write",
+      "args": { "value": "28" },
+      "expect": { "ok": false, "code": "SAFETY_APPROVAL_REQUIRED" }
+    },
+    {
+      "id": "human-approves",
+      "action": "approve_connector",
+      "route": "POST /v1/connectors/:id/approve",
+      "marker": "HUMAN APPROVES",
+      "ranges": {
+        "ble.gatt.0000ff10.0000ff13.notify": {
+          "value": { "min": 0, "max": 80 }
+        }
+      },
+      "expect": { "status": "APPROVED" }
+    },
+    {
+      "id": "install",
+      "action": "install_connector",
+      "route": "POST /v1/connectors/:id/install",
+      "expect": { "status": "INSTALLED", "autoActuateForbidden": true }
+    },
+    {
+      "id": "out-of-range-rejected",
+      "action": "invoke_connector_capability",
+      "capability": "ble.gatt.0000ff10.0000ff13.notify",
+      "args": { "value": 95 },
+      "expect": { "ok": false, "code": "POLICY_CONSTRAINT_VIOLATION" }
+    },
+    {
+      "id": "in-range-ok",
+      "action": "invoke_connector_capability",
+      "capability": "ble.gatt.0000ff10.0000ff13.notify",
+      "args": { "value": 40 },
+      "expect": { "ok": true, "armed": false }
+    },
+    {
+      "id": "mcp-agent-session",
+      "action": "scripted_mcp_agent_loop",
+      "transcript": "transcript.md"
+    }
+  ]
+}

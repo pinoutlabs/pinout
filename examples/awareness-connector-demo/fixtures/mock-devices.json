@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "devices": [
+    {
+      "id": "mock-serial-esp32-known",
+      "transport": "serial",
+      "endpoint": "/dev/cu.mock-esp32-demo",
+      "vid": "303a",
+      "pid": "1001",
+      "vendor": "Espressif",
+      "moduleId": "pinout/esp32",
+      "deviceClass": "microcontroller",
+      "firmware": "esp32-bridge",
+      "version": "0.0.1-alpha.1",
+      "confidence": 0.5,
+      "interfaces": ["serial"],
+      "advertisedName": "pinout-esp32-bridge",
+      "capabilities": ["sys.hello", "sys.arm", "sys.disarm", "gpio.write", "gpio.read"]
+    },
+    {
+      "id": "mock-ble-unknown-lamp",
+      "transport": "ble",
+      "endpoint": "aa:bb:cc:dd:ee:01",
+      "mac": "aa:bb:cc:dd:ee:01",
+      "advertisedName": "DeskLamp-GATT-Unknown",
+      "uuids": ["0000fff0-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"],
+      "moduleId": "unknown/ble-lamp",
+      "unknown": true,
+      "confidence": 0.25,
+      "interfaces": ["ble"]
+    },
+    {
+      "id": "mock-mqtt-room-sensor",
+      "transport": "mqtt",
+      "endpoint": "mqtt://127.0.0.1/tele/sim-room/SENSOR",
+      "advertisedName": "sim-room-sensor",
+      "moduleId": "unknown/mqtt-sensor",
+      "unknown": true,
+      "confidence": 0.25,
+      "interfaces": ["mqtt"]
+    }
+  ]
+}
