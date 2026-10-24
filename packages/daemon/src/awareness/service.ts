@@ -16,6 +16,7 @@ import {
   ValidationError,
   type DeviceDefinition,
   type Journal,
+  type SupportLevel,
   type SupportStatus,
 } from '@pinout/core';
 import {
@@ -27,7 +28,6 @@ import {
   type AwarenessRecord,
   type AwarenessStalenessConfig,
 } from '@pinout/awareness';
-import type { SupportLevel } from '@pinout/core';
 import type { DiscoveredCandidate, DiscoveryPlugin } from '@pinout/discovery';
 import {
   AwarenessDiscoveryScheduler,
@@ -47,10 +47,12 @@ export interface AwarenessServiceOptions {
   blePlugin?: DiscoveryPlugin;
   log?: (message: string) => void;
   /**
-   * Optional lookup for dated hardware/records evidence. Default: always
-   * SIMULATED (honest until an operator-backed record is supplied).
+   * Optional lookup for SupportLevel. Default: SIMULATED (honest until an
+   * operator-backed dated hardware/records entry is supplied via
+   * `hardwareRecordDate` / resolveEvidenceLevel).
    */
-  resolveEvidenceLevel?: (record: AwarenessRecord) => EvidenceLevel;
+  resolveEvidenceLevel?: (record: AwarenessRecord) => SupportLevel;
+  hardwareRecordDate?: string | null;
   now?: () => number;
 }
 
@@ -74,6 +76,9 @@ export class AwarenessService {
       ...(options.now ? { now: options.now } : {}),
       enrolledIds: () => this.readEnrolledIds(),
       resolveEvidenceLevel: options.resolveEvidenceLevel ?? (() => 'SIMULATED'),
+      ...(options.hardwareRecordDate !== undefined
+        ? { hardwareRecordDate: options.hardwareRecordDate }
+        : {}),
       onEvent: (event) => this.journalEvent(event),
     });
     this.registry.subscribe((event) => this.syncGraph(event.record));
@@ -218,7 +223,7 @@ export class AwarenessService {
   }
 
   private syncGraph(record: AwarenessRecord): void {
-    const support = evidenceLevelToSupportStatus(record.evidenceLevel) as SupportStatus;
+    const support: SupportStatus = supportLevelToSupportStatus(record.evidenceLevel);
     const connected =
       record.state === 'ONLINE' ||
       record.state === 'PENDING_ENROLL' ||

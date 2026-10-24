@@ -43,9 +43,10 @@ Default timeouts: stale after 30s, offline after 120s.
 
 ## Honesty
 
-- `evidenceLevel` is `SIMULATED` by default. It becomes `COMPILE_TESTED` /
-  `HARDWARE_VERIFIED` only when an explicit resolver finds a dated hardware
-  record (PR0 `SupportLevel` will replace the local compatible union on rebase).
+- `evidenceLevel` is core [`SupportLevel`](evidence-levels.md)
+  (`UNKNOWN` | `SIMULATED` | `COMPILE_TESTED` | `HARDWARE_VERIFIED`). Default
+  is `SIMULATED`; `HARDWARE_VERIFIED` requires a dated hardware record via
+  `applyEvidenceRules`.
 - Mock devices (`--mock-devices`) are always `SIMULATED` and tagged `mock: true`.
 - Enrollment writes `~/.pinout/devices.json` through the existing registration
   path. It **never** arms, actuates, or flashes.
@@ -127,7 +128,7 @@ type AwarenessRecord = {
   health: { status; lifecycle; message?; lastUpdated };
   capabilities?: string[];
   moduleId?: string;
-  evidenceLevel: 'SIMULATED' | 'COMPILE_TESTED' | 'HARDWARE_VERIFIED';
+  evidenceLevel: SupportLevel; // UNKNOWN | SIMULATED | COMPILE_TESTED | HARDWARE_VERIFIED
   connector?: { status: 'none' | 'available' | 'pending' | 'installed' | 'failed' };
   confidence?: number;
   mock?: boolean;
