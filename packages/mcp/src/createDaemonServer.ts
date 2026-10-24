@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { AwarenessClient } from '@pinout/awareness';
 import {
   buildMcpToolName,
   parseMcpToolName,
@@ -7,6 +8,11 @@ import {
   type CapabilityDescriptor,
   type RuntimeAgentTool,
 } from '@pinout/core';
+import {
+  awarenessControlPlaneTools,
+  awarenessToolNames,
+  attachAwarenessSurface,
+} from './awarenessSurface.js';
 import { controlPlaneTools, formatToolError, success, toMcpTool } from './createRuntimeServer.js';
 
 const toolsCacheTtlMs = 2000;
@@ -18,6 +24,11 @@ export interface DaemonMcpServerOptions {
   fetch?: typeof globalThis.fetch;
   /** Compatibility only: expose per-device tool names. Default catalog is static. */
   dynamicTools?: boolean;
+  /**
+   * Subscribe to awareness/connector SSE and emit MCP list-changed / resource updates.
+   * Default true for daemon-backed servers.
+   */
+  awarenessWatch?: boolean;
 }
 
 interface DaemonDeviceSummary {
@@ -39,10 +50,47 @@ interface DaemonJsonResult {
 /** MCP client for the single authoritative pinoutd process. */
 export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Server {
   const client = new DaemonClient(options);
+  const baseUrl = (options.baseUrl ?? 'http://127.0.0.1:8787').replace(/\/$/, '');
+  const awarenessClient = new AwarenessClient({
+    baseUrl,
+    ...(options.token ? { token: options.token } : {}),
+    ...(options.fetch ? { fetch: options.fetch } : {}),
+  });
   const server = new Server(
     { name: 'pinout-daemon', version: PINOUT_VERSION },
-    { capabilities: { tools: {} } },
+    {
+      capabilities: {
+        tools: { listChanged: true },
+        resources: { listChanged: true, subscribe: true },
+      },
+    },
   );
+
+  const awareness = attachAwarenessSurface({
+    server,
+    client,
+    awarenessClient,
+    onToolsMayHaveChanged: () => {
+      void server.sendToolListChanged().catch(() => undefined);
+    },
+  });
+
+  const watchEnabled = options.awarenessWatch !== false;
+  const previousOnInitialized = server.oninitialized;
+  server.oninitialized = () => {
+    previousOnInitialized?.();
+    if (watchEnabled) awareness.start();
+  };
+  const previousOnClose = server.onclose;
+  server.onclose = () => {
+    awareness.stop();
+    previousOnClose?.();
+  };
+  const originalClose = server.close.bind(server);
+  server.close = async () => {
+    awareness.stop();
+    return originalClose();
+  };
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     let runtimeToolsList: RuntimeAgentTool[] = [];
@@ -52,13 +100,23 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
       runtimeToolsList = [];
     }
     return {
-      tools: [...controlPlaneTools(), staticInvokeTool, ...runtimeToolsList.map(toMcpTool)],
+      tools: [
+        ...controlPlaneTools(),
+        ...awarenessControlPlaneTools(),
+        staticInvokeTool,
+        ...runtimeToolsList.map(toMcpTool),
+      ],
     };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const args = (request.params.arguments ?? {}) as Record<string, unknown>;
     try {
+      if (awarenessToolNames.has(request.params.name)) {
+        const handled = await awareness.handleToolCall(request.params.name, args);
+        if (handled) return handled;
+      }
+
       switch (request.params.name) {
         case 'pinout__invoke': {
           if (!args.args || typeof args.args !== 'object' || Array.isArray(args.args))
@@ -207,6 +265,42 @@ class DaemonClient {
     return result.payload;
   }
 
+  /** GET an additive route; null if the daemon has not implemented it yet. */
+  async tryGetOptional(path: string): Promise<Record<string, unknown> | null> {
+    const result = await this.request('GET', path);
+    if (result.response.ok) {
+      return result.payload;
+    }
+    if (isMissingRoute(result.response.status, result.payload)) {
+      return null;
+    }
+    throw daemonHttpError(result.response.status, result.payload);
+  }
+
+  /** Open an SSE body stream; null when the route is missing. */
+  async openEventStream(
+    path: string,
+    signal?: AbortSignal,
+  ): Promise<ReadableStream<Uint8Array> | null> {
+    if (signal?.aborted) return null;
+    const headers: Record<string, string> = { accept: 'text/event-stream' };
+    if (this.token) headers.authorization = `Bearer ${this.token}`;
+    let response: Response;
+    try {
+      response = await this.fetchFn(`${this.baseUrl}${path}`, {
+        method: 'GET',
+        headers,
+        ...(signal ? { signal } : {}),
+      });
+    } catch {
+      return null;
+    }
+    if (!response.ok || !response.body) {
+      return null;
+    }
+    return response.body;
+  }
+
   async runtimeTools(): Promise<RuntimeAgentTool[]> {
     const now = Date.now();
     if (this.toolsCache && this.toolsCache.expiresAt > now) {
@@ -285,18 +379,6 @@ class DaemonClient {
       safety: typeof safety.state === 'string' ? safety.state : safety,
       devices: detailed,
     };
-  }
-
-  /** GET an additive route; null if the daemon has not implemented it yet. */
-  private async tryGetOptional(path: string): Promise<Record<string, unknown> | null> {
-    const result = await this.request('GET', path);
-    if (result.response.ok) {
-      return result.payload;
-    }
-    if (isMissingRoute(result.response.status, result.payload)) {
-      return null;
-    }
-    throw daemonHttpError(result.response.status, result.payload);
   }
 
   private async request(

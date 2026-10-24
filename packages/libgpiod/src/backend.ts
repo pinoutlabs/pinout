@@ -585,7 +585,26 @@ export class LibgpiodBackend implements DeviceBackend {
     pulseMs: number,
   ): Promise<Record<string, unknown>> {
     const now = new Date();
+    // Arm cancellation before awaiting drive so safeState() during startup still wins.
+    let cancelledBeforeWait = false;
+    state.cancelPulse = () => {
+      cancelledBeforeWait = true;
+    };
     await this.drive(state, activeRaw);
+    if (cancelledBeforeWait) {
+      state.cancelPulse = null;
+      // safeState() (or another canceller) already owns applying the safe level.
+      return {
+        line: state.config.name,
+        offset: state.config.offset,
+        value,
+        raw: activeRaw,
+        mode: 'pulse',
+        pulseMs,
+        cancelled: true,
+        at: now.toISOString(),
+      };
+    }
     state.evidence = recordAcknowledged(state.evidence, value, now, this.config.provenance);
     state.releasedOnExit = false;
     this.emit('gpio.changed', {

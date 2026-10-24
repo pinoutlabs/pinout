@@ -70,6 +70,13 @@ Embedded and daemon-backed modes have different control-plane behavior:
   return `CONTROL_PLANE_UNAVAILABLE` because no daemon manager is present.
   This mode is for hardware-free development.
 
+Nearby-device awareness and automatic connector-building tools
+(`pinout__nearby_devices`, `pinout__request_enroll`,
+`pinout__generate_connector`, and related) are documented in
+[MCP awareness + connectors](mcp-awareness.md). Enrollment and physical-output
+approval stay human steps; quarantined connectors may expose read-only
+capabilities only until a human approves.
+
 See the [safety model](safety-model.md) and [security model](security-model.md)
 for lease, halt, authentication, and direct-access boundaries.
 
