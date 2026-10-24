@@ -13,3 +13,13 @@ export {
   type AwarenessSchedulerOptions,
   type TransportIntervalConfig,
 } from './awareness/scheduler.js';
+export {
+  ConnectorPipeline,
+  generateConnector,
+  generateConnectorFallback,
+  createAwarenessServiceLookup,
+  type ConnectorRecord,
+  type ConnectorStatus,
+  type GenerateConnectorFn,
+  type AwarenessLookup,
+} from './connectors/index.js';

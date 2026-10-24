@@ -20,7 +20,8 @@
     "pinoutd": "./dist/main.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "workers"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -34,6 +35,8 @@
     "@pinout/awareness": "0.0.1-alpha.1",
     "@pinout/core": "0.0.1-alpha.1",
     "@pinout/discovery": "0.0.1-alpha.1",
+    "@pinout/generator": "0.0.1-alpha.1",
+    "@pinout/module-host": "0.0.1-alpha.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {

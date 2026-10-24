@@ -73,6 +73,11 @@ export function registerModule(module: PinoutModuleDefinition): void {
   runtimeModules.set(module.id, module);
 }
 
+/** Remove a previously registered runtime module (installed connectors / hot unload). */
+export function unregisterModule(moduleId: string): boolean {
+  return runtimeModules.delete(moduleId);
+}
+
 export function isBuiltinModule(moduleId: string): boolean {
   return builtinModules.has(moduleId);
 }

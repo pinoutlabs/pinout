@@ -67,7 +67,12 @@ export type JournalEntryKind =
   | 'device.reconnected'
   | 'lease.acquired'
   | 'lease.released'
-  | 'lease.expired';
+  | 'lease.expired'
+  | 'connector.generated'
+  | 'connector.quarantined'
+  | 'connector.approved'
+  | 'connector.installed'
+  | 'connector.rejected';
 
 export interface JournalEntry {
   sequence: number;
@@ -145,6 +150,9 @@ export class Journal {
   }
 
   async query(filter: JournalQuery = {}): Promise<JournalEntry[]> {
+    // Wait for pending file appends so callers observe every entry that
+    // append() has already returned (including connector.* events).
+    await this.writeChain;
     const all = await this.storage.readAll();
     const sorted = [...all].sort((a, b) => a.sequence - b.sequence);
     const out: JournalEntry[] = [];

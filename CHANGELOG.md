@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Connector pipeline (PR4)** (`@pinout/daemon`, `@pinout/cli`): human-gated
+  generate → conformance quarantine → approve → install path for generated
+  modules. Daemon routes `POST/GET /v1/connectors…` match MCP PR2
+  `GeneratedConnectorRecord` shapes (`safetyFlags`, capability `safety`,
+  `{ connector }` / `{ connectors }`); SSE emits `connector.installed` and
+  `connector_installed` for tool-cache invalidation. Storage under
+  `~/.pinout/connectors/`, integrity-checked install into `~/.pinout/modules`
+  with hot `runtimeModules` registration and `connector.*` journal events.
+  CLI: `pinout connector list|show|generate|approve|install|reject`. Malicious
+  or failing conformance stays `CANDIDATE`; tampering fails install closed.
+  Evidence capped via `SupportLevel` (never auto-flash / auto-approve /
+  auto-actuate). Docs: [docs/connectors.md](docs/connectors.md); updates
+  [docs/generator-safety.md](docs/generator-safety.md).
 - **Generator connectors (`@pinout/generator`)**: Extended Hardware Interface IR kinds with `ble-gatt`, `mqtt`, `mdns`, and `serial-bridge` (legacy kinds unchanged). New ingestors for `sys.hello`, GATT dumps, MQTT topic samples, and mDNS/OpenAPI; safety inference classifies read-only vs `physicalOutput` with strict schemas and default-deny `requiresApproval` policy stubs. Deterministic 8-file connector templates plus programmatic `generateConnector({ source, ir|raw, outDir|inMemory })` for the daemon/install pipeline (uses core `SupportLevel` / `mapFromGeneratorLifecycle`, evidence capped at `COMPILE_TESTED`; never auto-install/register). Fixtures under `fixtures/generator/{serial-hello,ble-gatt-lamp,mqtt-sensor-relay,unknown-weird}`. Docs: [docs/generator-connectors.md](docs/generator-connectors.md).
 - **Canonical SupportLevel evidence ladder** (`@pinout/core`, PR0 foundation):
   `UNKNOWN` | `SIMULATED` | `COMPILE_TESTED` | `HARDWARE_VERIFIED` with mappers from

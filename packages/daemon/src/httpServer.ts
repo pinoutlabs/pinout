@@ -28,6 +28,7 @@ import {
   ValidationError,
   PinoutError,
   FileJournalStorage,
+  resolvePinoutHome,
   type PinoutRuntime,
   type RuntimeEventEnvelope,
   type JournalEntryKind,
@@ -39,6 +40,14 @@ import {
   runtimeToAgentTools,
 } from '@pinout/core';
 import type { AwarenessService } from './awareness/service.js';
+import {
+  ConnectorPipeline,
+  createAwarenessServiceLookup,
+  type AwarenessLookup,
+  type ConnectorPipelineOptions,
+  type GenerateConnectorFn,
+} from './connectors/index.js';
+import { serializeConnectorRecord } from './connectors/serialize.js';
 
 export interface DaemonConfig {
   host?: string;
@@ -57,6 +66,14 @@ export interface DaemonConfig {
   requireLeases?: boolean;
   /** Optional device-awareness service (discovery + persistent registry). */
   awareness?: AwarenessService;
+  /** Override Pinout home (`~/.pinout`) for connector/module persistence. */
+  pinoutHome?: string;
+  /** Optional awareness lookup override (tests). Defaults to `awareness.get`. */
+  awarenessLookup?: AwarenessLookup;
+  /** Optional generateConnector override (tests / malicious fixtures). */
+  generateConnectorFn?: GenerateConnectorFn;
+  /** Connector conformance gate options (e.g. skipSandbox in unit tests). */
+  connectorConformance?: ConnectorPipelineOptions['conformanceOptions'];
 }
 
 export const DEFAULT_DAEMON_PORT = 8787;
@@ -70,7 +87,20 @@ function isLoopbackHost(host: string): boolean {
 // ---------------------------------------------------------------------------
 
 export interface DaemonEvent {
-  kind: 'runtime.event' | 'operation' | 'safety' | 'lease' | 'stream.opened' | 'stream.closed';
+  kind:
+    | 'runtime.event'
+    | 'operation'
+    | 'safety'
+    | 'lease'
+    | 'stream.opened'
+    | 'stream.closed'
+    | 'connector'
+    | 'connector.generated'
+    | 'connector.quarantined'
+    | 'connector.approved'
+    | 'connector.installed'
+    | 'connector.rejected'
+    | 'connector_installed';
   at: number;
   data: Record<string, unknown>;
 }
@@ -108,6 +138,8 @@ export class DaemonContext {
   readonly streams: StreamBus;
   readonly events: EventHub;
   readonly awareness: AwarenessService | undefined;
+  readonly connectors: ConnectorPipeline;
+  readonly pinoutHome: string;
   readonly startedAt: number;
   readonly ready: Promise<void>;
 
@@ -117,10 +149,65 @@ export class DaemonContext {
     this.events = new EventHub();
     this.streams = new StreamBus();
     this.awareness = config.awareness;
+    this.pinoutHome = resolvePinoutHome(config.pinoutHome);
 
     this.journal = new Journal(
       config.journalPath ? { storage: new FileJournalStorage(config.journalPath) } : {},
     );
+
+    const connectorOptions: ConnectorPipelineOptions = {
+      home: this.pinoutHome,
+      journal: this.journal,
+      publishEvent: (kind, data) => {
+        // MCP watches /v1/events for kind `connector.installed` / `connector_installed`
+        // (see packages/mcp awarenessSurface startConnectorBusWatcher).
+        const eventKind =
+          kind === 'connector.installed'
+            ? ('connector.installed' as const)
+            : (kind as DaemonEvent['kind']);
+        const connectorStatus =
+          typeof data.status === 'string'
+            ? data.status
+            : kind === 'connector.installed'
+              ? 'INSTALLED'
+              : typeof (data.connector as { status?: string } | undefined)?.status === 'string'
+                ? (data.connector as { status: string }).status
+                : undefined;
+        this.events.publish({
+          kind: eventKind,
+          at: Date.now(),
+          data: {
+            event: kind,
+            ...data,
+            ...(connectorStatus !== undefined ? { status: connectorStatus } : {}),
+          },
+        });
+        if (kind === 'connector.installed') {
+          // Alias matching MCP mock contract: kind connector_installed + status INSTALLED.
+          this.events.publish({
+            kind: 'connector_installed',
+            at: Date.now(),
+            data: {
+              event: 'connector_installed',
+              ...data,
+              status: 'INSTALLED',
+            },
+          });
+        }
+      },
+    };
+    if (config.awarenessLookup !== undefined) {
+      connectorOptions.awarenessLookup = config.awarenessLookup;
+    } else if (config.awareness) {
+      connectorOptions.awarenessLookup = createAwarenessServiceLookup(config.awareness);
+    }
+    if (config.generateConnectorFn !== undefined) {
+      connectorOptions.generateConnectorFn = config.generateConnectorFn;
+    }
+    if (config.connectorConformance !== undefined) {
+      connectorOptions.conformanceOptions = config.connectorConformance;
+    }
+    this.connectors = new ConnectorPipeline(connectorOptions);
 
     this.halt = new HaltCoordinator({
       onStateChange: (change) => {
@@ -847,6 +934,62 @@ export class DaemonHttpServer {
         record: result.record,
         device: { id: result.device.id, module: result.device.module },
       });
+    });
+
+    // -- Connectors (generate → quarantine → approve → install) -----------------
+    // Response shapes match packages/mcp GeneratedConnectorRecord /
+    // normalizeGeneratedConnector (PR2): { connector: { id, status, evidenceLevel, ... } }.
+    this.route('POST', '/v1/connectors/generate', async (c, _req, res, _match, body) => {
+      const awarenessId = requiredString(body, 'awarenessId');
+      const connector = await c.connectors.generate(awarenessId);
+      sendJson(res, 201, { connector: serializeConnectorRecord(connector) });
+    });
+
+    this.route('GET', '/v1/connectors', async (c, _req, res) => {
+      // Full GeneratedConnectorRecord objects — MCP list_connectors maps
+      // payload.connectors through normalizeGeneratedConnector (PR2).
+      sendJson(res, 200, {
+        connectors: c.connectors.listRecords().map(serializeConnectorRecord),
+      });
+    });
+
+    this.route('GET', '/v1/connectors/:id', async (c, _req, res, match) => {
+      const connector = c.connectors.get(match.params.id!);
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
+    });
+
+    this.route('POST', '/v1/connectors/:id/approve', async (c, _req, res, match, body) => {
+      const capabilities = body?.capabilities;
+      if (!Array.isArray(capabilities)) {
+        throw new ValidationError(
+          "Body field 'capabilities' must be an array of capability names.",
+        );
+      }
+      const ranges = body?.ranges;
+      if (!ranges || typeof ranges !== 'object' || Array.isArray(ranges)) {
+        throw new ValidationError(
+          "Body field 'ranges' must be an object mapping capability → param → {min,max}.",
+        );
+      }
+      const connector = c.connectors.approve(match.params.id!, {
+        capabilities: capabilities.map(String),
+        ranges: ranges as Record<string, Record<string, { min: number; max: number }>>,
+        ...(typeof body?.approvedBy === 'string' ? { approvedBy: body.approvedBy } : {}),
+      });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
+    });
+
+    this.route('POST', '/v1/connectors/:id/install', async (c, _req, res, match) => {
+      const connector = await c.connectors.install(match.params.id!);
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
+    });
+
+    this.route('POST', '/v1/connectors/:id/reject', async (c, _req, res, match, body) => {
+      const connector = c.connectors.reject(match.params.id!, {
+        ...(typeof body?.reason === 'string' ? { reason: body.reason } : {}),
+        ...(typeof body?.rejectedBy === 'string' ? { rejectedBy: body.rejectedBy } : {}),
+      });
+      sendJson(res, 200, { connector: serializeConnectorRecord(connector) });
     });
   }
 
