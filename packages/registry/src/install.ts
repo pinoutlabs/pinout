@@ -36,7 +36,7 @@ import {
   sanitizeModuleIdForPath,
 } from './content.js';
 import { RegistryError } from './errors.js';
-import { RegistryClient, type Fetcher, type FetcherResponse } from './client.js';
+import type { Fetcher, FetcherResponse, RegistryClient } from './client.js';
 import {
   MODULE_ID_PATTERN,
   REGISTRY_SEMVER_PATTERN,
@@ -173,10 +173,7 @@ export async function materializeEntry(
       return copyModuleDirectory(location.path, destination);
     }
     if (stats?.isFile()) {
-      const document = parsePayloadDocument(
-        readFileSync(location.path, 'utf8'),
-        location.path,
-      );
+      const document = parsePayloadDocument(readFileSync(location.path, 'utf8'), location.path);
       return materializePayloadDocument(
         document,
         dirname(location.path),
@@ -230,7 +227,10 @@ export function parsePayloadDocument(text: string, label: string): PayloadDocume
     );
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new RegistryError('MODULE_PAYLOAD_INVALID', `Payload document '${label}' must be an object.`);
+    throw new RegistryError(
+      'MODULE_PAYLOAD_INVALID',
+      `Payload document '${label}' must be an object.`,
+    );
   }
   const record = raw as Record<string, unknown>;
   const unknown = Object.keys(record).filter((key) => key !== 'schemaVersion' && key !== 'files');

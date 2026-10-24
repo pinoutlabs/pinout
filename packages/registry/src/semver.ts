@@ -70,7 +70,8 @@ export type VersionRange =
 
 export function parseVersionRange(range: string): VersionRange | null {
   const trimmed = range.trim();
-  if (trimmed === '' || trimmed === '*') return { kind: 'any' };
+  if (trimmed === '') return null;
+  if (trimmed === '*') return { kind: 'any' };
   const operator = trimmed[0];
   if (operator === '^' || operator === '~') {
     const version = trimmed.slice(1);

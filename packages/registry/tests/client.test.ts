@@ -9,7 +9,9 @@ import type { RegistryModuleEntry } from '../src/indexFormat.js';
 
 const HASH = 'a'.repeat(64);
 
-function entry(overrides: Partial<RegistryModuleEntry> & { name: string; version: string }): RegistryModuleEntry {
+function entry(
+  overrides: Partial<RegistryModuleEntry> & { name: string; version: string },
+): RegistryModuleEntry {
   return {
     description: `${overrides.name} module`,
     manifestHash: HASH,
@@ -63,7 +65,9 @@ describe('RegistryClient — local sources (offline)', () => {
     const client = new RegistryClient({ source: registryDir });
 
     expect((await client.resolve('test/thermo')).version).toBe('1.0.0');
-    expect((await client.resolve('test/thermo', '^0.1.0')).version).toBe('0.2.0');
+    // Zero-major caret: ^0.1.0 is >=0.1.0 <0.2.0 (npm-style).
+    expect((await client.resolve('test/thermo', '^0.1.0')).version).toBe('0.1.0');
+    expect((await client.resolve('test/thermo', '^0.2.0')).version).toBe('0.2.0');
     expect((await client.resolve('test/thermo', '~0.1.0')).version).toBe('0.1.0');
     expect((await client.resolve('test/thermo', '0.1.0')).version).toBe('0.1.0');
   });
@@ -114,7 +118,11 @@ describe('RegistryClient — local sources (offline)', () => {
 
   it('accepts a direct index file path and a file: URL', async () => {
     const indexPath = join(dir, 'custom-index.json');
-    writeFileSync(indexPath, indexDocument([entry({ name: 'test/thermo', version: '1.0.0' })]), 'utf8');
+    writeFileSync(
+      indexPath,
+      indexDocument([entry({ name: 'test/thermo', version: '1.0.0' })]),
+      'utf8',
+    );
     expect((await new RegistryClient({ source: indexPath }).list()).length).toBe(1);
     expect((await new RegistryClient({ source: `file://${indexPath}` }).list()).length).toBe(1);
   });
@@ -171,7 +179,11 @@ describe('RegistryClient — local sources (offline)', () => {
     const registryDir = join(dir, 'registry');
     mkdirSafe(registryDir);
     const indexPath = join(registryDir, 'registry.json');
-    writeFileSync(indexPath, indexDocument([entry({ name: 'test/thermo', version: '1.0.0' })]), 'utf8');
+    writeFileSync(
+      indexPath,
+      indexDocument([entry({ name: 'test/thermo', version: '1.0.0' })]),
+      'utf8',
+    );
     const client = new RegistryClient({ source: registryDir });
     await client.loadIndex();
     writeFileSync(indexPath, indexDocument([]), 'utf8');

@@ -13,11 +13,7 @@
  */
 
 /** Canonical evidence ladder shared across packages. */
-export type SupportLevel =
-  | 'UNKNOWN'
-  | 'SIMULATED'
-  | 'COMPILE_TESTED'
-  | 'HARDWARE_VERIFIED';
+export type SupportLevel = 'UNKNOWN' | 'SIMULATED' | 'COMPILE_TESTED' | 'HARDWARE_VERIFIED';
 
 /** Module-manifest `status` values (see `module/manifest.ts`). */
 export type ManifestStatus = 'CANDIDATE' | 'REVIEWED' | 'TESTED';
@@ -27,12 +23,7 @@ export type ManifestStatus = 'CANDIDATE' | 'REVIEWED' | 'TESTED';
  * here so this mapping layer does not create a circular import with types.ts.
  */
 export type SupportStatusInput =
-  | 'IMPLEMENTED'
-  | 'HARDWARE_VERIFIED'
-  | 'SIMULATED'
-  | 'COMPILE_TESTED'
-  | 'PLANNED'
-  | 'EXPERIMENTAL';
+  'IMPLEMENTED' | 'HARDWARE_VERIFIED' | 'SIMULATED' | 'COMPILE_TESTED' | 'PLANNED' | 'EXPERIMENTAL';
 
 /** The eight statuses published in `hardware/catalog.json`. */
 export type CatalogStatus =
@@ -50,11 +41,7 @@ export type ConformanceLevelInput = 'L0' | 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
 
 /** Generator candidate lifecycle (see `@pinout/generator` provenance). */
 export type GeneratorLifecycle =
-  | 'GENERATED'
-  | 'CONFORMANCE_PASSED'
-  | 'SIMULATION_TESTED'
-  | 'HUMAN_REVIEWED'
-  | 'HARDWARE_TESTED';
+  'GENERATED' | 'CONFORMANCE_PASSED' | 'SIMULATION_TESTED' | 'HUMAN_REVIEWED' | 'HARDWARE_TESTED';
 
 export const SUPPORT_LEVELS: readonly SupportLevel[] = [
   'UNKNOWN',

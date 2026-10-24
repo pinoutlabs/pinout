@@ -67,7 +67,9 @@ describe('semver subset', () => {
   it('selects the best matching version', () => {
     const versions = ['0.1.0', '0.2.0', '1.0.0', '1.1.0', '2.0.0'];
     expect(selectBestVersion(versions, '*')).toBe('2.0.0');
-    expect(selectBestVersion(versions, '^0.1.0')).toBe('0.2.0');
+    // Zero-major caret: ^0.1.0 is >=0.1.0 <0.2.0 (npm-style), so 0.2.0 is out.
+    expect(selectBestVersion(versions, '^0.1.0')).toBe('0.1.0');
+    expect(selectBestVersion(versions, '^0.2.0')).toBe('0.2.0');
     expect(selectBestVersion(versions, '~1.0.0')).toBe('1.0.0');
     expect(selectBestVersion(versions, '0.1.0')).toBe('0.1.0');
     expect(selectBestVersion(versions, '^3.0.0')).toBeNull();

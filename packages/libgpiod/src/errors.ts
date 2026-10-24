@@ -59,9 +59,10 @@ const LINE_ERROR_MARKERS: RegExp[] = [
  * this prose.
  */
 const CHIP_ERROR_MARKERS: RegExp[] = [
-  /\bunable to find (?:the )?(?:gpio)?chip\b/i,
-  /\bcannot find (?:the )?(?:gpio)?chip\b/i,
-  /\bcould not (?:find|open|access) (?:the )?(?:gpio)?chip\b/i,
+  // libgpiod v2 often prints "GPIO chip" with a space; also accept "gpiochip".
+  /\bunable to find (?:the )?(?:gpio\s*)?chip\b/i,
+  /\bcannot find (?:the )?(?:gpio\s*)?chip\b/i,
+  /\bcould not (?:find|open|access) (?:the )?(?:gpio\s*)?chip\b/i,
   /\bgpiochip\d*\b.*\bnot found\b/i,
   /\bunknown chip\b/i,
   /\bchip not found\b/i,
@@ -96,7 +97,9 @@ export function toolMissingError(
     `'${tool}' could not be executed${spawnError ? ` (${spawnError.code})` : ''}. Install the libgpiod v2 tools (gpiod) and ensure '${tool}' is on PATH.`,
     {
       tool,
-      ...(spawnError ? { spawnErrorCode: spawnError.code, spawnErrorMessage: spawnError.message } : {}),
+      ...(spawnError
+        ? { spawnErrorCode: spawnError.code, spawnErrorMessage: spawnError.message }
+        : {}),
       installHint: 'Debian/Ubuntu: apt install gpiod (libgpiod v2).',
     },
   );
@@ -125,11 +128,15 @@ export function toolFailureError(details: ToolFailureDetails): LibgpiodError {
 }
 
 export function parseFailureError(tool: string, message: string, stdout: string): LibgpiodError {
-  return new LibgpiodError('GPIO_OPERATION_FAILED', `${tool} output could not be parsed: ${message}`, {
-    phase: 'parse',
-    tool,
-    stdout,
-  });
+  return new LibgpiodError(
+    'GPIO_OPERATION_FAILED',
+    `${tool} output could not be parsed: ${message}`,
+    {
+      phase: 'parse',
+      tool,
+      stdout,
+    },
+  );
 }
 
 function firstMeaningfulLine(stderr: string): string {

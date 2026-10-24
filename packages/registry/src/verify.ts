@@ -15,7 +15,6 @@
  */
 import { statSync } from 'node:fs';
 import { createPublicKey, verify as edVerify } from 'node:crypto';
-import { join } from 'node:path';
 import {
   computeContentHash,
   computeManifestHash,
@@ -111,7 +110,8 @@ export function verifyEntry(
   const manifestVersion = readManifestString(parsedManifest, 'version');
   let metadata: EntryVerification['metadata'] = 'UNKNOWN';
   if (parsedManifest !== null) {
-    metadata = manifestId === entry.name && manifestVersion === entry.version ? 'MATCH' : 'MISMATCH';
+    metadata =
+      manifestId === entry.name && manifestVersion === entry.version ? 'MATCH' : 'MISMATCH';
     if (metadata === 'MISMATCH') {
       failures.push({
         code: 'MODULE_METADATA_MISMATCH',
@@ -221,9 +221,7 @@ function verifySignature(
 
   const publisherAllowlisted =
     publisher !== null &&
-    allowlist.some(
-      (trusted) => trusted.publisher === undefined || trusted.publisher === publisher,
-    );
+    allowlist.some((trusted) => trusted.publisher === undefined || trusted.publisher === publisher);
   if (
     publisher !== null &&
     allowlist.length > 0 &&

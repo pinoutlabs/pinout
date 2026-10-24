@@ -20,12 +20,7 @@ import {
 
 describe('SupportLevel foundation', () => {
   it('exposes the canonical ladder including UNKNOWN', () => {
-    expect(SUPPORT_LEVELS).toEqual([
-      'UNKNOWN',
-      'SIMULATED',
-      'COMPILE_TESTED',
-      'HARDWARE_VERIFIED',
-    ]);
+    expect(SUPPORT_LEVELS).toEqual(['UNKNOWN', 'SIMULATED', 'COMPILE_TESTED', 'HARDWARE_VERIFIED']);
     expect(isSupportLevel('SIMULATED')).toBe(true);
     expect(isSupportLevel('IMPLEMENTED')).toBe(false);
     expect(compareSupportLevels('SIMULATED', 'COMPILE_TESTED')).toBeLessThan(0);
@@ -53,9 +48,9 @@ describe('SupportLevel foundation', () => {
     for (const [input, expected] of cases) {
       expect(mapFromSupportStatus(input), input).toBe(expected);
     }
-    expect(
-      mapFromSupportStatus('HARDWARE_VERIFIED', { hardwareRecordDate: '2026-10-24' }),
-    ).toBe('HARDWARE_VERIFIED');
+    expect(mapFromSupportStatus('HARDWARE_VERIFIED', { hardwareRecordDate: '2026-10-24' })).toBe(
+      'HARDWARE_VERIFIED',
+    );
   });
 
   it('maps all eight catalog statuses', () => {
@@ -79,9 +74,9 @@ describe('SupportLevel foundation', () => {
       'COMPILE_TESTED', // no dated record
       'UNKNOWN',
     ]);
-    expect(
-      mapFromCatalogStatus('HARDWARE_VERIFIED', { hardwareRecordDate: '2026-09-05' }),
-    ).toBe('HARDWARE_VERIFIED');
+    expect(mapFromCatalogStatus('HARDWARE_VERIFIED', { hardwareRecordDate: '2026-09-05' })).toBe(
+      'HARDWARE_VERIFIED',
+    );
   });
 
   it('maps conformance L0–L5 and requires a dated record for L5', () => {
@@ -94,9 +89,9 @@ describe('SupportLevel foundation', () => {
       'COMPILE_TESTED',
       'COMPILE_TESTED', // L5 without record
     ]);
-    expect(
-      mapFromConformanceLevel('L5', { hardwareRecordDate: '2026-10-01' }),
-    ).toBe('HARDWARE_VERIFIED');
+    expect(mapFromConformanceLevel('L5', { hardwareRecordDate: '2026-10-01' })).toBe(
+      'HARDWARE_VERIFIED',
+    );
   });
 
   it('maps generator lifecycle and never lets generated exceed COMPILE_TESTED without a record', () => {
@@ -114,12 +109,10 @@ describe('SupportLevel foundation', () => {
       'COMPILE_TESTED',
       'COMPILE_TESTED',
     ]);
-    expect(
-      mapFromGeneratorLifecycle('HARDWARE_TESTED', { hardwareRecordDate: '2026-10-24' }),
-    ).toBe('HARDWARE_VERIFIED');
-    expect(
-      applyEvidenceRules('HARDWARE_VERIFIED', { generated: true }),
-    ).toBe('COMPILE_TESTED');
+    expect(mapFromGeneratorLifecycle('HARDWARE_TESTED', { hardwareRecordDate: '2026-10-24' })).toBe(
+      'HARDWARE_VERIFIED',
+    );
+    expect(applyEvidenceRules('HARDWARE_VERIFIED', { generated: true })).toBe('COMPILE_TESTED');
   });
 
   it('validates dated hardware record strings', () => {

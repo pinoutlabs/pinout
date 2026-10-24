@@ -287,6 +287,7 @@ export function advertisementToCandidate(ad: BleAdvertisement): DiscoveredCandid
     vendor?: string;
     deviceClass?: string;
     reason: string;
+    unavailable?: boolean;
   }> = [];
   let confidence = 0.25;
 

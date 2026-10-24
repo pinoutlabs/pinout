@@ -291,7 +291,8 @@ export const builtinBoards: BoardDescriptor[] = [
       'ADC1 covers GPIO 0-6 only; ESP32-C6 has no ADC2.',
     ],
     support: 'EXPERIMENTAL',
-  },  {
+  },
+  {
     schemaVersion: '1',
     boardId: 'raspberry-pi-pico',
     family: 'rp2040',
@@ -301,9 +302,7 @@ export const builtinBoards: BoardDescriptor[] = [
       28,
     ],
     adcPins: [26, 27, 28],
-    pwmPins: [
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25,
-    ],
+    pwmPins: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25],
     reservedPins: [23, 24, 29],
     inputOnlyPins: [],
     uartPins: [
@@ -348,15 +347,14 @@ export const builtinBoards: BoardDescriptor[] = [
 ];
 
 // LEDC channel counts: classic ESP32 16, S2/S3 8, C3/C6 6 (Espressif datasheets).
-const pwmChannelLimits: Partial<
-  Record<BoardDescriptor['family'], { label: string; max: number }>
-> = {
-  esp32: { label: 'ESP32', max: 16 },
-  'esp32-s2': { label: 'ESP32-S2', max: 8 },
-  'esp32-s3': { label: 'ESP32-S3', max: 8 },
-  'esp32-c3': { label: 'ESP32-C3', max: 6 },
-  'esp32-c6': { label: 'ESP32-C6', max: 6 },
-};
+const pwmChannelLimits: Partial<Record<BoardDescriptor['family'], { label: string; max: number }>> =
+  {
+    esp32: { label: 'ESP32', max: 16 },
+    'esp32-s2': { label: 'ESP32-S2', max: 8 },
+    'esp32-s3': { label: 'ESP32-S3', max: 8 },
+    'esp32-c3': { label: 'ESP32-C3', max: 6 },
+    'esp32-c6': { label: 'ESP32-C6', max: 6 },
+  };
 
 export function boardForInfo(info: {
   boardId?: string;
@@ -374,8 +372,14 @@ export function validateBoardAction(
   payload: Record<string, unknown>,
 ): void {
   const channelLimit = pwmChannelLimits[board.family];
-  if (channelLimit !== undefined && typeof payload.channel === 'number' && payload.channel > channelLimit.max - 1)
-    throw new ValidationError(`${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`);
+  if (
+    channelLimit !== undefined &&
+    typeof payload.channel === 'number' &&
+    payload.channel > channelLimit.max - 1
+  )
+    throw new ValidationError(
+      `${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`,
+    );
   const read =
     ['gpio.read', 'gpio.watch', 'gpio.unwatch', 'gpio.analogRead'].includes(action) ||
     (action === 'gpio.mode' && payload.mode === 'input');

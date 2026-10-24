@@ -54,7 +54,7 @@ export interface RegistryVerifyFlags {
 }
 
 export interface RegistryConformanceFlags {
-  json?: string;
+  reportFile?: string;
   simulationVerified?: boolean;
   integrationVerified?: boolean;
   hardwareRecord?: string;
@@ -96,7 +96,9 @@ export function registerRegistryCommands(
             out.log({ entry: packed.entry, files: packed.files, path: outPath });
             return;
           }
-          out.log(`Packed ${packed.entry.name}@${packed.entry.version} (${packed.files.length} files)`);
+          out.log(
+            `Packed ${packed.entry.name}@${packed.entry.version} (${packed.files.length} files)`,
+          );
           out.log(`Entry written to ${outPath}`);
           return;
         }
@@ -276,7 +278,8 @@ export function registerRegistryCommands(
   module
     .command('conformance <dir>')
     .description('Emit the machine-readable L0–L5 conformance report for a module directory.')
-    .option('--json <file>', 'write the machine-readable report to a file')
+    // Avoid `--json <file>`: it collides with the global boolean `--json` flag.
+    .option('--report-file <file>', 'write the machine-readable report to a file')
     .option('--simulation-verified', 'record simulation evidence (L3)')
     .option('--integration-verified', 'record daemon/module-host integration evidence (L4)')
     .option('--hardware-record <file>', 'dated hardware test record JSON (L5)')
@@ -306,8 +309,8 @@ export function registerRegistryCommands(
           );
         }
         const report = await registry.evaluateModuleConformance(dir, conformanceOptions);
-        if (options.json) {
-          const reportPath = resolve(options.json);
+        if (options.reportFile) {
+          const reportPath = resolve(options.reportFile);
           mkdirSync(dirname(reportPath), { recursive: true });
           writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
           if (!out.json) {

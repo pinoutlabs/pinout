@@ -1,11 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -215,13 +208,7 @@ describe('CLI module publish, search, info', () => {
     expect(index.modules[0]?.['publisher']).toBe('pinoutlabs');
     expect(existsSync(join(registryDir, 'modules/test-climate@0.1.0/index.js'))).toBe(true);
 
-    const duplicate = await run([
-      'module',
-      'publish',
-      fixture,
-      '--registry',
-      registryDir,
-    ]);
+    const duplicate = await run(['module', 'publish', fixture, '--registry', registryDir]);
     expect(duplicate.code).toBe(1);
     expect(duplicate.text).toContain('[MODULE_ALREADY_PUBLISHED]');
 
@@ -347,13 +334,7 @@ describe('CLI module install and verify through --registry', () => {
     expect(verified.text).toContain('REGISTRY VERIFICATION: OK');
     expect(verified.text).toContain('SIGNATURE: VALID');
 
-    const untrusted = await run([
-      'module',
-      'verify',
-      installed,
-      '--registry',
-      registryDir,
-    ]);
+    const untrusted = await run(['module', 'verify', installed, '--registry', registryDir]);
     expect(untrusted.code).toBe(0);
     expect(untrusted.text).toContain('SIGNATURE: UNTRUSTED');
   });
@@ -364,13 +345,7 @@ describe('CLI module install and verify through --registry', () => {
     const previous = process.env['PINOUT_HOME'];
     process.env['PINOUT_HOME'] = home;
     try {
-      const result = await run([
-        'module',
-        'install',
-        'test/climate',
-        '--registry',
-        registryDir,
-      ]);
+      const result = await run(['module', 'install', 'test/climate', '--registry', registryDir]);
       expect(result.code).toBe(0);
       expect(existsSync(join(home, 'registry-modules/test__climate@0.1.0/index.js'))).toBe(true);
     } finally {
@@ -472,7 +447,7 @@ describe('CLI module install and verify through --registry', () => {
 describe('CLI module conformance', () => {
   it('emits and writes the L2 report for a runnable module', async () => {
     const reportPath = join(dir, 'reports/conformance.json');
-    const result = await run(['module', 'conformance', fixture, '--json', reportPath]);
+    const result = await run(['module', 'conformance', fixture, '--report-file', reportPath]);
 
     expect(result.code).toBe(0);
     expect(result.text).toContain('L2 CONFORMANCE_PASS');
@@ -539,7 +514,7 @@ describe('CLI module conformance', () => {
     writeFileSync(join(broken, 'index.js'), 'export default {};\n', 'utf8');
 
     const reportPath = join(dir, 'broken-report.json');
-    const result = await run(['module', 'conformance', broken, '--json', reportPath]);
+    const result = await run(['module', 'conformance', broken, '--report-file', reportPath]);
     expect(result.code).toBe(1);
     expect(result.text).toContain('[CONFORMANCE_FAILED]');
     const report = JSON.parse(readFileSync(reportPath, 'utf8')) as { passed: boolean };
@@ -559,13 +534,7 @@ describe('CLI module conformance', () => {
       })}\n`,
       'utf8',
     );
-    const result = await run([
-      'module',
-      'conformance',
-      fixture,
-      '--hardware-record',
-      hardwarePath,
-    ]);
+    const result = await run(['module', 'conformance', fixture, '--hardware-record', hardwarePath]);
     expect(result.code).toBe(1);
     expect(result.text).toContain('[CONFORMANCE_FAILED]');
     expect(result.text).toContain('YYYY-MM-DD');

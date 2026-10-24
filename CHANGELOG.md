@@ -64,6 +64,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - **ESP32-S3 `firmwareTarget`**: aligned to PlatformIO env `esp32-s3-devkitc-1`
   (local alias `esp32s3-devkit` documented); reserved strap GPIO 3 removed from
   `adcPins` so the board descriptor validates.
+- **`pinout module conformance --report-file`**: renamed from `--json <file>` so it
+  no longer collides with the global boolean `--json` flag.
+- **Registry semver**: empty ranges are invalid; zero-major caret tests match
+  npm-style `^0.1.0` → `<0.2.0` (not `0.2.0`).
 
 ### Added (Phases 1–5 sprint)
 
