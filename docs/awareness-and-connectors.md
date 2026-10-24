@@ -1,6 +1,6 @@
 # Device awareness and automatic connectors
 
-**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses fixtures and, until PR1–PR4 merge, a labeled local stub of the daemon/MCP surface. Nothing here is `HARDWARE_VERIFIED`.
+**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses fixtures and, until PR1–PR4 merge, a labeled local stub of the daemon/MCP surface. Nothing here is `HARDWARE_VERIFIED`. Evidence vocabulary is the canonical [`SupportLevel`](evidence-levels.md) from `@pinout/core`.
 
 ## Product story
 
@@ -103,17 +103,17 @@ flowchart TB
 
 ### Evidence (`SupportLevel`)
 
-Canonical ladder (PR0 / `@pinout/core`):
+Canonical ladder from `@pinout/core` (PR0):
 
 `UNKNOWN` → `SIMULATED` → `COMPILE_TESTED` → `HARDWARE_VERIFIED`
 
 Rules:
 
-1. Generated connectors **never** exceed `COMPILE_TESTED` without a dated `hardware/records/` entry.
+1. Generated connectors **never** exceed `COMPILE_TESTED` without a dated `hardware/records/` entry (`applyEvidenceRules` / `capSupportLevel`).
 2. This repository currently has **no** awareness/connector `HARDWARE_VERIFIED` claim.
 3. Simulator and fixture demos must stay labeled `SIMULATED`.
 
-See [evidence-levels.md](evidence-levels.md) when present on `main`, and [hardware-support.md](hardware-support.md).
+Full mapping tables and honesty rules: [evidence-levels.md](evidence-levels.md). Also [hardware-support.md](hardware-support.md).
 
 ## Threat / safety model
 
@@ -167,6 +167,8 @@ npm run demo:awareness
 ```
 
 Until then the demo prints an explicit **stubbed** list in its summary.
+
+Related drafts from parallel PRs (link once merged): `docs/awareness.md` (PR1), `docs/mcp-awareness.md` (PR2). This overview stays the product-story entry point.
 
 ## HTTP / MCP contracts (for implementers)
 

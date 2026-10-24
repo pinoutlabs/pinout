@@ -2,7 +2,7 @@
 
 > **SIMULATED** — scripted agent loop against mock devices. Pinout has never run on real hardware in this repository. No radio, broker, or USB was used.
 
-Generated: 2026-10-24T20:29:02.994Z
+Generated: 2026-10-24T20:32:31.185Z
 
 [system] MCP tools available: pinout__nearby_devices, pinout__awareness_events, pinout__describe_nearby, pinout__request_enroll, pinout__generate_connector, pinout__connector_status, pinout__list_connectors, pinout__invoke_connector
 
@@ -23,8 +23,8 @@ Generated: 2026-10-24T20:29:02.994Z
         "protocol": 1
       },
       "state": "IDENTIFIED",
-      "firstSeen": 1792873742985,
-      "lastSeen": 1792873742985,
+      "firstSeen": 1792873951176,
+      "lastSeen": 1792873951176,
       "moduleId": "pinout/esp32",
       "capabilities": [
         "sys.hello",
@@ -49,8 +49,8 @@ Generated: 2026-10-24T20:29:02.994Z
         "rssi": -62
       },
       "state": "ONLINE",
-      "firstSeen": 1792873742985,
-      "lastSeen": 1792873742990,
+      "firstSeen": 1792873951176,
+      "lastSeen": 1792873951181,
       "moduleId": null,
       "capabilities": [],
       "evidenceLevel": "UNKNOWN",
@@ -72,8 +72,8 @@ Generated: 2026-10-24T20:29:02.994Z
         "broker": "mqtt://127.0.0.1:1883"
       },
       "state": "SEEN",
-      "firstSeen": 1792873742985,
-      "lastSeen": 1792873742985,
+      "firstSeen": 1792873951176,
+      "lastSeen": 1792873951176,
       "moduleId": null,
       "capabilities": [],
       "evidenceLevel": "UNKNOWN",
@@ -102,8 +102,8 @@ Generated: 2026-10-24T20:29:02.994Z
       "rssi": -62
     },
     "state": "ONLINE",
-    "firstSeen": 1792873742985,
-    "lastSeen": 1792873742990,
+    "firstSeen": 1792873951176,
+    "lastSeen": 1792873951181,
     "moduleId": null,
     "capabilities": [],
     "evidenceLevel": "UNKNOWN",

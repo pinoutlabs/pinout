@@ -1,12 +1,13 @@
 /**
  * Contract types for the awareness + connector demo (PR5).
  *
- * Aligns with PR0 SupportLevel and the PR1–PR4 HTTP/MCP surface described in
- * docs/awareness-and-connectors.md. Until those PRs merge, the demo stub
- * implements the same shapes locally (honestly labeled SIMULATED / STUBBED).
+ * Evidence levels use canonical SupportLevel from @pinout/core (PR0).
+ * HTTP/MCP shapes align with PR1–PR4; until those merge, the demo stub
+ * implements them locally (honestly labeled SIMULATED / STUBBED).
  */
+import { capSupportLevel, compareSupportLevels, type SupportLevel } from '@pinout/core';
 
-export type SupportLevel = 'UNKNOWN' | 'SIMULATED' | 'COMPILE_TESTED' | 'HARDWARE_VERIFIED';
+export type { SupportLevel };
 
 export type AwarenessTransport = 'serial' | 'usb' | 'ble' | 'mdns' | 'mqtt';
 
@@ -105,16 +106,15 @@ export interface MockDevicesFile {
   devices: MockDeviceFixture[];
 }
 
-export const EVIDENCE_RANK: Record<SupportLevel, number> = {
-  UNKNOWN: 0,
-  SIMULATED: 1,
-  COMPILE_TESTED: 2,
-  HARDWARE_VERIFIED: 3,
-};
-
+/** Cap generated-connector evidence (never above COMPILE_TESTED without HIL record). */
 export function capEvidenceLevel(
   level: SupportLevel,
   max: SupportLevel = 'COMPILE_TESTED',
 ): SupportLevel {
-  return EVIDENCE_RANK[level] > EVIDENCE_RANK[max] ? max : level;
+  return capSupportLevel(level, max);
+}
+
+/** True when `level` is strictly stronger than `max`. */
+export function evidenceExceeds(level: SupportLevel, max: SupportLevel): boolean {
+  return compareSupportLevels(level, max) > 0;
 }

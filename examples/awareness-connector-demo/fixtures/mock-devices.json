@@ -1,5 +1,5 @@
 {
-  "$schemaComment": "SIMULATED mock-devices fixture for pinoutd --mock-devices (PR1) and the PR5 demo stub. Not real hardware.",
+  "$schemaComment": "SIMULATED mock-devices fixture for the PR5 demo stub and (after PR1) pinoutd --mock-devices. Richer than fixtures/awareness/demo-devices.json: includes UNKNOWN BLE+GATT + MQTT sensor paths for connector generation. Not real hardware.",
   "preset": "awareness-demo",
   "label": "SIMULATED — awareness + connector demo (no radio, no broker, no USB)",
   "devices": [

@@ -24,7 +24,7 @@ import {
   startMockControlPlane,
   type RunningMockControlPlane,
 } from '../src/mockControlPlane.js';
-import { EVIDENCE_RANK, type SupportLevel } from '../src/types.js';
+import { evidenceExceeds, type SupportLevel } from '../src/types.js';
 
 const demoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -71,9 +71,7 @@ describe('awareness-connector demo e2e (SIMULATED)', () => {
 
     expect(connector.status).toBe('QUARANTINED');
     expect(connector.armed).toBe(false);
-    expect(EVIDENCE_RANK[connector.evidenceLevel]).toBeLessThanOrEqual(
-      EVIDENCE_RANK.COMPILE_TESTED,
-    );
+    expect(evidenceExceeds(connector.evidenceLevel, 'COMPILE_TESTED')).toBe(false);
     expect(connector.evidenceLevel).not.toBe('HARDWARE_VERIFIED' satisfies SupportLevel);
 
     const readOnly = invokeConnectorCapability(plane.store, connector.id, 'lamp.status', {});
@@ -110,9 +108,7 @@ describe('awareness-connector demo e2e (SIMULATED)', () => {
     expect(inRange.result?.simulated).toBe(true);
 
     // Evidence still capped after install.
-    expect(EVIDENCE_RANK[connector.evidenceLevel]).toBeLessThanOrEqual(
-      EVIDENCE_RANK.COMPILE_TESTED,
-    );
+    expect(evidenceExceeds(connector.evidenceLevel, 'COMPILE_TESTED')).toBe(false);
   });
 
   it('exposes PR2 MCP tools and drives a scripted agent session', async () => {
@@ -154,9 +150,7 @@ describe('awareness-connector demo e2e (SIMULATED)', () => {
       const connector = (
         status.structuredContent as { connector: { evidenceLevel: SupportLevel; armed: boolean } }
       ).connector;
-      expect(EVIDENCE_RANK[connector.evidenceLevel]).toBeLessThanOrEqual(
-        EVIDENCE_RANK.COMPILE_TESTED,
-      );
+      expect(evidenceExceeds(connector.evidenceLevel, 'COMPILE_TESTED')).toBe(false);
       expect(connector.armed).toBe(false);
 
       const denied = await client.callTool({
@@ -183,9 +177,7 @@ describe('awareness-connector demo e2e (SIMULATED)', () => {
     const mqttConnector = generateConnectorFromStore(plane.store, 'mock-mqtt-room-sensor');
     expect(mqttConnector.status).toBe('QUARANTINED');
     expect(mqttConnector.armed).toBe(false);
-    expect(EVIDENCE_RANK[mqttConnector.evidenceLevel]).toBeLessThanOrEqual(
-      EVIDENCE_RANK.COMPILE_TESTED,
-    );
+    expect(evidenceExceeds(mqttConnector.evidenceLevel, 'COMPILE_TESTED')).toBe(false);
 
     const response = await fetch(
       `${plane.baseUrl}/v1/connectors/${encodeURIComponent(mqttConnector.id)}/approve`,
