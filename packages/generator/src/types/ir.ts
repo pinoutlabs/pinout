@@ -21,6 +21,25 @@ export interface CandidateArgument {
   unit?: string;
   description?: string;
   required?: boolean;
+  minimum?: number;
+  maximum?: number;
+  enumValues?: Array<string | number | boolean>;
+}
+
+/**
+ * Interface transport kinds. Legacy kinds (tcp|serial|http|sdk|unknown) remain
+ * for back-compat; connector builders also emit ble-gatt, mqtt, mdns, serial-bridge.
+ */
+export type HardwareInterfaceKind =
+  'tcp' | 'serial' | 'http' | 'sdk' | 'unknown' | 'ble-gatt' | 'mqtt' | 'mdns' | 'serial-bridge';
+
+export type CapabilitySafetyClass = 'readOnly' | 'physicalOutput' | 'unknown';
+
+export interface CandidateArgumentSchema {
+  type: 'object';
+  additionalProperties: false;
+  properties: Record<string, CandidateArgument>;
+  required?: string[];
 }
 
 export interface CandidateCapability {
@@ -29,9 +48,19 @@ export interface CandidateCapability {
   vendorNames?: string[];
   arguments?: Record<string, CandidateArgument>;
   output?: Record<string, CandidateArgument>;
+  /** Strict input schema for physical outputs (no additionalProperties). */
+  inputSchema?: CandidateArgumentSchema;
+  /** Strict output schema when inferred from samples. */
+  outputSchema?: CandidateArgumentSchema;
   confidence: number;
   evidence: EvidenceReference[];
   implementationStatus: 'implemented' | 'skeleton' | 'unknown';
+  /** Inferred actuation class — never invent; unknowns stay explicit. */
+  safetyClass?: CapabilitySafetyClass;
+  reversible?: boolean;
+  reversibilityNotes?: string;
+  /** True when human must supply ranges / approve before hard policies. */
+  requiresApproval?: boolean;
 }
 
 export interface CandidateStateField {
@@ -63,14 +92,18 @@ export interface CandidateSafetyConstraint {
   evidence: EvidenceReference[];
   requiresHumanReview: boolean;
   documented: boolean;
+  /** Policy stub: default-deny until a human supplies bounds. */
+  requiresApproval?: boolean;
 }
 
 export interface HardwareInterface {
-  kind: 'tcp' | 'serial' | 'http' | 'sdk' | 'unknown';
+  kind: HardwareInterfaceKind;
   description?: string;
   host?: string;
   port?: number;
   baud?: number;
+  /** Topic prefix / service type / GATT service UUID when known. */
+  endpoint?: string;
   commands?: string[];
   evidence: EvidenceReference[];
   confidence: number;
@@ -119,3 +152,15 @@ export function confidenceBand(confidence: number): ConfidenceBand {
   }
   return 'low';
 }
+
+export const HARDWARE_INTERFACE_KINDS: readonly HardwareInterfaceKind[] = [
+  'tcp',
+  'serial',
+  'http',
+  'sdk',
+  'unknown',
+  'ble-gatt',
+  'mqtt',
+  'mdns',
+  'serial-bridge',
+] as const;

@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Generator connectors (`@pinout/generator`)**: Extended Hardware Interface IR kinds with `ble-gatt`, `mqtt`, `mdns`, and `serial-bridge` (legacy kinds unchanged). New ingestors for `sys.hello`, GATT dumps, MQTT topic samples, and mDNS/OpenAPI; safety inference classifies read-only vs `physicalOutput` with strict schemas and default-deny `requiresApproval` policy stubs. Deterministic 8-file connector templates plus programmatic `generateConnector({ source, ir|raw, outDir|inMemory })` for the daemon/install pipeline (uses core `SupportLevel` / `mapFromGeneratorLifecycle`, evidence capped at `COMPILE_TESTED`; never auto-install/register). Fixtures under `fixtures/generator/{serial-hello,ble-gatt-lamp,mqtt-sensor-relay,unknown-weird}`. Docs: [docs/generator-connectors.md](docs/generator-connectors.md).
 - **Canonical SupportLevel evidence ladder** (`@pinout/core`, PR0 foundation):
   `UNKNOWN` | `SIMULATED` | `COMPILE_TESTED` | `HARDWARE_VERIFIED` with mappers from
   module-manifest status, spec `SupportStatus`, `hardware/catalog.json` statuses,
@@ -60,21 +61,6 @@ All notable changes to this project are documented here. The format follows [Kee
   [docs/esp32-mqtt.md](docs/esp32-mqtt.md), firmware README, catalog + board
   `wireless.mqttBridge` notes.
 - **ESP32-C3 / ESP32-S3 first-class bridge targets** (`firmware/esp32-bridge`): PlatformIO envs `esp32-c3-supermini` and `esp32-s3-devkitc-1` build with pin maps, I2C/SPI defaults, and `boardId` values aligned to `firmware/boards/*.json`. Classic `esp32dev` remains the default CI compile gate. C3/S3 stay out of that gate and are compiled by the release-candidate workflow. Status remains honest `COMPILE_TESTED` (no physical HIL; never auto-flash). Host simulator/family pin rules and board-descriptor tests cover reserved flash/USB/UART/strap pins; `builtinBoards` includes S3.
-
-### Changed
-
-- **BLE discovery rules** (`@pinout/discovery`): every `BLE_RULES` `moduleId` resolves
-  in the builtin registry or is explicitly `unavailable` (no dangling
-  `pinout/micropython-bridge` / `pinout/bridge` / unmarked `unknown/*`).
-- **Hardware catalog honesty**: Linux SBC GPIO (`@pinout/libgpiod`) → `IMPLEMENTED`
-  (scripted tests only); ROS 2 sidecar → `SIMULATED` (package exists; no HIL).
-- **ESP32-S3 `firmwareTarget`**: aligned to PlatformIO env `esp32-s3-devkitc-1`
-  (local alias `esp32s3-devkit` documented); reserved strap GPIO 3 removed from
-  `adcPins` so the board descriptor validates.
-- **`pinout module conformance --report-file`**: renamed from `--json <file>` so it
-  no longer collides with the global boolean `--json` flag.
-- **Registry semver**: empty ranges are invalid; zero-major caret tests match
-  npm-style `^0.1.0` → `<0.2.0` (not `0.2.0`).
 
 ### Added (Phases 1–5 sprint)
 

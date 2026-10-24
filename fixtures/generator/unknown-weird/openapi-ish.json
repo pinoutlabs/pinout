@@ -1,0 +1,23 @@
+{
+  "vendor": "WeirdCo",
+  "model": "weird-http-gadget",
+  "mdns": {
+    "name": "WeirdGadget.local",
+    "type": "_http._tcp",
+    "host": "weirdgadget.local",
+    "port": 8080,
+    "txt": { "path": "/api" }
+  },
+  "openapi": {
+    "info": { "title": "Weird Gadget API", "version": "0.0.1" },
+    "operations": [
+      {
+        "method": "GET",
+        "path": "/api/status",
+        "operationId": "status.read",
+        "summary": "Read gadget status",
+        "readOnly": true
+      }
+    ]
+  }
+}

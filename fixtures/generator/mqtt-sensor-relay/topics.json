@@ -1,0 +1,40 @@
+{
+  "vendor": "Shelly-like",
+  "model": "Sensor+Relay Combo",
+  "broker": "mqtt://127.0.0.1:1883",
+  "samples": [
+    {
+      "topic": "home/lab/sensor/tele/SENSOR",
+      "direction": "subscribe",
+      "payload": {
+        "temperatureC": 21.5,
+        "humidityPercent": 48,
+        "pressurePa": 101325
+      }
+    },
+    {
+      "topic": "home/lab/sensor/tele/SENSOR",
+      "direction": "subscribe",
+      "payload": {
+        "temperatureC": 22.0,
+        "humidityPercent": 50,
+        "pressurePa": 101300
+      }
+    },
+    {
+      "topic": "home/lab/relay/cmnd/POWER",
+      "direction": "publish",
+      "payload": { "on": true }
+    },
+    {
+      "topic": "home/lab/relay/cmnd/POWER",
+      "direction": "publish",
+      "payload": { "on": false }
+    },
+    {
+      "topic": "home/lab/relay/stat/POWER",
+      "direction": "subscribe",
+      "payload": { "on": false }
+    }
+  ]
+}

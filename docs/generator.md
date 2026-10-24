@@ -88,11 +88,13 @@ The IR is the central artifact. Every inferred fact carries **evidence**, **conf
 Key fields:
 
 - `device` — vendor, model, device class
-- `interfaces` — tcp, serial, sdk
-- `capabilities` — semantic capability ids with arguments
-- `safety` — range, precondition, candidate constraints
+- `interfaces` — `tcp` · `serial` · `http` · `sdk` · `unknown` · `ble-gatt` · `mqtt` · `mdns` · `serial-bridge`
+- `capabilities` — semantic capability ids with arguments, optional `safetyClass` / `requiresApproval`
+- `safety` — range, precondition, candidate constraints (default-deny stubs when ranges missing)
 - `uncertainties` — explicit unknowns (preferred over hallucination)
 - `evidence` — source references
+
+Connector building for awareness / GATT / MQTT / mDNS uses `generateConnector` — see [generator-connectors.md](generator-connectors.md).
 
 Confidence bands:
 
