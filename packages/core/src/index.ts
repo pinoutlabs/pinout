@@ -104,6 +104,17 @@ export {
   computeFreshness,
   isStale,
   hasObservedValue,
+  SUPPORT_LEVELS,
+  isSupportLevel,
+  compareSupportLevels,
+  capSupportLevel,
+  isDatedHardwareRecord,
+  applyEvidenceRules,
+  mapFromManifestStatus,
+  mapFromSupportStatus,
+  mapFromCatalogStatus,
+  mapFromConformanceLevel,
+  mapFromGeneratorLifecycle,
 } from './spec/index.js';
 export type {
   EvidenceSource,
@@ -112,6 +123,13 @@ export type {
   EvidenceState,
   StatePrerequisite,
   DeviceStateEvidence,
+  SupportLevel,
+  ManifestStatus,
+  SupportStatusInput,
+  CatalogStatus,
+  ConformanceLevelInput,
+  GeneratorLifecycle,
+  SupportLevelOptions,
 } from './spec/index.js';
 export {
   PolicyError,
