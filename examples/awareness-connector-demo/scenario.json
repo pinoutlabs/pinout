@@ -4,6 +4,7 @@
   "evidenceLabel": "SIMULATED",
   "honesty": [
     "All devices in this scenario are fixtures. Pinout has never run on real hardware in this repository.",
+    "Awareness uses real pinoutd --mock-devices (PR1). Connectors use generateConnector + fixtures/generator (PR3).",
     "Evidence for generated connectors must never exceed COMPILE_TESTED without a dated hardware/records entry.",
     "Nothing is auto-armed. Physical-output capabilities stay rejected until a human approves ranges."
   ],
@@ -12,14 +13,14 @@
       "id": "boot",
       "action": "boot_pinoutd_mock_discovery",
       "mockDevices": "fixtures/mock-devices.json",
-      "expect": { "mode": "mock-discovery", "label": "SIMULATED" }
+      "expect": { "mode": "real-awareness+generator+stub-lifecycle", "label": "SIMULATED" }
     },
     {
       "id": "known-recognized",
       "action": "list_awareness",
       "expect": {
         "deviceId": "mock-serial-esp32-known",
-        "state": "IDENTIFIED",
+        "state": "PENDING_ENROLL",
         "moduleId": "pinout/esp32"
       }
     },
@@ -28,15 +29,15 @@
       "action": "list_awareness",
       "expect": {
         "deviceId": "mock-ble-unknown-lamp",
-        "state": "SEEN",
-        "moduleId": null,
-        "evidenceLevel": "UNKNOWN"
+        "moduleIdPrefix": "unknown/",
+        "evidenceLevel": "SIMULATED"
       }
     },
     {
       "id": "generate-connector",
       "action": "generate_connector",
       "awarenessId": "mock-ble-unknown-lamp",
+      "fixture": "fixtures/generator/ble-gatt-lamp/gatt-dump.json",
       "expect": {
         "status": "QUARANTINED",
         "evidenceLevelMax": "COMPILE_TESTED",
@@ -44,17 +45,17 @@
       }
     },
     {
-      "id": "readonly-status-ok",
+      "id": "readonly-ok",
       "action": "invoke_connector_capability",
-      "capability": "lamp.status",
+      "capability": "ble.gatt.00001800.00002a00.read",
       "args": {},
       "expect": { "ok": true }
     },
     {
       "id": "physical-before-approve-rejected",
       "action": "invoke_connector_capability",
-      "capability": "lamp.setBrightness",
-      "args": { "percent": 40 },
+      "capability": "ble.gatt.0000ff10.0000ff12.write",
+      "args": { "value": "28" },
       "expect": { "ok": false, "code": "SAFETY_APPROVAL_REQUIRED" }
     },
     {
@@ -62,11 +63,10 @@
       "action": "approve_connector",
       "marker": "HUMAN APPROVES",
       "ranges": {
-        "lamp.setBrightness": {
-          "percent": { "min": 0, "max": 80 }
+        "ble.gatt.0000ff10.0000ff13.notify": {
+          "value": { "min": 0, "max": 80 }
         }
       },
-      "capabilities": ["lamp.setBrightness", "lamp.status"],
       "expect": { "status": "APPROVED" }
     },
     {
@@ -77,27 +77,20 @@
     {
       "id": "out-of-range-rejected",
       "action": "invoke_connector_capability",
-      "capability": "lamp.setBrightness",
-      "args": { "percent": 95 },
+      "capability": "ble.gatt.0000ff10.0000ff13.notify",
+      "args": { "value": 95 },
       "expect": { "ok": false, "code": "POLICY_CONSTRAINT_VIOLATION" }
     },
     {
       "id": "in-range-ok",
       "action": "invoke_connector_capability",
-      "capability": "lamp.setBrightness",
-      "args": { "percent": 40 },
+      "capability": "ble.gatt.0000ff10.0000ff13.notify",
+      "args": { "value": 40 },
       "expect": { "ok": true, "armed": false }
     },
     {
       "id": "mcp-agent-session",
       "action": "scripted_mcp_agent_loop",
-      "tools": [
-        "pinout__nearby_devices",
-        "pinout__describe_nearby",
-        "pinout__generate_connector",
-        "pinout__connector_status",
-        "pinout__list_connectors"
-      ],
       "transcript": "transcript.md"
     }
   ]

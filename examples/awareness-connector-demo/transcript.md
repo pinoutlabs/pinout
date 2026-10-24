@@ -1,10 +1,10 @@
 # Awareness → connector MCP agent transcript
 
-> **SIMULATED** — scripted agent loop against mock devices. Pinout has never run on real hardware in this repository. No radio, broker, or USB was used.
+> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices + generateConnector fixtures. Pinout has never run on real hardware in this repository.
 
-Generated: 2026-10-24T20:32:31.185Z
+Generated: 2026-10-24T20:42:34.358Z
 
-[system] MCP tools available: pinout__nearby_devices, pinout__awareness_events, pinout__describe_nearby, pinout__request_enroll, pinout__generate_connector, pinout__connector_status, pinout__list_connectors, pinout__invoke_connector
+[system] MCP awareness/connector tools: pinout__nearby_devices, pinout__awareness_events, pinout__describe_nearby, pinout__request_enroll, pinout__generate_connector, pinout__connector_status, pinout__list_connectors
 
 [agent] What devices are nearby?
 [tool] pinout__nearby_devices
@@ -15,73 +15,92 @@ Generated: 2026-10-24T20:32:31.185Z
       "id": "mock-serial-esp32-known",
       "transport": "serial",
       "identity": {
-        "advertisedName": "pinout-esp32-bridge",
-        "vid": "303A",
+        "endpoint": "/dev/cu.mock-esp32-demo",
+        "guessedModuleId": "pinout/esp32",
+        "vendor": "Espressif",
+        "deviceClass": "microcontroller",
+        "vid": "303a",
         "pid": "1001",
+        "advertisedName": "pinout-esp32-bridge",
         "firmware": "esp32-bridge",
-        "version": "0.0.1-alpha.1",
-        "protocol": 1
+        "version": "0.0.1-alpha.1"
       },
-      "state": "IDENTIFIED",
-      "firstSeen": 1792873951176,
-      "lastSeen": 1792873951176,
-      "moduleId": "pinout/esp32",
-      "capabilities": [
-        "sys.hello",
-        "sys.arm",
-        "sys.disarm",
-        "gpio.write",
-        "gpio.read"
-      ],
+      "state": "PENDING_ENROLL",
+      "firstSeen": 1792874554332,
+      "lastSeen": 1792874554332,
+      "health": {
+        "status": "CONNECTED",
+        "lifecycle": "ready",
+        "lastUpdated": 1792874554332
+      },
       "evidenceLevel": "SIMULATED",
-      "label": "known ESP32 bridge (auto-recognized module)"
+      "confidence": 0.5,
+      "connector": {
+        "status": "none",
+        "guidance": "No awareness connector yet — generate/approve via connector tools; physical-output stays human-gated."
+      },
+      "mock": true,
+      "moduleId": "pinout/esp32",
+      "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect."
     },
     {
       "id": "mock-ble-unknown-lamp",
       "transport": "ble",
       "identity": {
+        "endpoint": "aa:bb:cc:dd:ee:01",
+        "guessedModuleId": "unknown/ble-lamp",
         "advertisedName": "DeskLamp-GATT-Unknown",
-        "macHash": "sim-aa:bb:cc:dd:ee:01",
         "uuids": [
           "0000fff0-0000-1000-8000-00805f9b34fb",
           "0000fff1-0000-1000-8000-00805f9b34fb"
         ],
-        "rssi": -62
+        "macHash": "077a24919e64dcdb"
       },
-      "state": "ONLINE",
-      "firstSeen": 1792873951176,
-      "lastSeen": 1792873951181,
-      "moduleId": null,
-      "capabilities": [],
-      "evidenceLevel": "UNKNOWN",
-      "label": "UNKNOWN BLE/GATT lamp-like device (no module match → connector generation)",
+      "state": "IDENTIFIED",
+      "firstSeen": 1792874554333,
+      "lastSeen": 1792874554333,
+      "health": {
+        "status": "CONNECTED",
+        "lifecycle": "ready",
+        "lastUpdated": 1792874554333
+      },
+      "evidenceLevel": "SIMULATED",
+      "confidence": 0.25,
       "connector": {
-        "id": "conn-mock-ble-unknown-lamp",
-        "status": "INSTALLED"
-      }
+        "status": "none",
+        "guidance": "No awareness connector yet — generate/approve via connector tools; physical-output stays human-gated."
+      },
+      "mock": true,
+      "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect."
     },
     {
       "id": "mock-mqtt-room-sensor",
       "transport": "mqtt",
       "identity": {
-        "advertisedName": "sim-room-sensor",
-        "topics": [
-          "tele/sim-room/SENSOR",
-          "cmnd/sim-room/STATUS"
-        ],
-        "broker": "mqtt://127.0.0.1:1883"
+        "endpoint": "mqtt://127.0.0.1/tele/sim-room/SENSOR",
+        "guessedModuleId": "unknown/mqtt-sensor",
+        "advertisedName": "sim-room-sensor"
       },
-      "state": "SEEN",
-      "firstSeen": 1792873951176,
-      "lastSeen": 1792873951176,
-      "moduleId": null,
-      "capabilities": [],
-      "evidenceLevel": "UNKNOWN",
-      "label": "UNKNOWN MQTT sensor (samples only; SIMULATED)"
+      "state": "IDENTIFIED",
+      "firstSeen": 1792874554334,
+      "lastSeen": 1792874554334,
+      "health": {
+        "status": "CONNECTED",
+        "lifecycle": "ready",
+        "lastUpdated": 1792874554334
+      },
+      "evidenceLevel": "SIMULATED",
+      "confidence": 0.25,
+      "connector": {
+        "status": "none",
+        "guidance": "No awareness connector yet — generate/approve via connector tools; physical-output stays human-gated."
+      },
+      "mock": true,
+      "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect."
     }
   ],
-  "label": "SIMULATED",
-  "owner": "scripted-agent"
+  "count": 3,
+  "honesty": "evidenceLevel is SupportLevel (SIMULATED unless COMPILE_TESTED/HARDWARE_VERIFIED). Never claim hardware from SIMULATED/UNKNOWN."
 }
 ```
 
@@ -89,31 +108,34 @@ Generated: 2026-10-24T20:32:31.185Z
 [tool] pinout__describe_nearby
 ```json
 {
-  "device": {
-    "id": "mock-ble-unknown-lamp",
-    "transport": "ble",
-    "identity": {
-      "advertisedName": "DeskLamp-GATT-Unknown",
-      "macHash": "sim-aa:bb:cc:dd:ee:01",
-      "uuids": [
-        "0000fff0-0000-1000-8000-00805f9b34fb",
-        "0000fff1-0000-1000-8000-00805f9b34fb"
-      ],
-      "rssi": -62
-    },
-    "state": "ONLINE",
-    "firstSeen": 1792873951176,
-    "lastSeen": 1792873951181,
-    "moduleId": null,
-    "capabilities": [],
-    "evidenceLevel": "UNKNOWN",
-    "label": "UNKNOWN BLE/GATT lamp-like device (no module match → connector generation)",
-    "connector": {
-      "id": "conn-mock-ble-unknown-lamp",
-      "status": "INSTALLED"
-    }
+  "id": "mock-ble-unknown-lamp",
+  "transport": "ble",
+  "identity": {
+    "endpoint": "aa:bb:cc:dd:ee:01",
+    "guessedModuleId": "unknown/ble-lamp",
+    "advertisedName": "DeskLamp-GATT-Unknown",
+    "uuids": [
+      "0000fff0-0000-1000-8000-00805f9b34fb",
+      "0000fff1-0000-1000-8000-00805f9b34fb"
+    ],
+    "macHash": "077a24919e64dcdb"
   },
-  "label": "SIMULATED"
+  "state": "IDENTIFIED",
+  "firstSeen": 1792874554333,
+  "lastSeen": 1792874554333,
+  "health": {
+    "status": "CONNECTED",
+    "lifecycle": "ready",
+    "lastUpdated": 1792874554333
+  },
+  "evidenceLevel": "SIMULATED",
+  "confidence": 0.25,
+  "connector": {
+    "status": "none",
+    "guidance": "No awareness connector yet — generate/approve via connector tools; physical-output stays human-gated."
+  },
+  "mock": true,
+  "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect."
 }
 ```
 
@@ -121,60 +143,90 @@ Generated: 2026-10-24T20:32:31.185Z
 [tool] pinout__connector_status
 ```json
 {
-  "connector": {
-    "id": "conn-mock-ble-unknown-lamp",
-    "awarenessId": "mock-ble-unknown-lamp",
-    "status": "INSTALLED",
-    "evidenceLevel": "COMPILE_TESTED",
-    "mode": "installed",
-    "capabilities": [
-      {
-        "id": "lamp.setBrightness",
-        "physicalOutput": true,
-        "params": {
-          "percent": {
-            "type": "number",
-            "suggestedMin": 0,
-            "suggestedMax": 100
-          }
-        },
-        "confidence": 0.55,
-        "requiresHumanReview": true
-      },
-      {
-        "id": "lamp.status",
-        "physicalOutput": false,
-        "params": {},
-        "confidence": 0.7,
-        "requiresHumanReview": false
-      }
-    ],
-    "approvedCapabilities": [
-      "lamp.setBrightness",
-      "lamp.status"
-    ],
-    "ranges": {
-      "lamp.setBrightness": {
-        "percent": {
-          "min": 0,
-          "max": 80
+  "id": "conn-mock-ble-unknown-lamp",
+  "awarenessId": "mock-ble-unknown-lamp",
+  "status": "INSTALLED",
+  "evidenceLevel": "SIMULATED",
+  "mode": "installed",
+  "capabilities": [
+    {
+      "id": "ble.gatt.00001800.00002a00.read",
+      "physicalOutput": false,
+      "requiresApproval": false
+    },
+    {
+      "id": "ble.gatt.0000ff10.0000ff11.write",
+      "physicalOutput": true,
+      "requiresApproval": true,
+      "args": {
+        "value": {
+          "type": "string",
+          "required": true
         }
       }
     },
-    "armed": false,
-    "generated": true,
-    "report": {
-      "quarantine": true,
-      "conformanceGate": "stubbed",
-      "notes": [
-        "SIMULATED connector generated from fixture ingest (GATT dump / MQTT samples).",
-        "Physical-output capabilities remain blocked until HUMAN APPROVES ranges.",
-        "Evidence capped at COMPILE_TESTED — Pinout has never run on real hardware here.",
-        "Nothing was auto-armed."
-      ]
+    {
+      "id": "ble.gatt.0000ff10.0000ff12.write",
+      "physicalOutput": true,
+      "requiresApproval": true,
+      "args": {
+        "value": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
+      "id": "ble.gatt.0000ff10.0000ff13.notify",
+      "physicalOutput": true,
+      "requiresApproval": true,
+      "args": {
+        "value": {
+          "type": "number",
+          "required": true
+        }
+      }
+    }
+  ],
+  "approvedCapabilities": [
+    "ble.gatt.00001800.00002a00.read",
+    "ble.gatt.0000ff10.0000ff12.write",
+    "ble.gatt.0000ff10.0000ff13.notify"
+  ],
+  "ranges": {
+    "ble.gatt.0000ff10.0000ff13.notify": {
+      "value": {
+        "min": 0,
+        "max": 80
+      }
     }
   },
-  "label": "SIMULATED"
+  "armed": false,
+  "generated": true,
+  "source": "gatt",
+  "moduleId": "ble-lamp-proto/connector",
+  "pendingApprovals": [
+    "ble.gatt.0000ff10.0000ff11.write",
+    "ble.gatt.0000ff10.0000ff12.write",
+    "ble.gatt.0000ff10.0000ff13.notify"
+  ],
+  "report": {
+    "quarantine": true,
+    "conformanceGate": "passed",
+    "neverInstalls": true,
+    "neverRegisters": true,
+    "notes": [
+      "Generated via @pinout/generator generateConnector (source=gatt).",
+      "Fixture: fixtures/generator/ble-gatt-lamp/gatt-dump.json",
+      "Evidence SIMULATED (capped ≤ COMPILE_TESTED; never HARDWARE_VERIFIED here).",
+      "Physical-output capabilities blocked until HUMAN APPROVES ranges.",
+      "Install/register deferred to PR4 daemon routes — this stub only simulates lifecycle.",
+      "Nothing was auto-armed."
+    ]
+  },
+  "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect.",
+  "guidance": "INSTALLED: capabilities follow normal lease/arm/safety rules. Always surface evidenceLevel (SupportLevel) honestly; SIMULATED/UNKNOWN are not hardware.",
+  "humanApprovalRequiredForPhysicalOutput": false
 }
 ```
 
@@ -187,37 +239,56 @@ Generated: 2026-10-24T20:32:31.185Z
       "id": "conn-mock-ble-unknown-lamp",
       "awarenessId": "mock-ble-unknown-lamp",
       "status": "INSTALLED",
-      "evidenceLevel": "COMPILE_TESTED",
+      "evidenceLevel": "SIMULATED",
       "mode": "installed",
       "capabilities": [
         {
-          "id": "lamp.setBrightness",
-          "physicalOutput": true,
-          "params": {
-            "percent": {
-              "type": "number",
-              "suggestedMin": 0,
-              "suggestedMax": 100
-            }
-          },
-          "confidence": 0.55,
-          "requiresHumanReview": true
+          "id": "ble.gatt.00001800.00002a00.read",
+          "physicalOutput": false,
+          "requiresApproval": false
         },
         {
-          "id": "lamp.status",
-          "physicalOutput": false,
-          "params": {},
-          "confidence": 0.7,
-          "requiresHumanReview": false
+          "id": "ble.gatt.0000ff10.0000ff11.write",
+          "physicalOutput": true,
+          "requiresApproval": true,
+          "args": {
+            "value": {
+              "type": "string",
+              "required": true
+            }
+          }
+        },
+        {
+          "id": "ble.gatt.0000ff10.0000ff12.write",
+          "physicalOutput": true,
+          "requiresApproval": true,
+          "args": {
+            "value": {
+              "type": "string",
+              "required": true
+            }
+          }
+        },
+        {
+          "id": "ble.gatt.0000ff10.0000ff13.notify",
+          "physicalOutput": true,
+          "requiresApproval": true,
+          "args": {
+            "value": {
+              "type": "number",
+              "required": true
+            }
+          }
         }
       ],
       "approvedCapabilities": [
-        "lamp.setBrightness",
-        "lamp.status"
+        "ble.gatt.00001800.00002a00.read",
+        "ble.gatt.0000ff10.0000ff12.write",
+        "ble.gatt.0000ff10.0000ff13.notify"
       ],
       "ranges": {
-        "lamp.setBrightness": {
-          "percent": {
+        "ble.gatt.0000ff10.0000ff13.notify": {
+          "value": {
             "min": 0,
             "max": 80
           }
@@ -225,19 +296,34 @@ Generated: 2026-10-24T20:32:31.185Z
       },
       "armed": false,
       "generated": true,
+      "source": "gatt",
+      "moduleId": "ble-lamp-proto/connector",
+      "pendingApprovals": [
+        "ble.gatt.0000ff10.0000ff11.write",
+        "ble.gatt.0000ff10.0000ff12.write",
+        "ble.gatt.0000ff10.0000ff13.notify"
+      ],
       "report": {
         "quarantine": true,
-        "conformanceGate": "stubbed",
+        "conformanceGate": "passed",
+        "neverInstalls": true,
+        "neverRegisters": true,
         "notes": [
-          "SIMULATED connector generated from fixture ingest (GATT dump / MQTT samples).",
-          "Physical-output capabilities remain blocked until HUMAN APPROVES ranges.",
-          "Evidence capped at COMPILE_TESTED — Pinout has never run on real hardware here.",
+          "Generated via @pinout/generator generateConnector (source=gatt).",
+          "Fixture: fixtures/generator/ble-gatt-lamp/gatt-dump.json",
+          "Evidence SIMULATED (capped ≤ COMPILE_TESTED; never HARDWARE_VERIFIED here).",
+          "Physical-output capabilities blocked until HUMAN APPROVES ranges.",
+          "Install/register deferred to PR4 daemon routes — this stub only simulates lifecycle.",
           "Nothing was auto-armed."
         ]
-      }
+      },
+      "honesty": "evidenceLevel=SIMULATED — do not claim physical hardware effect.",
+      "guidance": "INSTALLED: capabilities follow normal lease/arm/safety rules. Always surface evidenceLevel (SupportLevel) honestly; SIMULATED/UNKNOWN are not hardware.",
+      "humanApprovalRequiredForPhysicalOutput": false
     }
   ],
-  "label": "SIMULATED"
+  "count": 1,
+  "honesty": "Read-only capabilities of a QUARANTINED connector are usable; physical-output capabilities are not until a human approves. Always surface evidenceLevel honestly — SIMULATED unless a hardware record says otherwise; never claim hardware."
 }
 ```
 
@@ -247,6 +333,9 @@ Generated: 2026-10-24T20:32:31.185Z
 
 ## Honesty
 
+- Awareness from real pinoutd `--mock-devices` (PR1).
+- MCP tools from real `createDaemonMcpServer` (PR2).
+- Connectors from `@pinout/generator` `generateConnector` + fixtures (PR3).
+- Approve/install HTTP still facade-stubbed until PR4.
 - Evidence level for generated connectors ≤ `COMPILE_TESTED`.
 - Nothing auto-armed.
-- All devices were fixtures (`examples/awareness-connector-demo/fixtures/`).

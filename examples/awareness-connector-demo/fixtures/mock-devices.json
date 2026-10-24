@@ -1,55 +1,43 @@
 {
-  "$schemaComment": "SIMULATED mock-devices fixture for the PR5 demo stub and (after PR1) pinoutd --mock-devices. Richer than fixtures/awareness/demo-devices.json: includes UNKNOWN BLE+GATT + MQTT sensor paths for connector generation. Not real hardware.",
-  "preset": "awareness-demo",
-  "label": "SIMULATED — awareness + connector demo (no radio, no broker, no USB)",
+  "schemaVersion": 1,
   "devices": [
     {
       "id": "mock-serial-esp32-known",
       "transport": "serial",
-      "identity": {
-        "advertisedName": "pinout-esp32-bridge",
-        "vid": "303A",
-        "pid": "1001",
-        "firmware": "esp32-bridge",
-        "version": "0.0.1-alpha.1",
-        "protocol": 1
-      },
+      "endpoint": "/dev/cu.mock-esp32-demo",
+      "vid": "303a",
+      "pid": "1001",
+      "vendor": "Espressif",
       "moduleId": "pinout/esp32",
-      "stateHint": "IDENTIFIED",
-      "capabilitiesHint": ["sys.hello", "sys.arm", "sys.disarm", "gpio.write", "gpio.read"],
-      "evidenceLevel": "SIMULATED",
-      "label": "known ESP32 bridge (auto-recognized module)"
+      "deviceClass": "microcontroller",
+      "firmware": "esp32-bridge",
+      "version": "0.0.1-alpha.1",
+      "confidence": 0.5,
+      "interfaces": ["serial"],
+      "advertisedName": "pinout-esp32-bridge",
+      "capabilities": ["sys.hello", "sys.arm", "sys.disarm", "gpio.write", "gpio.read"]
     },
     {
       "id": "mock-ble-unknown-lamp",
       "transport": "ble",
-      "identity": {
-        "advertisedName": "DeskLamp-GATT-Unknown",
-        "macHash": "sim-aa:bb:cc:dd:ee:01",
-        "uuids": ["0000fff0-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"],
-        "rssi": -62
-      },
-      "moduleId": null,
-      "stateHint": "SEEN",
-      "capabilitiesHint": [],
-      "gattDumpPath": "./unknown-ble-lamp.gatt.json",
-      "evidenceLevel": "UNKNOWN",
-      "label": "UNKNOWN BLE/GATT lamp-like device (no module match → connector generation)"
+      "endpoint": "aa:bb:cc:dd:ee:01",
+      "mac": "aa:bb:cc:dd:ee:01",
+      "advertisedName": "DeskLamp-GATT-Unknown",
+      "uuids": ["0000fff0-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"],
+      "moduleId": "unknown/ble-lamp",
+      "unknown": true,
+      "confidence": 0.25,
+      "interfaces": ["ble"]
     },
     {
       "id": "mock-mqtt-room-sensor",
       "transport": "mqtt",
-      "identity": {
-        "advertisedName": "sim-room-sensor",
-        "topics": ["tele/sim-room/SENSOR", "cmnd/sim-room/STATUS"],
-        "broker": "mqtt://127.0.0.1:1883"
-      },
-      "moduleId": null,
-      "stateHint": "SEEN",
-      "capabilitiesHint": [],
-      "mqttSamplesPath": "./mqtt-sensor-samples.json",
-      "evidenceLevel": "UNKNOWN",
-      "label": "UNKNOWN MQTT sensor (samples only; SIMULATED)"
+      "endpoint": "mqtt://127.0.0.1/tele/sim-room/SENSOR",
+      "advertisedName": "sim-room-sensor",
+      "moduleId": "unknown/mqtt-sensor",
+      "unknown": true,
+      "confidence": 0.25,
+      "interfaces": ["mqtt"]
     }
   ]
 }

@@ -1,16 +1,16 @@
 # Awareness → connector demo (**SIMULATED**)
 
-Product story (all fixtures — **Pinout has never run on real hardware** in this repository):
+Product story (fixtures only — **Pinout has never run on real hardware**):
 
-1. Boot discovery in mock-device mode.
-2. A **known** serial ESP32 is auto-recognized (`IDENTIFIED` + `moduleId`).
-3. An **unknown** BLE/GATT lamp-like device appears (`SEEN`, no module).
-4. Generator builds a **quarantined**, read-only connector (evidence ≤ `COMPILE_TESTED`).
-5. Read-only `lamp.status` works; physical `lamp.setBrightness` is **rejected** until approval.
-6. Scripted **`HUMAN APPROVES`** step unlocks ranges (`percent` 0–80).
-7. Install (still **not** auto-armed).
-8. Out-of-range invoke rejected; in-range invoke OK (**SIMULATED**).
-9. Scripted MCP agent loop → [`transcript.md`](./transcript.md) (labeled SIMULATED).
+1. Boot **real** `pinoutd` awareness with `--mock-devices` (PR1).
+2. A **known** serial ESP32 is observed (`PENDING_ENROLL` + `pinout/esp32`) — never auto-enrolled.
+3. An **unknown** BLE lamp appears (`identity.guessedModuleId: unknown/ble-lamp`).
+4. **PR3** `generateConnector` builds a quarantined connector from `fixtures/generator/ble-gatt-lamp`.
+5. Read-only GATT read works; physical write is **rejected** until approval.
+6. Scripted **`HUMAN APPROVES`** unlocks notify ranges (`value` 0–80).
+7. Install via lifecycle stub (PR4 pending) — still **not** auto-armed.
+8. Out-of-range rejected; in-range OK (**SIMULATED**).
+9. Scripted agent loop via **real** `createDaemonMcpServer` (PR2) → [`transcript.md`](./transcript.md).
 
 ```bash
 npm run demo:awareness
@@ -21,15 +21,20 @@ npm test -- examples/awareness-connector-demo/test/e2e.test.ts
 
 | Path | Role |
 | --- | --- |
-| `scenario.json` | Scripted scenario spec + expected codes |
-| `fixtures/mock-devices.json` | Fake serial / BLE / MQTT devices for `--mock-devices` |
-| `fixtures/unknown-ble-lamp.gatt.json` | SIMULATED GATT dump |
-| `fixtures/mqtt-sensor-samples.json` | SIMULATED MQTT samples |
-| `src/mockControlPlane.ts` | Local stub of `/v1/awareness*` + `/v1/connectors*` until PR1/PR4 merge |
-| `src/mcpBridge.ts` | PR2 tool names against that control plane |
-| `src/runDemo.ts` | Driver |
+| `fixtures/mock-devices.json` | PR1 `--mock-devices` schema |
+| `fixtures/connector-evidence.json` | Maps awareness ids → PR3 generator fixtures |
+| `src/startDemoStack.ts` | Real awareness + connector stub + unified MCP facade |
+| `src/connectorStub.ts` | `generateConnector` + approve/install until PR4 |
+| `src/demoFacade.ts` | One baseUrl for PR2 `createDaemonMcpServer` |
+| `src/agentLoop.ts` | Scripted MCP session using real PR2 tools |
 | `test/e2e.test.ts` | CI assertions |
 
 ## Upstream rebase
 
-When PR1–PR4 merge, set `PINOUT_DAEMON_URL`, `PINOUT_TOKEN`, and `PINOUT_AWARENESS_DEMO_USE_UPSTREAM=1` to exercise real `pinoutd --discover --mock-devices`. Until then the demo **stub** is intentional and labeled in the run output.
+| Layer | Status in this demo |
+| --- | --- |
+| PR0 `SupportLevel` | Live |
+| PR1 awareness / `--mock-devices` | Live |
+| PR2 MCP tools | Live (`createDaemonMcpServer` via facade) |
+| PR3 `generateConnector` + fixtures | Live |
+| PR4 `/v1/connectors*` on pinoutd | Lifecycle stub + facade until merge |

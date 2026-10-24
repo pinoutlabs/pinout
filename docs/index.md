@@ -5,14 +5,13 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 ## Platform & Architecture
 
 - [Architecture](architecture.md) — the runtime, module, and daemon boundaries.
-- [Device awareness](awareness.md) — persistent observation registry, SSE events, and approved enroll (`SIMULATED` unless a dated hardware record exists).
+- [Device awareness](awareness.md) — registry, `--mock-devices`, `/v1/awareness*` (**SIMULATED** unless a dated hardware record exists).
+- [Device awareness and automatic connectors](awareness-and-connectors.md) — end-to-end product story + demo (**SIMULATED**; no HIL).
 - [BLE GATT transport](ble-gatt.md) — NDJSON over BLE (host SIMULATED; firmware COMPILE_TESTED when PlatformIO succeeds; no HIL).
 - [Hardware support](hardware-support.md) — statuses generated from `hardware/catalog.json`.
 - [Evidence levels](evidence-levels.md) — canonical SupportLevel mapping (`UNKNOWN` → `HARDWARE_VERIFIED`).
 - [Acceptance ledger](acceptance-ledger.md) — phase-by-phase implementation and verification status matrix.
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.
-- [Device awareness and automatic connectors](awareness-and-connectors.md) — nearby devices → quarantined connectors → human-approved ranges → MCP (**SIMULATED**; no HIL).
-- [Evidence levels](evidence-levels.md) — canonical `SupportLevel` ladder (`UNKNOWN` → `HARDWARE_VERIFIED`).
 - [Safety model](safety-model.md) and [security model](security-model.md).
 - [State evidence contract](state-evidence.md) — commanded vs acknowledged vs independently observed physical state.
 - [Recovery and reconciliation model](recovery-model.md) — operation persistence, crash recovery windows, and mandatory reconciliation.

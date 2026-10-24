@@ -1,0 +1,13 @@
+{
+  "$schemaComment": "Maps awareness mock ids → PR3 generator fixtures (repo-root relative). Used by the demo connector stub until PR4 installs the daemon /v1/connectors pipeline.",
+  "byAwarenessId": {
+    "mock-ble-unknown-lamp": {
+      "source": "gatt",
+      "fixturePath": "fixtures/generator/ble-gatt-lamp/gatt-dump.json"
+    },
+    "mock-mqtt-room-sensor": {
+      "source": "mqtt",
+      "fixturePath": "fixtures/generator/mqtt-sensor-relay/topics.json"
+    }
+  }
+}

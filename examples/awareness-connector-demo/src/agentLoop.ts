@@ -1,11 +1,11 @@
 /**
- * Scripted MCP agent session for the awareness → connector story.
+ * Scripted MCP agent session using real createDaemonMcpServer (PR2 tools).
  * No LLM — deterministic tool calls. Transcript is labeled SIMULATED.
  */
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { writeFile } from 'node:fs/promises';
-import { createAwarenessConnectorMcpServer } from './mcpBridge.js';
+import { awarenessToolNames, createDaemonMcpServer } from '@pinout/mcp';
 
 export interface AgentLoopOptions {
   baseUrl: string;
@@ -26,10 +26,12 @@ function line(role: 'system' | 'agent' | 'tool' | 'human', text: string): string
 }
 
 export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<AgentLoopResult> {
-  const server = createAwarenessConnectorMcpServer({
+  const server = createDaemonMcpServer({
     baseUrl: options.baseUrl,
     token: options.token,
     owner: 'scripted-agent',
+    awarenessWatch: false,
+    dynamicTools: false,
   });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: 'pinout-awareness-demo-agent', version: '0.0.1-alpha.1' });
@@ -37,7 +39,7 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
   const transcript: string[] = [
     '# Awareness → connector MCP agent transcript',
     '',
-    '> **SIMULATED** — scripted agent loop against mock devices. Pinout has never run on real hardware in this repository. No radio, broker, or USB was used.',
+    '> **SIMULATED** — scripted agent loop via real `createDaemonMcpServer` (PR2) against mock-devices + generateConnector fixtures. Pinout has never run on real hardware in this repository.',
     '',
     `Generated: ${new Date().toISOString()}`,
     '',
@@ -52,7 +54,8 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
 
     const listed = await client.listTools();
     toolNames.push(...listed.tools.map((t) => t.name));
-    transcript.push(line('system', `MCP tools available: ${toolNames.join(', ')}`));
+    const awarenessTools = toolNames.filter((name) => awarenessToolNames.has(name));
+    transcript.push(line('system', `MCP awareness/connector tools: ${awarenessTools.join(', ')}`));
     transcript.push('');
 
     transcript.push(line('agent', 'What devices are nearby?'));
@@ -68,7 +71,7 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
     );
     const described = await client.callTool({
       name: 'pinout__describe_nearby',
-      arguments: { awarenessId: options.unknownAwarenessId },
+      arguments: { id: options.unknownAwarenessId },
     });
     transcript.push(line('tool', 'pinout__describe_nearby'));
     transcript.push('```json');
@@ -78,7 +81,10 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
 
     if (!connectorId) {
       transcript.push(
-        line('agent', 'No module matched — request a quarantined connector (read-only first).'),
+        line(
+          'agent',
+          'No enrollable module matched — request a quarantined connector via generateConnector.',
+        ),
       );
       const generated = await client.callTool({
         name: 'pinout__generate_connector',
@@ -88,15 +94,15 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
       transcript.push('```json');
       transcript.push(JSON.stringify(generated.structuredContent ?? generated, null, 2));
       transcript.push('```');
-      const structured = generated.structuredContent as { connector?: { id?: string } } | undefined;
-      connectorId = structured?.connector?.id ?? `conn-${options.unknownAwarenessId}`;
+      const structured = generated.structuredContent as { id?: string } | undefined;
+      connectorId = structured?.id ?? `conn-${options.unknownAwarenessId}`;
       transcript.push('');
     }
 
     transcript.push(line('agent', `Check connector status for ${connectorId}.`));
     const status = await client.callTool({
       name: 'pinout__connector_status',
-      arguments: { connectorId },
+      arguments: { id: connectorId },
     });
     transcript.push(line('tool', 'pinout__connector_status'));
     transcript.push('```json');
@@ -123,9 +129,12 @@ export async function runScriptedAgentLoop(options: AgentLoopOptions): Promise<A
     transcript.push('');
     transcript.push('## Honesty');
     transcript.push('');
+    transcript.push('- Awareness from real pinoutd `--mock-devices` (PR1).');
+    transcript.push('- MCP tools from real `createDaemonMcpServer` (PR2).');
+    transcript.push('- Connectors from `@pinout/generator` `generateConnector` + fixtures (PR3).');
+    transcript.push('- Approve/install HTTP still facade-stubbed until PR4.');
     transcript.push('- Evidence level for generated connectors ≤ `COMPILE_TESTED`.');
     transcript.push('- Nothing auto-armed.');
-    transcript.push('- All devices were fixtures (`examples/awareness-connector-demo/fixtures/`).');
   } finally {
     await client.close();
     await server.close();

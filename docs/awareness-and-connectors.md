@@ -1,6 +1,6 @@
 # Device awareness and automatic connectors
 
-**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses fixtures and, until PR1–PR4 merge, a labeled local stub of the daemon/MCP surface. Nothing here is `HARDWARE_VERIFIED`. Evidence vocabulary is the canonical [`SupportLevel`](evidence-levels.md) from `@pinout/core`.
+**Status: SIMULATED software path.** Pinout has never run on real hardware in this repository. The end-to-end demo (`npm run demo:awareness`) uses **real** pinoutd awareness (`--mock-devices`, PR1), **real** MCP tools via `createDaemonMcpServer` ([mcp-awareness.md](mcp-awareness.md), PR2), and **real** [`generateConnector`](generator-connectors.md) (PR3) against `fixtures/generator/*`. Connector approve/install HTTP is still a labeled stub behind a demo facade until PR4. Nothing here is `HARDWARE_VERIFIED`. Evidence vocabulary is the canonical [`SupportLevel`](evidence-levels.md) from `@pinout/core`.
 
 ## Product story
 
@@ -139,11 +139,11 @@ npm run demo:awareness
 
 What you should see:
 
-1. Known mock ESP32 → `IDENTIFIED`
-2. Unknown BLE lamp → `SEEN`
-3. Connector → `QUARANTINED` (read-only `lamp.status` OK)
-4. Physical invoke → `SAFETY_APPROVAL_REQUIRED`
-5. Banner **`>>> HUMAN APPROVES <<<`** with ranges
+1. Known mock ESP32 → `PENDING_ENROLL` (`pinout/esp32`, never auto-enrolled)
+2. Unknown BLE lamp → `unknown/ble-lamp` (mock)
+3. Connector from `fixtures/generator/ble-gatt-lamp` → `QUARANTINED` (GATT read OK)
+4. Physical write → `SAFETY_APPROVAL_REQUIRED`
+5. Banner **`>>> HUMAN APPROVES <<<`** with notify `value` ranges
 6. Out-of-range → `POLICY_CONSTRAINT_VIOLATION`; in-range → OK (`simulated: true`)
 7. [`examples/awareness-connector-demo/transcript.md`](../examples/awareness-connector-demo/transcript.md) updated (SIMULATED)
 
@@ -153,22 +153,24 @@ Headless CI:
 npm test -- examples/awareness-connector-demo/test/e2e.test.ts
 ```
 
-Fixtures live under `examples/awareness-connector-demo/fixtures/` (mock-devices, GATT dump, MQTT samples).
+Fixtures: `examples/awareness-connector-demo/fixtures/mock-devices.json` (PR1 schema) and `fixtures/generator/ble-gatt-lamp` / `mqtt-sensor-relay` (PR3).
 
-### After PR1–PR4 merge
+### Still stubbed / pending
+
+| Piece | Status |
+| --- | --- |
+| Awareness `/v1/awareness*` | **Live** — see [awareness.md](awareness.md) |
+| MCP awareness/connector tools | **Live** — see [mcp-awareness.md](mcp-awareness.md) |
+| `generateConnector` | **Live** — see [generator-connectors.md](generator-connectors.md) |
+| Daemon `/v1/connectors*` approve/install | Stub (+ demo facade) until PR4 |
 
 ```bash
-# once pinoutd supports --mock-devices and /v1/awareness + /v1/connectors:
+# awareness-only exploration without the full demo:
 pinoutd --discover --mock-devices examples/awareness-connector-demo/fixtures/mock-devices.json
-export PINOUT_DAEMON_URL=http://127.0.0.1:8787
-export PINOUT_TOKEN=...
-export PINOUT_AWARENESS_DEMO_USE_UPSTREAM=1
-npm run demo:awareness
+# then: GET http://127.0.0.1:8787/v1/awareness
 ```
 
-Until then the demo prints an explicit **stubbed** list in its summary.
-
-Related drafts from parallel PRs (link once merged): `docs/awareness.md` (PR1), `docs/mcp-awareness.md` (PR2). This overview stays the product-story entry point.
+This overview stays the product-story entry point alongside [awareness.md](awareness.md) and [generator-connectors.md](generator-connectors.md).
 
 ## HTTP / MCP contracts (for implementers)
 
@@ -188,14 +190,18 @@ Related drafts from parallel PRs (link once merged): `docs/awareness.md` (PR1), 
 
 **MCP tools:** `pinout__nearby_devices`, `pinout__awareness_events`, `pinout__describe_nearby`, `pinout__request_enroll`, `pinout__generate_connector`, `pinout__connector_status`, `pinout__list_connectors`
 
-**Approve body example**
+**Approve body example** (GATT lamp fixture notify characteristic)
 
 ```json
 {
-  "capabilities": ["lamp.setBrightness", "lamp.status"],
+  "capabilities": [
+    "ble.gatt.00001800.00002a00.read",
+    "ble.gatt.0000ff10.0000ff12.write",
+    "ble.gatt.0000ff10.0000ff13.notify"
+  ],
   "ranges": {
-    "lamp.setBrightness": {
-      "percent": { "min": 0, "max": 80 }
+    "ble.gatt.0000ff10.0000ff13.notify": {
+      "value": { "min": 0, "max": 80 }
     }
   }
 }
