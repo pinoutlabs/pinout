@@ -19,12 +19,13 @@ It does not implement a full board support package. It accepts structured comman
 ## Additional ESP32 family profiles
 
 The local board-header implementation also provides esp32s2-devkit,
-esp32s3-devkit, and esp32c6-devkit. The S3 name is an alias for the same
-esp32-s3-devkitc-1 board identity used by the release workflow. S2 and C6
-remain experimental; compile and physical HIL evidence must be recorded
-before raising their support status. S2 uses the ESP32-S2-Saola-1 PlatformIO
-definition because PlatformIO 6.5.0 has no DevKitC-1 definition. C6 uses the
-pinned pioarduino Arduino-ESP32 3.x platform.
+esp32s3-devkit, and esp32c6-devkit. The board descriptor
+`firmwareTarget` for S3 is **`esp32-s3-devkitc-1`** (release / COMPILE_TESTED
+env); `esp32s3-devkit` remains a local PlatformIO alias for the same profile.
+S2 and C6 remain experimental; compile and physical HIL evidence must be
+recorded before raising their support status. S2 uses the ESP32-S2-Saola-1
+PlatformIO definition because PlatformIO 6.5.0 has no DevKitC-1 definition.
+C6 uses the pinned pioarduino Arduino-ESP32 3.x platform.
 
 There is **no** physical HIL evidence for C3 or S3 in this repository. Do not treat compile success as hardware verification. Pinout tools **never auto-flash**.
 

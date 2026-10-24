@@ -71,10 +71,10 @@
     {
       "category": "embedded",
       "target": "Linux SBC GPIO (libgpiod)",
-      "integration": "planned",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "libgpiod-first design; sysfs only as documented fallback."
+      "integration": "@pinout/libgpiod LibgpiodBackend + pinout/linux-gpio",
+      "status": "IMPLEMENTED",
+      "testedHow": "scripted CommandRunner unit tests; libgpiod v2 CLI argv/parsers fixture-tested; no physical gpiochip HIL",
+      "notes": "Package exists and is unit-tested against a fake runner. Not HARDWARE_VERIFIED — no real /dev/gpiochip line was driven. Linux-only; libgpiod v2 tools required. Never sysfs."
     },
     {
       "category": "protocol",
@@ -199,10 +199,10 @@
     {
       "category": "robotics",
       "target": "ROS 2 bridge",
-      "integration": "planned sidecar design",
-      "status": "PLANNED",
-      "testedHow": "none",
-      "notes": "High-rate ROS traffic must not traverse MCP."
+      "integration": "@pinout/ros2-sidecar (FakeRosActionServer + StreamBus)",
+      "status": "SIMULATED",
+      "testedHow": "in-process FakeRosActionServer unit tests; frame/freshness and reconciliation paths; no rclnodejs / live ROS 2",
+      "notes": "Package exists as a simulator-only sidecar. High-rate ROS traffic must not traverse MCP. Not HARDWARE_VERIFIED; real controller path remains gated."
     },
     {
       "category": "lab",

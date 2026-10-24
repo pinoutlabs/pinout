@@ -19,6 +19,43 @@ export interface BoardDiscoveryOptions {
   excludedPaths?: string[];
 }
 
+/**
+ * USB VIDs accepted as serial discovery candidates (never proof of identity).
+ * Includes Raspberry Pi Pico / RP2040 MicroPython CDC (`2e8a`).
+ */
+export const boardDiscoveryVendorIds = [
+  '2341', // Arduino
+  '2a03', // Arduino.org
+  '303a', // Espressif
+  '10c4', // Silicon Labs CP210x
+  '1a86', // WCH CH340
+  '0403', // FTDI
+  '2e8a', // Raspberry Pi (Pico / RP2040)
+] as const;
+
+/** Firmware identity strings accepted after a successful protocol handshake. */
+export const boardDiscoveryFirmwareIds = [
+  'esp32-bridge',
+  'uno-bridge',
+  'micropython-bridge',
+] as const;
+
+export function isBoardDiscoveryVendorId(vendorId: string | undefined): boolean {
+  return boardDiscoveryVendorIds.includes(
+    (vendorId ?? '').toLowerCase() as (typeof boardDiscoveryVendorIds)[number],
+  );
+}
+
+export function isBoardDiscoveryFirmware(firmware: string): boolean {
+  return (boardDiscoveryFirmwareIds as readonly string[]).includes(firmware);
+}
+
+function vendorForBoardFamily(family: string): string {
+  if (family === 'avr') return 'Arduino';
+  if (family === 'rp2040' || family === 'micropython') return 'Raspberry Pi';
+  return 'Espressif';
+}
+
 /** Explicit --discover opt-in: serial opening may reset boards. Never flashes firmware. */
 export class BoardDiscovery {
   private readonly attached = new Map<string, { id: string; backend: ProtocolDeviceBackend }>();
@@ -84,12 +121,7 @@ export class BoardDiscovery {
       if (this.attached.has(path) || this.options.excludedPaths?.some((p) => canonical(p) === path))
         continue;
       // USB adapters are candidates, never proof of board identity.
-      if (
-        !['2341', '2a03', '303a', '10c4', '1a86', '0403'].includes(
-          (original.vendorId ?? '').toLowerCase(),
-        )
-      )
-        continue;
+      if (!isBoardDiscoveryVendorId(original.vendorId)) continue;
       if ((this.retryAt.get(path) ?? 0) > Date.now()) continue;
       this.retryAt.set(path, Date.now() + 15000);
       const port = { ...original, path };
@@ -98,12 +130,14 @@ export class BoardDiscovery {
         const transport =
           this.options.transport?.(port) ?? serialPort({ path, resetOnConnect: false });
         device = await connect({ transport, timeoutMs: 2500 });
-        if (!device.info.boardId || !['esp32-bridge', 'uno-bridge'].includes(device.info.firmware))
+        if (!device.info.boardId || !isBoardDiscoveryFirmware(device.info.firmware))
           throw new Error(
             'Flash the matching Pinout bridge first; firmware must advertise boardId.',
           );
         const board = boardForInfo(device.info)!;
-        const backend = new ProtocolDeviceBackend(device, { requireWatchdog: true });
+        // Pico MicroPython path has no watchdog/arming; classic bridges require it.
+        const requireWatchdog = device.info.firmware !== 'micropython-bridge';
+        const backend = new ProtocolDeviceBackend(device, { requireWatchdog });
         // Never inherit an armed session from a previous process.
         await backend.disarm();
         const suffix = createHash('sha256')
@@ -115,7 +149,7 @@ export class BoardDiscovery {
           {
             ...esp32Module,
             id: 'pinout/board',
-            vendor: board.family === 'avr' ? 'Arduino' : 'Espressif',
+            vendor: vendorForBoardFamily(board.family),
             model: board.boardId,
             createProtocolBackend: async () => backend,
           },

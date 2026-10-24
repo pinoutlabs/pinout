@@ -41,7 +41,12 @@
  * GPIO simulator. See INTEGRATION_NOTES.md for the flag alternative.
  */
 import type { CommandExitInfo, CommandRunner, CommandStream } from './runner.js';
-import { LibgpiodError, commandTimeoutError, toolFailureError, toolMissingError } from './errors.js';
+import {
+  LibgpiodError,
+  commandTimeoutError,
+  toolFailureError,
+  toolMissingError,
+} from './errors.js';
 import { assertLinux } from './platform.js';
 import {
   parseGpiodetectOutput,
@@ -391,12 +396,9 @@ export class GpioTools {
     args: readonly string[],
   ): Promise<void> {
     const exited = exitPromise(stream);
-    const timeoutSentinel = { timedOut: true } as const;
-    const outcome = await Promise.race([
-      exited,
-      sleep(graceMs).then(() => timeoutSentinel),
-    ]);
-    if (outcome === timeoutSentinel) return;
+    const timeoutSentinel = { timedOut: true as const };
+    const outcome = await Promise.race([exited, sleep(graceMs).then(() => timeoutSentinel)]);
+    if ('timedOut' in outcome) return;
     await flushMicrotasks();
     await flushMicrotasks();
     if (outcome.error) {
@@ -569,7 +571,10 @@ interface StreamCollector {
   text(): string;
 }
 
-function collectStream(stream: AsyncIterable<string>, limit = STDERR_CAPTURE_LIMIT): StreamCollector {
+function collectStream(
+  stream: AsyncIterable<string>,
+  limit = STDERR_CAPTURE_LIMIT,
+): StreamCollector {
   const chunks: string[] = [];
   let total = 0;
   const consume = async (): Promise<void> => {
@@ -602,10 +607,10 @@ async function terminateStream(
   exited: Promise<CommandExitInfo>,
   timeoutMs: number,
 ): Promise<CommandExitInfo> {
-  const timeoutSentinel = { timedOut: true } as const;
+  const timeoutSentinel = { timedOut: true as const };
   stream.kill('SIGTERM');
   const outcome = await Promise.race([exited, sleep(timeoutMs).then(() => timeoutSentinel)]);
-  if (outcome !== timeoutSentinel) return outcome;
+  if (!('timedOut' in outcome)) return outcome;
   stream.kill('SIGKILL');
   return exited;
 }

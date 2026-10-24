@@ -9,9 +9,9 @@ import {
   PinoutRuntime,
   runPanTiltConformance,
   simulatedEsp32,
-  SimulatedPanTiltBackend,
   validatePanTiltConfig,
   type PanTiltStatus,
+  type SimulatedPanTiltBackend,
 } from '@pinout/core';
 
 describe('Pan-tilt module - configuration', () => {
@@ -112,9 +112,9 @@ describe('Pan-tilt module - simulated backend', () => {
     await expect(backend.invoke('panTilt.setAngle', { angle: 5 })).rejects.toMatchObject({
       code: 'INVALID_PAYLOAD',
     });
-    await expect(
-      backend.invoke('panTilt.setAngles', { tilt: 40 }),
-    ).rejects.toMatchObject({ code: 'UNSUPPORTED_CONFIGURATION' });
+    await expect(backend.invoke('panTilt.setAngles', { tilt: 40 })).rejects.toMatchObject({
+      code: 'UNSUPPORTED_CONFIGURATION',
+    });
     await backend.close();
   });
 

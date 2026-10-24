@@ -29,6 +29,8 @@ export interface IdentityGuess {
   vendor?: string;
   deviceClass?: string;
   reason: string;
+  /** Discovery hint only — module is not in the builtin registry. */
+  unavailable?: boolean;
 }
 
 export interface Evidence {

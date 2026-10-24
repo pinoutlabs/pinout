@@ -101,7 +101,12 @@ describe('LibgpiodBackend configuration validation', () => {
       { lines: [null] },
       { lines: [{ offset: -1 }] },
       { lines: [{ offset: 1 }, { offset: 1 }] },
-      { lines: [{ offset: 1, name: 'a' }, { offset: 2, name: 'a' }] },
+      {
+        lines: [
+          { offset: 1, name: 'a' },
+          { offset: 2, name: 'a' },
+        ],
+      },
       { lines: [{ offset: 1, direction: 'sideways' }] },
       { lines: [{ offset: 1, polarity: 'flipped' }] },
       { lines: [{ offset: 1, safeLevel: 'floaty' }] },
@@ -141,13 +146,7 @@ describe('LibgpiodBackend writes and evidence', () => {
       held: true,
     });
     expect(runner.spawns[0]!.file).toBe('gpioset');
-    expect(runner.spawns[0]!.args).toEqual([
-      '--chip',
-      'gpiochip0',
-      '--consumer',
-      'pinout',
-      '17=1',
-    ]);
+    expect(runner.spawns[0]!.args).toEqual(['--chip', 'gpiochip0', '--consumer', 'pinout', '17=1']);
     expect(stateOf(backend).lines.status_led).toMatchObject({
       value: true,
       raw: 1,
@@ -180,7 +179,7 @@ describe('LibgpiodBackend writes and evidence', () => {
   });
 
   it('sets and releases a line once with hold: false', async () => {
-    const runner = new FakeCommandRunner();
+    const runner = new FakeCommandRunner().enqueue({ code: 0, stdout: '', stderr: '' });
     const backend = makeBackend(runner);
     const result = await backend.invoke('gpio.write', {
       line: 'status_led',
@@ -229,9 +228,12 @@ describe('LibgpiodBackend writes and evidence', () => {
     const pending = backend.invoke('gpio.write', {
       line: 'status_led',
       value: true,
-      pulseMs: 5000,
+      pulseMs: 30_000,
     });
-    await flushUntil(() => runner.spawns.length === 1);
+    // Wait until the pulse is armed (holder up + cancel callback registered),
+    // not merely until gpioset is spawned — otherwise safeState can race ahead
+    // of waitForPulse and miss the cancel.
+    await flushUntil(() => stateOf(backend).lines.status_led?.held === true);
 
     const safe = await backend.safeState();
     const result = await pending;
@@ -251,21 +253,23 @@ describe('LibgpiodBackend writes and evidence', () => {
       ],
     });
 
-    await expect(backend.invoke('gpio.write', { line: 'button', value: true })).rejects.toMatchObject(
-      { code: 'VALIDATION_ERROR' },
+    await expect(
+      backend.invoke('gpio.write', { line: 'button', value: true }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    await expect(backend.invoke('gpio.write', { line: 'led', value: 'yes' })).rejects.toMatchObject(
+      {
+        code: 'VALIDATION_ERROR',
+      },
     );
-    await expect(backend.invoke('gpio.write', { line: 'led', value: 'yes' })).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR',
-    });
     await expect(
       backend.invoke('gpio.write', { line: 'led', offset: 17, value: true }),
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
-    await expect(
-      backend.invoke('gpio.write', { line: 'nope', value: true }),
-    ).rejects.toMatchObject({ code: 'GPIO_LINE_NOT_FOUND' });
-    await expect(
-      backend.invoke('gpio.write', { offset: 99, value: true }),
-    ).rejects.toMatchObject({ code: 'GPIO_LINE_NOT_FOUND' });
+    await expect(backend.invoke('gpio.write', { line: 'nope', value: true })).rejects.toMatchObject(
+      { code: 'GPIO_LINE_NOT_FOUND' },
+    );
+    await expect(backend.invoke('gpio.write', { offset: 99, value: true })).rejects.toMatchObject({
+      code: 'GPIO_LINE_NOT_FOUND',
+    });
     expect(runner.usedTools()).toEqual([]);
     await backend.close();
   });
@@ -317,9 +321,7 @@ describe('LibgpiodBackend reads, watches, and safe state', () => {
       lines: [{ offset: 3, name: 'button', direction: 'input', bias: 'pull-up' }],
     });
     await backend.invoke('gpio.read', { line: 'button' });
-    expect(runner.runs[0]!.args).toEqual(
-      expect.arrayContaining(['--bias', 'pull-up']),
-    );
+    expect(runner.runs[0]!.args).toEqual(expect.arrayContaining(['--bias', 'pull-up']));
     await backend.close();
   });
   it('translates watch edges through polarity and stops the monitor', async () => {
@@ -367,7 +369,7 @@ describe('LibgpiodBackend reads, watches, and safe state', () => {
     runner.spawns[0]!.process.exit({ code: 3, signal: null });
     await flushUntil(() => events.includes('gpio.watchStopped'));
 
-    expect(stateOf(backend).lines.status_led.watching).toBe(false);
+    expect(stateOf(backend).lines.status_led?.watching).toBe(false);
     await backend.close();
   });
 
@@ -392,11 +394,32 @@ describe('LibgpiodBackend reads, watches, and safe state', () => {
       lines: Array<{ line: string; action: string; raw: number | null; reason?: string }>;
     };
     expect(result.lines).toEqual([
-      { line: 'drive_b', offset: 12, safeLevel: 'low', action: 'driven', raw: 0, reason: 'safe-state' },
-      { line: 'drive_a', offset: 13, safeLevel: 'low', action: 'driven', raw: 0, reason: 'safe-state' },
+      {
+        line: 'drive_b',
+        offset: 12,
+        safeLevel: 'low',
+        action: 'driven',
+        raw: 0,
+        reason: 'safe-state',
+      },
+      {
+        line: 'drive_a',
+        offset: 13,
+        safeLevel: 'low',
+        action: 'driven',
+        raw: 0,
+        reason: 'safe-state',
+      },
       { line: 'z_line', offset: 11, safeLevel: 'high-z', action: 'released', raw: null },
       { line: 'hold_line', offset: 10, safeLevel: 'hold', action: 'kept', raw: 1 },
-      { line: 'sense', offset: 14, safeLevel: 'high-z', action: 'skipped', raw: null, reason: 'input-line' },
+      {
+        line: 'sense',
+        offset: 14,
+        safeLevel: 'high-z',
+        action: 'skipped',
+        raw: null,
+        reason: 'input-line',
+      },
     ]);
     expect(runner.spawns).toHaveLength(4);
     expect(runner.spawns[1]!.process.signals).toEqual(['SIGTERM']);
@@ -451,9 +474,9 @@ describe('LibgpiodBackend lifecycle and platform gating', () => {
     await expect(backend.invoke('gpio.read', { line: 'status_led' })).rejects.toMatchObject({
       code: 'PLATFORM_UNSUPPORTED',
     });
-    await expect(backend.invoke('gpio.write', { line: 'status_led', value: true })).rejects.toMatchObject(
-      { code: 'PLATFORM_UNSUPPORTED' },
-    );
+    await expect(
+      backend.invoke('gpio.write', { line: 'status_led', value: true }),
+    ).rejects.toMatchObject({ code: 'PLATFORM_UNSUPPORTED' });
     expect(runner.usedTools()).toEqual([]);
     await backend.close();
   });
@@ -519,7 +542,9 @@ describe('libgpiod module definition', () => {
     }
     const write = libgpiodCapabilities.find((capability) => capability.name === 'gpio.write');
     expect(write?.safety).toMatchObject({ physicalOutput: true, reversible: true });
-    const safeState = libgpiodCapabilities.find((capability) => capability.name === 'gpio.safeState');
+    const safeState = libgpiodCapabilities.find(
+      (capability) => capability.name === 'gpio.safeState',
+    );
     expect(safeState?.safety).toMatchObject({ physicalOutput: true, reversible: false });
   });
 

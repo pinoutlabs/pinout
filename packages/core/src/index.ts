@@ -104,6 +104,17 @@ export {
   computeFreshness,
   isStale,
   hasObservedValue,
+  SUPPORT_LEVELS,
+  isSupportLevel,
+  compareSupportLevels,
+  capSupportLevel,
+  isDatedHardwareRecord,
+  applyEvidenceRules,
+  mapFromManifestStatus,
+  mapFromSupportStatus,
+  mapFromCatalogStatus,
+  mapFromConformanceLevel,
+  mapFromGeneratorLifecycle,
 } from './spec/index.js';
 export type {
   EvidenceSource,
@@ -112,6 +123,13 @@ export type {
   EvidenceState,
   StatePrerequisite,
   DeviceStateEvidence,
+  SupportLevel,
+  ManifestStatus,
+  SupportStatusInput,
+  CatalogStatus,
+  ConformanceLevelInput,
+  GeneratorLifecycle,
+  SupportLevelOptions,
 } from './spec/index.js';
 export {
   PolicyError,
@@ -284,7 +302,7 @@ export {
 export type { BoardDescriptor } from './boards/descriptors.js';
 export type { ToolDefinition, ToolDanger } from './runtime/toolExport.js';
 export type { InvokeOptions } from './runtime/deviceInstance.js';
-export { getModule, listModules, registerModule } from './modules/registry.js';
+export { getModule, listModules, registerModule, isBuiltinModule } from './modules/registry.js';
 export {
   esp32Module,
   esp32ModuleId,

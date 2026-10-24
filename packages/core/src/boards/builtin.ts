@@ -206,7 +206,7 @@ export const builtinBoards: BoardDescriptor[] = [
     gpioPins: [
       1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
     ],
-    adcPins: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    adcPins: [1, 2, 4, 5, 6, 7, 8, 9, 10],
     pwmPins: [
       1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47, 48,
     ],
@@ -239,13 +239,14 @@ export const builtinBoards: BoardDescriptor[] = [
       vendorId: '303a',
       productId: '1001',
     },
-    firmwareTarget: 'esp32s3-devkit',
+    firmwareTarget: 'esp32-s3-devkitc-1',
     warnings: [
       'GPIO 26-32 are wired to SPI flash: never drive them.',
       'GPIO 33-37 are internal flash/PSRAM pins on octal-PSRAM modules and stay reserved.',
       'GPIO 0/3/45/46 are boot straps; 19/20 USB-JTAG; 43/44 UART0; GPIO 22-25 are not on the DevKitC-1 headers.',
       'The onboard addressable RGB LED is GPIO 38 (v1.1) or GPIO 48 (initial revision).',
       'The bridge transports protocol v1 over UART0 at 115200 baud.',
+      'firmwareTarget matches PlatformIO env esp32-s3-devkitc-1 (COMPILE_TESTED). Local alias esp32s3-devkit builds the same profile.',
     ],
     support: 'COMPILE_TESTED',
   },
@@ -290,7 +291,8 @@ export const builtinBoards: BoardDescriptor[] = [
       'ADC1 covers GPIO 0-6 only; ESP32-C6 has no ADC2.',
     ],
     support: 'EXPERIMENTAL',
-  },  {
+  },
+  {
     schemaVersion: '1',
     boardId: 'raspberry-pi-pico',
     family: 'rp2040',
@@ -300,9 +302,7 @@ export const builtinBoards: BoardDescriptor[] = [
       28,
     ],
     adcPins: [26, 27, 28],
-    pwmPins: [
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25,
-    ],
+    pwmPins: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25],
     reservedPins: [23, 24, 29],
     inputOnlyPins: [],
     uartPins: [
@@ -347,15 +347,14 @@ export const builtinBoards: BoardDescriptor[] = [
 ];
 
 // LEDC channel counts: classic ESP32 16, S2/S3 8, C3/C6 6 (Espressif datasheets).
-const pwmChannelLimits: Partial<
-  Record<BoardDescriptor['family'], { label: string; max: number }>
-> = {
-  esp32: { label: 'ESP32', max: 16 },
-  'esp32-s2': { label: 'ESP32-S2', max: 8 },
-  'esp32-s3': { label: 'ESP32-S3', max: 8 },
-  'esp32-c3': { label: 'ESP32-C3', max: 6 },
-  'esp32-c6': { label: 'ESP32-C6', max: 6 },
-};
+const pwmChannelLimits: Partial<Record<BoardDescriptor['family'], { label: string; max: number }>> =
+  {
+    esp32: { label: 'ESP32', max: 16 },
+    'esp32-s2': { label: 'ESP32-S2', max: 8 },
+    'esp32-s3': { label: 'ESP32-S3', max: 8 },
+    'esp32-c3': { label: 'ESP32-C3', max: 6 },
+    'esp32-c6': { label: 'ESP32-C6', max: 6 },
+  };
 
 export function boardForInfo(info: {
   boardId?: string;
@@ -373,8 +372,14 @@ export function validateBoardAction(
   payload: Record<string, unknown>,
 ): void {
   const channelLimit = pwmChannelLimits[board.family];
-  if (channelLimit !== undefined && typeof payload.channel === 'number' && payload.channel > channelLimit.max - 1)
-    throw new ValidationError(`${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`);
+  if (
+    channelLimit !== undefined &&
+    typeof payload.channel === 'number' &&
+    payload.channel > channelLimit.max - 1
+  )
+    throw new ValidationError(
+      `${channelLimit.label} supports PWM channels 0–${channelLimit.max - 1}.`,
+    );
   const read =
     ['gpio.read', 'gpio.watch', 'gpio.unwatch', 'gpio.analogRead'].includes(action) ||
     (action === 'gpio.mode' && payload.mode === 'input');
