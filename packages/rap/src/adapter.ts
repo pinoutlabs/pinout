@@ -4,6 +4,8 @@ import {
   toolResultMessage,
 } from './callbackDelivery.js';
 import { DaemonClient } from './daemonClient.js';
+import { resolveInvokeIdempotencyKey } from './idempotency.js';
+import { ownerForRapThread } from './owner.js';
 import { PendingStore } from './pendingStore.js';
 import { abortThreadSafety } from './safety.js';
 import { buildPinoutToolset, idempotencyKeyFor } from './toolset.js';
@@ -15,10 +17,15 @@ import type {
   RapToolsetManifest,
 } from './types.js';
 
+/** Align with MCP invokeWaitMs (#62): bounded wait then OPERATION_PENDING. */
+export const DEFAULT_INVOKE_WAIT_MS = 10_000;
+
 const terminalStatuses = new Set([
   'completed',
   'failed',
   'cancelled',
+  'timed_out',
+  'rejected',
   'requires_reconciliation',
   'uncertain',
   'stop_unconfirmed',
@@ -34,7 +41,9 @@ export interface RapAdapterOptions {
   maxCallbackAttempts?: number;
   callbackBaseDelayMs?: number;
   pollIntervalMs?: number;
+  /** Bounded wait after waitFor=accepted before OPERATION_PENDING (default 10s). */
   operationTimeoutMs?: number;
+  invokeWaitMs?: number;
 }
 
 export class RapAdapter {
@@ -69,7 +78,8 @@ export class RapAdapter {
         : {}),
     });
     this.pollIntervalMs = options.pollIntervalMs ?? 25;
-    this.operationTimeoutMs = options.operationTimeoutMs ?? 30_000;
+    this.operationTimeoutMs =
+      options.invokeWaitMs ?? options.operationTimeoutMs ?? DEFAULT_INVOKE_WAIT_MS;
   }
 
   toolset(): RapToolsetManifest {
@@ -241,7 +251,7 @@ export class RapAdapter {
 
   private async executeOperation(call: PendingCallRecord): Promise<string> {
     const args = call.arguments;
-    const owner = call.groupId;
+    const owner = ownerForRapThread(call.groupId, args);
     const required = (name: string): string => {
       const value = args[name];
       if (typeof value !== 'string' || value.length === 0) {
@@ -302,7 +312,7 @@ export class RapAdapter {
         }
         call.updatedAt = Date.now();
         this.store.upsertCall(call);
-        return jsonText(result);
+        return jsonText({ ...result, owner });
       }
       case 'pinout__renew_lease': {
         const leaseId = required('leaseId');
@@ -313,6 +323,11 @@ export class RapAdapter {
             ...(typeof args.ttlMs === 'number' ? { ttlMs: args.ttlMs } : {}),
           }),
         );
+      }
+      case 'pinout__heartbeat': {
+        const deviceId = required('deviceId');
+        this.store.noteDevice(owner, deviceId);
+        return jsonText(await this.daemon.heartbeat(deviceId, owner));
       }
       case 'pinout__release_lease': {
         const leaseId = required('leaseId');
@@ -329,22 +344,38 @@ export class RapAdapter {
             : {};
         this.store.noteDevice(owner, deviceId);
         call.deviceIds = unique([...call.deviceIds, deviceId]);
+        const keyInfo = resolveInvokeIdempotencyKey({
+          groupId: call.groupId,
+          callId: call.id,
+          args,
+          deviceId,
+          capability,
+          owner,
+          physicalOutput: true,
+        });
         const accepted = await this.daemon.invokeAccepted({
           deviceId,
           capability,
           args: invokeArgs,
           owner,
-          idempotencyKey: call.key,
+          idempotencyKey: keyInfo.idempotencyKey,
           ...(typeof args.timeoutMs === 'number' ? { timeoutMs: args.timeoutMs } : {}),
         });
-        const operation = accepted.operation as { id?: string } | undefined;
+        const keyMeta = {
+          idempotencyKey: keyInfo.idempotencyKey,
+          ...(keyInfo.idempotencyKeyGenerated ? { idempotencyKeyGenerated: true } : {}),
+          idempotencyKeySource: keyInfo.source,
+          owner,
+          ...(accepted.deduped === true ? { deduped: true } : {}),
+        };
+        const operation = accepted.operation as { id?: string; status?: string } | undefined;
         if (!operation?.id) {
-          return jsonText(accepted);
+          return jsonText({ ...accepted, ...keyMeta });
         }
         call.daemonOperationId = operation.id;
         call.updatedAt = Date.now();
         this.store.upsertCall(call);
-        return await this.watchOperation(call, operation.id);
+        return await this.watchOperation(call, operation.id, keyMeta);
       }
       default:
         throw Object.assign(new Error(`Unknown operation '${call.operation}'.`), {
@@ -353,9 +384,15 @@ export class RapAdapter {
     }
   }
 
-  private async watchOperation(call: PendingCallRecord, operationId: string): Promise<string> {
-    const deadline = Date.now() + this.operationTimeoutMs;
+  private async watchOperation(
+    call: PendingCallRecord,
+    operationId: string,
+    keyMeta: Record<string, unknown> = {},
+  ): Promise<string> {
+    const waitBudgetMs = this.operationTimeoutMs;
+    const deadline = Date.now() + waitBudgetMs;
     let lastFraction = -1;
+    let latest: Record<string, unknown> = {};
     while (Date.now() < deadline) {
       if (call.cancelled) {
         try {
@@ -365,6 +402,7 @@ export class RapAdapter {
         }
       }
       const payload = await this.daemon.operationStatus(operationId);
+      latest = payload;
       const operation = payload.operation as
         | {
             id?: string;
@@ -391,15 +429,29 @@ export class RapAdapter {
         );
       }
       if (terminalStatuses.has(status)) {
-        return jsonText(payload);
+        return jsonText({ ...payload, ...keyMeta });
       }
       await sleep(this.pollIntervalMs);
       // Refresh cancelled flag from store (cancel_tool_call may have landed).
-      const latest = this.store.getCall(call.key);
-      if (latest?.cancelled) call.cancelled = true;
+      const refreshed = this.store.getCall(call.key);
+      if (refreshed?.cancelled) call.cancelled = true;
     }
-    throw Object.assign(new Error(`Operation ${operationId} timed out waiting for terminal state.`), {
-      code: 'OPERATION_TIMEOUT',
+
+    const pendingOperation = (latest.operation as Record<string, unknown> | undefined) ?? {
+      id: operationId,
+    };
+    // Match MCP #62: do not hang — return OPERATION_PENDING with poll/cancel hints.
+    return jsonText({
+      code: 'OPERATION_PENDING',
+      message:
+        'Operation accepted but did not reach a terminal state within the invoke wait budget. Poll pinout__operation_status or cancel with pinout__cancel_operation; retry with the same idempotencyKey to observe the original operation without re-actuating.',
+      operationId,
+      operation: pendingOperation,
+      waitMs: waitBudgetMs,
+      poll: { tool: 'pinout__operation_status', arguments: { operationId } },
+      cancel: { tool: 'pinout__cancel_operation', arguments: { operationId } },
+      retryable: true,
+      ...keyMeta,
     });
   }
 

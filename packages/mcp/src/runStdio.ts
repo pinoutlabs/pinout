@@ -12,8 +12,14 @@ import {
 import { createMcpTransport } from './connectDevice.js';
 import { createRuntimeMcpServer } from './createRuntimeServer.js';
 import { createDaemonMcpServer } from './createDaemonServer.js';
+import { runHttpServer } from './runHttp.js';
 
 export async function runStdioServer(): Promise<void> {
+  if (shouldRunHttp(process.argv.slice(2))) {
+    await runHttpServer();
+    return;
+  }
+
   if (process.env.PINOUT_DEMO === 'heterogeneous') {
     await runHeterogeneousRuntimeServer();
     return;
@@ -25,6 +31,11 @@ export async function runStdioServer(): Promise<void> {
   }
 
   await runEmbeddedServer();
+}
+
+function shouldRunHttp(argv: string[]): boolean {
+  if (process.env.PINOUT_MCP_HTTP === '1') return true;
+  return argv.includes('--http');
 }
 
 async function runDaemonServer(): Promise<void> {
@@ -40,11 +51,17 @@ async function runDaemonServer(): Promise<void> {
       /* Daemon may not have started yet. */
     }
   }
+  const invokeWaitMs = process.env.PINOUT_MCP_INVOKE_WAIT_MS
+    ? Number.parseInt(process.env.PINOUT_MCP_INVOKE_WAIT_MS, 10)
+    : undefined;
   const server = createDaemonMcpServer({
     dynamicTools: process.env.PINOUT_MCP_DYNAMIC_TOOLS === '1',
     ...(process.env.PINOUT_DAEMON_URL ? { baseUrl: process.env.PINOUT_DAEMON_URL } : {}),
     ...(token ? { token } : {}),
     owner: process.env.PINOUT_OWNER ?? 'mcp-stdio',
+    ...(invokeWaitMs !== undefined && Number.isFinite(invokeWaitMs)
+      ? { invokeWaitMs }
+      : {}),
   });
   await runStdioSession(server);
 }

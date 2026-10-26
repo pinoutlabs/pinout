@@ -216,15 +216,18 @@ describe('Daemon HTTP Recovery & Reconciliation API', () => {
     daemon = await startDaemon(runtime2, { port: 0, journalPath, requireLeases: true });
     const url2 = `http://127.0.0.1:${daemon.port}`;
 
-    // Agent A's previous in-memory lease is invalidated; invocation fails without acquiring new lease
+    // Agent A's previous in-memory lease is invalidated; a NEW actuation (fresh
+    // idempotency key) fails without acquiring a new lease. Observing the prior
+    // completed op via its original key remains allowed by design.
     const invokeAfterRestart = await fetch(`${url2}/v1/devices/relay-lease-api/invoke`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         capability: 'relay.set',
-        args: { on: true },
+        args: { on: false },
         owner: 'agent-a',
         waitFor: 'result',
+        idempotencyKey: 'after-restart-new-actuation',
       }),
     });
     expect(invokeAfterRestart.status).toBe(409);

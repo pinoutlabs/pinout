@@ -36,14 +36,18 @@ export interface LeaseConflictDetails {
 }
 
 const DEFAULT_TTL_MS = 60_000;
+/** Hard ceiling for any acquire/renew TTL unless overridden in the constructor. */
+export const DEFAULT_MAX_LEASE_TTL_MS = 300_000;
 
 export class LeaseManager {
   private readonly leases = new Map<string, Lease>();
   private sequence = 0;
   private readonly nowFn: () => number;
+  readonly maxTtlMs: number;
 
-  constructor(options: { now?: () => number } = {}) {
+  constructor(options: { now?: () => number; maxTtlMs?: number } = {}) {
     this.nowFn = options.now ?? Date.now;
+    this.maxTtlMs = options.maxTtlMs ?? DEFAULT_MAX_LEASE_TTL_MS;
   }
 
   /**
@@ -80,7 +84,7 @@ export class LeaseManager {
       scope: options.scope,
       owner: options.owner,
       createdAt: now,
-      expiresAt: now + (options.ttlMs ?? DEFAULT_TTL_MS),
+      expiresAt: now + this.clampTtl(options.ttlMs ?? DEFAULT_TTL_MS),
       renewable: true,
     };
     this.leases.set(lease.id, lease);
@@ -108,7 +112,7 @@ export class LeaseManager {
         `Lease '${leaseId}' belongs to '${lease.owner}'.`,
       );
     }
-    lease.expiresAt = this.nowFn() + ttlMs;
+    lease.expiresAt = this.nowFn() + this.clampTtl(ttlMs);
     return { ...lease };
   }
 
@@ -193,14 +197,29 @@ export class LeaseManager {
 
   /** Remove all expired leases; returns how many were reaped. */
   reapExpired(): number {
-    let reaped = 0;
+    return this.drainExpired().length;
+  }
+
+  /**
+   * Remove expired leases and return copies of each reaped lease so callers
+   * (e.g. the daemon fail-safe timer) can disarm / apply safeState.
+   */
+  drainExpired(): Lease[] {
+    const expired: Lease[] = [];
     for (const [id, lease] of this.leases) {
       if (this.isExpired(lease)) {
         this.leases.delete(id);
-        reaped += 1;
+        expired.push({ ...lease });
       }
     }
-    return reaped;
+    return expired;
+  }
+
+  private clampTtl(ttlMs: number): number {
+    if (!Number.isFinite(ttlMs) || ttlMs < 1) {
+      return 1;
+    }
+    return Math.min(ttlMs, this.maxTtlMs);
   }
 
   private isExpired(lease: Lease): boolean {

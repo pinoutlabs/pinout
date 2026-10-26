@@ -287,7 +287,13 @@ describe('pinoutd HTTP API', () => {
     const rejected = await fetch(`${base}/v1/devices/relay-01/invoke`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ capability: 'relay.set', args: { on: true } }),
+      body: JSON.stringify({
+        capability: 'relay.set',
+        args: { on: true },
+        // Distinct key so this is a new actuation, not an idempotent observe of
+        // an earlier successful invoke on the shared daemon.
+        idempotencyKey: 'halt-rejection-check',
+      }),
     });
     expect(rejected.status).toBe(409);
     const err = (await rejected.json()) as { error: { code: string } };
@@ -352,7 +358,12 @@ describe('pinoutd HTTP API', () => {
     void fetch(`${base}/v1/devices/relay-01/invoke`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ capability: 'relay.set', args: { on: true }, waitFor: 'result' }),
+      body: JSON.stringify({
+        capability: 'relay.set',
+        args: { on: true },
+        waitFor: 'result',
+        idempotencyKey: `sse-event-${Date.now()}`,
+      }),
     });
 
     let collected = '';

@@ -159,6 +159,12 @@ export class DaemonClient {
     return this.call('GET', '/v1/leases');
   }
 
+  heartbeat(deviceId: string, actor: string): Promise<Record<string, unknown>> {
+    return this.call('POST', `/v1/devices/${encodeURIComponent(deviceId)}/heartbeat`, {
+      actor,
+    });
+  }
+
   /** Best-effort disarm / safe-state for a device the thread may have armed. */
   async disarmOrSafeState(deviceId: string, owner: string): Promise<void> {
     try {

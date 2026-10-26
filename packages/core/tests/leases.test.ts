@@ -128,6 +128,23 @@ describe('LeaseManager', () => {
     expect(manager.list().map((l) => l.owner)).toEqual(['b']);
   });
 
+  it('clamps acquire/renew TTL to maxTtlMs and drainExpired returns copies', () => {
+    const capped = new LeaseManager({ now: () => now, maxTtlMs: 2_000 });
+    const lease = capped.acquire({
+      scope: { kind: 'device', deviceId: 'arm-01' },
+      owner: 'a',
+      ttlMs: 60_000,
+    });
+    expect(lease.expiresAt).toBe(now + 2_000);
+    const renewed = capped.renew(lease.id, 'a', 99_000);
+    expect(renewed.expiresAt).toBe(now + 2_000);
+    now += 2_500;
+    const drained = capped.drainExpired();
+    expect(drained).toHaveLength(1);
+    expect(drained[0]?.id).toBe(lease.id);
+    expect(capped.list()).toHaveLength(0);
+  });
+
   it('lists leases filtered by owner and device', () => {
     manager.acquire({ scope: { kind: 'device', deviceId: 'arm-01' }, owner: 'a' });
     manager.acquire({ scope: { kind: 'device', deviceId: 'arm-02' }, owner: 'a' });

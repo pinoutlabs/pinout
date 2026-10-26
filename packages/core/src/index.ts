@@ -467,7 +467,7 @@ export type {
   ReconcileOptions,
   ExtendedOperationStatus,
 } from './operation/operationManager.js';
-export { LeaseManager } from './lease/leaseManager.js';
+export { LeaseManager, DEFAULT_MAX_LEASE_TTL_MS } from './lease/leaseManager.js';
 export type {
   LeaseScopeInput,
   AcquireLeaseOptions,

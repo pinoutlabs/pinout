@@ -27,6 +27,8 @@ The normal pipeline is:
    Commands may carry a `validityMs` TTL. Buffered or delayed commands exceeding their TTL are rejected with `COMMAND_EXPIRED`.
 5. **Legacy Firmware Guarantees**:
    The host SDK inspects the firmware identity `features` array. Older firmware lacking `watchdog` and `arming` flags is treated as unsupported for safety-critical actuation.
+6. **Host fail-safe on authority loss (daemon)**:
+   When a lease expires or the host deadman heartbeat goes stale, `pinoutd` (default ON) disarms and applies backend `safeState`, journaling the event. Arming requires an active lease. This runs while the daemon process is alive (e.g. agent paused mid-MCP tool call). The firmware watchdog remains mandatory if the host crashes or the link is severed — see [Infinity + MCP](infinity.md).
 
 ## Verification Status
 

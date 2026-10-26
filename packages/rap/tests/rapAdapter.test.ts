@@ -330,6 +330,143 @@ describe('pinout RAP adapter', () => {
     ).rejects.toThrow(/Bearer token is required/i);
   });
 
+  it('exposes heartbeat and renew_lease in the toolset', async () => {
+    const { rap } = await startHarness();
+    const toolset = await getJson(`${rap.baseUrl}/.well-known/rap-toolset`);
+    const names = (
+      toolset.json as { tools: Array<{ name: string }> }
+    ).tools.map((tool) => tool.name);
+    expect(names).toContain('pinout__heartbeat');
+    expect(names).toContain('pinout__renew_lease');
+  });
+
+  it('heartbeats and renews leases for the RAP thread owner', async () => {
+    const { rap, mock } = await startHarness();
+    const groupId = 'thread_hb';
+
+    await postJson(`${rap.baseUrl}/invoke`, {
+      operation: 'pinout__acquire_lease',
+      arguments: { deviceId: 'relay-rap', ttlMs: 5_000 },
+      id: 'call_lease_hb',
+      callback_url: mock.callbackUrl,
+      group_id: groupId,
+    });
+    const leaseResult = await mock.waitForToolResult('call_lease_hb');
+    const leasePayload = JSON.parse(String(leaseResult.text)) as {
+      lease: { id: string };
+      owner: string;
+    };
+    expect(leasePayload.owner).toBe(groupId);
+
+    await postJson(`${rap.baseUrl}/invoke`, {
+      operation: 'pinout__renew_lease',
+      arguments: { leaseId: leasePayload.lease.id, ttlMs: 5_000 },
+      id: 'call_renew',
+      callback_url: mock.callbackUrl,
+      group_id: groupId,
+    });
+    const renew = await mock.waitForToolResult('call_renew');
+    expect(String(renew.text)).toMatch(/lease/i);
+
+    await postJson(`${rap.baseUrl}/invoke`, {
+      operation: 'pinout__heartbeat',
+      arguments: { deviceId: 'relay-rap' },
+      id: 'call_hb',
+      callback_url: mock.callbackUrl,
+      group_id: groupId,
+    });
+    const hb = await mock.waitForToolResult('call_hb');
+    expect(String(hb.text)).toMatch(/alive|deviceId/i);
+  });
+
+  it('scopes owner with threadId and returns OPERATION_PENDING when wait budget elapses', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'pinout-rap-pending-'));
+    const journalDir = join(home, 'rap');
+    const mock = await startMockRapRuntime();
+
+    let opPolls = 0;
+    const fakeFetch: typeof fetch = async (input, init) => {
+      const url = String(input);
+      // Callback POSTs must reach the mock RAP runtime, not the daemon stub.
+      if (url.includes('/callback')) {
+        return globalThis.fetch(input, init);
+      }
+      if (url.includes('/v1/devices/') && url.includes('/invoke') && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            operation: {
+              id: 'op_pending_1',
+              deviceId: 'relay-rap',
+              capability: 'relay.set',
+              status: 'running',
+            },
+          }),
+          { status: 202, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      if (url.includes('/v1/operations/op_pending_1')) {
+        opPolls += 1;
+        return new Response(
+          JSON.stringify({
+            operation: {
+              id: 'op_pending_1',
+              status: 'running',
+              progress: { fraction: 0.1, message: 'still going' },
+            },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const adapter = new RapAdapter({
+      publicBaseUrl: 'http://127.0.0.1:9',
+      daemonUrl: 'http://127.0.0.1:9',
+      pinoutHome: home,
+      journalDir,
+      fetch: fakeFetch,
+      invokeWaitMs: 80,
+      pollIntervalMs: 15,
+      maxCallbackAttempts: 2,
+      callbackBaseDelayMs: 1,
+    });
+
+    adapter.acceptInvocation({
+      operation: 'pinout__invoke',
+      arguments: {
+        deviceId: 'relay-rap',
+        capability: 'relay.set',
+        args: { on: true },
+        threadId: 'nested-1',
+      },
+      id: 'call_pending',
+      callback_url: mock.callbackUrl,
+      group_id: 'thread_pending',
+    });
+
+    const result = await mock.waitForToolResult('call_pending');
+    const payload = JSON.parse(String(result.text)) as {
+      code: string;
+      operationId: string;
+      owner: string;
+      idempotencyKey: string;
+      poll: { tool: string };
+    };
+    expect(payload.code).toBe('OPERATION_PENDING');
+    expect(payload.operationId).toBe('op_pending_1');
+    expect(payload.owner).toBe('thread_pending:nested-1');
+    expect(payload.idempotencyKey).toBe('thread_pending:call_pending');
+    expect(payload.poll.tool).toBe('pinout__operation_status');
+    expect(opPolls).toBeGreaterThan(0);
+
+    await mock.close();
+    rmSync(home, { recursive: true, force: true });
+  });
+
   it('aborts safety after callback delivery exhaustion', async () => {
     const home = mkdtempSync(join(tmpdir(), 'pinout-rap-failcb-'));
     const journalDir = join(home, 'rap');

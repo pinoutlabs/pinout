@@ -341,6 +341,21 @@ export class SafetyEngine {
     this.deadman.set(deviceId, this.nowFn());
   }
 
+  /** Last deadman heartbeat timestamp for a device, if any. */
+  getDeadmanLastAlive(deviceId: string): number | undefined {
+    return this.deadman.get(deviceId);
+  }
+
+  /** Clear deadman tracking (e.g. after fail-safe disarm). */
+  clearDeadman(deviceId: string): void {
+    this.deadman.delete(deviceId);
+  }
+
+  /** Configured deadman rules (for proactive stale monitoring). */
+  listDeadmanRules(): DeadmanRule[] {
+    return this.rules.filter((rule): rule is DeadmanRule => rule.kind === 'deadman');
+  }
+
   configureBudget(resource: string, limit: number, windowMs: number): void {
     this.budgets.set(resource, { limit, windowMs, consumed: [] });
   }

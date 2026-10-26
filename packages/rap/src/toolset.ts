@@ -1,11 +1,24 @@
 import type { RapToolDef, RapToolsetManifest } from './types.js';
 
+const ownerThreadProps = {
+  owner: {
+    type: 'string',
+    description:
+      'Optional per-call owner / principal. Defaults to the RAP group_id (Infinity thread).',
+  },
+  threadId: {
+    type: 'string',
+    description:
+      'Optional nested thread id; scopes owner as <group_id>:<threadId> (MCP-compatible).',
+  },
+} as const;
+
 /** Build the Pinout RAP toolset from the static capability catalog. */
 export function buildPinoutToolset(endpoint: string): RapToolsetManifest {
   return {
     name: 'pinout',
     description:
-      'Pinout physical execution tools. Read-only tools inspect devices; physical-output tools actuate hardware under leases. SIMULATED devices are labeled by the daemon.',
+      'Pinout physical execution tools for Infinity RAP. Read-only tools inspect devices; physical-output tools actuate under leases. Use pinout__renew_lease / pinout__heartbeat while the agent is paused so fail-safe disarm does not trip. SIMULATED devices are labeled by the daemon.',
     endpoint,
     tools: pinoutRapTools(),
     needsMigration: false,
@@ -100,6 +113,7 @@ export function pinoutRapTools(): RapToolDef[] {
           deviceId: { type: 'string', minLength: 1 },
           capability: { type: 'string', minLength: 1 },
           args: { type: 'object' },
+          ...ownerThreadProps,
         },
       },
       annotations: {
@@ -113,7 +127,7 @@ export function pinoutRapTools(): RapToolDef[] {
     {
       name: 'pinout__invoke',
       description:
-        'PHYSICAL-OUTPUT. Start a governed capability invocation on pinoutd with waitFor=accepted. Requires an exclusive lease for actuation. Uses group_id:id as the idempotency key. Returns when the operation reaches a terminal state.',
+        'PHYSICAL-OUTPUT. Start a governed capability invocation on pinoutd with waitFor=accepted. Requires an exclusive lease and explicit sys.arm before outputs. Idempotency key defaults to RAP group_id:id (override with idempotencyKey). Waits up to ~10s then returns OPERATION_PENDING with operationId — poll pinout__operation_status or cancel with pinout__cancel_operation. Renew leases / heartbeat while Infinity pauses the agent.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -123,13 +137,19 @@ export function pinoutRapTools(): RapToolDef[] {
           capability: { type: 'string', minLength: 1 },
           args: { type: 'object' },
           timeoutMs: { type: 'number' },
+          idempotencyKey: {
+            type: 'string',
+            description:
+              'Optional override. Default is group_id:id so retries after an agent pause never double-actuate.',
+          },
+          ...ownerThreadProps,
         },
       },
       annotations: {
         'x-pinout-side-effect': 'physical-output',
         readOnlyHint: false,
         destructiveHint: true,
-        idempotentHint: true,
+        idempotentHint: false,
       },
       displayScript: '"invoke " + args.deviceId + " " + args.capability',
     },
@@ -174,7 +194,7 @@ export function pinoutRapTools(): RapToolDef[] {
     {
       name: 'pinout__acquire_lease',
       description:
-        'CONTROL-PLANE. Acquire an exclusive or shared-read lease before physical actuation. Owner is the RAP group_id (thread).',
+        'CONTROL-PLANE. Acquire an exclusive or shared-read lease before physical actuation. Owner defaults to the RAP group_id (Infinity thread). TTL is clamped by pinoutd maxLeaseTtlMs; renew before expiry or fail-safe will disarm/safeState.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -183,6 +203,7 @@ export function pinoutRapTools(): RapToolDef[] {
           deviceId: { type: 'string', minLength: 1 },
           ttlMs: { type: 'number' },
           mode: { type: 'string', enum: ['exclusive', 'shared-read'] },
+          ...ownerThreadProps,
         },
       },
       annotations: {
@@ -195,7 +216,8 @@ export function pinoutRapTools(): RapToolDef[] {
     },
     {
       name: 'pinout__renew_lease',
-      description: 'CONTROL-PLANE. Renew a lease owned by this RAP thread (group_id).',
+      description:
+        'CONTROL-PLANE. Renew a lease owned by this RAP thread so Infinity agent pauses do not trip fail-safe lease expiry. Pair with pinout__heartbeat for armed devices.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -203,6 +225,7 @@ export function pinoutRapTools(): RapToolDef[] {
         properties: {
           leaseId: { type: 'string', minLength: 1 },
           ttlMs: { type: 'number' },
+          ...ownerThreadProps,
         },
       },
       annotations: {
@@ -214,13 +237,34 @@ export function pinoutRapTools(): RapToolDef[] {
       displayScript: '"renew lease " + args.leaseId',
     },
     {
+      name: 'pinout__heartbeat',
+      description:
+        'CONTROL-PLANE. Kick the device deadman heartbeat while the agent is paused. Stale heartbeats trigger host fail-safe disarm/safeState (complementary to firmware watchdog).',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['deviceId'],
+        properties: {
+          deviceId: { type: 'string', minLength: 1 },
+          ...ownerThreadProps,
+        },
+      },
+      annotations: {
+        'x-pinout-side-effect': 'control-plane',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+      displayScript: '"heartbeat " + args.deviceId',
+    },
+    {
       name: 'pinout__release_lease',
       description: 'CONTROL-PLANE. Release a lease owned by this RAP thread (group_id).',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
         required: ['leaseId'],
-        properties: { leaseId: { type: 'string', minLength: 1 } },
+        properties: { leaseId: { type: 'string', minLength: 1 }, ...ownerThreadProps },
       },
       annotations: {
         'x-pinout-side-effect': 'control-plane',
@@ -233,9 +277,7 @@ export function pinoutRapTools(): RapToolDef[] {
   ];
 }
 
-export function idempotencyKeyFor(groupId: string, id: string): string {
-  return `${groupId}:${id}`;
-}
+export { rapCallIdempotencyKey as idempotencyKeyFor } from './idempotency.js';
 
 export function isPhysicalOutputTool(operation: string): boolean {
   return (
@@ -243,6 +285,7 @@ export function isPhysicalOutputTool(operation: string): boolean {
     operation === 'pinout__cancel_operation' ||
     operation === 'pinout__acquire_lease' ||
     operation === 'pinout__renew_lease' ||
+    operation === 'pinout__heartbeat' ||
     operation === 'pinout__release_lease'
   );
 }
