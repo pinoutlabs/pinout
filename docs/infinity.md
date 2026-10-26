@@ -151,6 +151,7 @@ what failed / not completed:
     mock credentials, and a longer compile of the Infinity workspace than this
     change’s verification budget. Prefer the scripted MCP client below, which
     asserts the same pause/lease/idempotency contracts Infinity hits over stdio.
+    For a **native RAP** tool server (no MCP bridge), see [RAP adapter](rap.md).
 ```
 
 To finish the Infinity bring-up on a laptop:
@@ -181,8 +182,16 @@ Asserted:
 6. **Per-thread owner**: `threadId` scopes lease owner to `mcp-infinity:t-1`.
 7. **Max lease TTL** clamped by daemon `maxLeaseTtlMs`.
 
+## Native RAP alternative
+
+If Infinity is configured with a `toolset_server` instead of an MCP bridge,
+use [`@pinout/rap`](rap.md): same daemon fail-safe / `OPERATION_PENDING` /
+idempotency / renew+heartbeat contracts, spoken as RAP
+(`/.well-known/rap-toolset`, `/invoke`, `/cancel_tool_call`, `/close_thread`).
+
 ## Related docs
 
+- [RAP / Infinity adapter](rap.md)
 - [MCP quickstart](mcp.md)
 - [Daemon API](daemon.md)
 - [Safety model](safety-model.md) (arming, watchdog, safe state)
