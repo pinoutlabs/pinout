@@ -107,8 +107,10 @@ async function main(): Promise<void> {
     try {
       await session.client.connect(session.transport);
       const tools = await session.client.listTools();
-      const relayTool = tools.tools.find((tool) => tool.name.endsWith('__relay_set'));
-      if (!relayTool) throw new Error('MCP relay.set tool was not advertised.');
+      // Default daemon-backed MCP catalog is static (pinout__invoke), not per-capability tools.
+      if (!tools.tools.some((tool) => tool.name === 'pinout__invoke')) {
+        throw new Error('MCP pinout__invoke tool was not advertised.');
+      }
       // Warm the MCP tool cache and connection before timing steady-state calls.
       await session.client.listTools();
       await session.client.callTool({
@@ -119,15 +121,19 @@ async function main(): Promise<void> {
       for (let index = 0; index < samples; index += 1) {
         let started = performance.now();
         const listed = await session.client.listTools();
-        if (!listed.tools.some((tool) => tool.name === relayTool.name)) {
+        if (!listed.tools.some((tool) => tool.name === 'pinout__invoke')) {
           throw new Error('MCP listTools result changed during benchmark.');
         }
         listToolsMs.push(performance.now() - started);
 
         started = performance.now();
         const invoke = await session.client.callTool({
-          name: relayTool.name,
-          arguments: { on: index % 2 === 0 },
+          name: 'pinout__invoke',
+          arguments: {
+            deviceId: 'relay-bench',
+            capability: 'relay.set',
+            args: { on: index % 2 === 0 },
+          },
         });
         if (invoke.isError) throw new Error('MCP invoke returned an error.');
         mcpInvokeMs.push(performance.now() - started);
@@ -180,9 +186,11 @@ async function main(): Promise<void> {
       evidence: 'SIMULATED',
       method: {
         samples,
-        mcp: 'real packages/mcp/dist/index.js stdio subprocess, daemon-backed, persistent session after initialize warmup',
+        mcp: 'real packages/mcp/dist/index.js stdio subprocess, daemon-backed static catalog (pinout__invoke), persistent session after initialize warmup',
         http: 'real loopback pinoutd GET/POST endpoints, persistent fetch dispatcher after warmup',
         initialize: 'fresh stdio child process and MCP client connect for every sample',
+        invoke:
+          'MCP: pinout__invoke({deviceId, capability: relay.set, args}); HTTP: POST /v1/devices/:id/invoke',
       },
       limits: {
         minimumSamples: 'N >= 30',

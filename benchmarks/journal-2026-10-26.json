@@ -1,0 +1,151 @@
+{
+  "benchmark": "file-journal-restart-hydrate-and-list",
+  "issue": 30,
+  "evidence": "SIMULATED",
+  "method": {
+    "operationCounts": [
+      100,
+      1000,
+      5000
+    ],
+    "restartSamples": 10,
+    "fixture": "completed relay.set operations through POST /v1/devices/:id/invoke on pinoutd with unique idempotencyKey per invoke",
+    "restart": "fresh DaemonContext and DaemonHttpServer against the same FileJournalStorage JSONL file",
+    "list": "GET /v1/operations response fully parsed and operation count asserted"
+  },
+  "limits": {
+    "noPhysicalClaim": true,
+    "noExactlyOnceClaim": true,
+    "temporaryFilesRemoved": true
+  },
+  "recordedAt": "2026-10-26T17:57:16.551Z",
+  "gitSha": "707152522cebc1c54bdd40752df28550c7759e5f",
+  "node": "v22.23.4",
+  "machine": {
+    "hostname": "cursor",
+    "platform": "linux",
+    "release": "6.12.94+",
+    "arch": "x64",
+    "cpu": "Intel(R) Xeon(R) Processor",
+    "logicalCpus": 4
+  },
+  "results": [
+    {
+      "operationCount": 100,
+      "storageBackend": "FileJournalStorage",
+      "journalPath": "temporary JSONL (removed after run)",
+      "hydrate": {
+        "count": 10,
+        "p50Ms": 3.0880824999999845,
+        "p95Ms": 3.5153784999999687,
+        "rawSamplesMs": [
+          3.0574780000000032,
+          2.529348999999968,
+          2.8276149999999802,
+          2.7893169999999827,
+          3.118686999999966,
+          3.357141000000013,
+          3.5697789999999827,
+          3.4488889999999515,
+          3.2744450000000143,
+          2.3033080000000155
+        ]
+      },
+      "listOperations": {
+        "count": 10,
+        "p50Ms": 1.5309280000000172,
+        "p95Ms": 2.252139350000012,
+        "rawSamplesMs": [
+          1.7814070000000015,
+          1.2288170000000491,
+          1.385590000000036,
+          1.339102999999966,
+          1.5990040000000363,
+          1.4977910000000065,
+          1.6652300000000082,
+          1.5640650000000278,
+          2.6372840000000224,
+          1.0318809999999985
+        ]
+      }
+    },
+    {
+      "operationCount": 1000,
+      "storageBackend": "FileJournalStorage",
+      "journalPath": "temporary JSONL (removed after run)",
+      "hydrate": {
+        "count": 10,
+        "p50Ms": 18.47412799999995,
+        "p95Ms": 24.697744749999977,
+        "rawSamplesMs": [
+          19.670196000000033,
+          21.776706999999988,
+          26.499501999999893,
+          16.19573700000001,
+          14.880431000000044,
+          18.105362000000014,
+          22.49559700000009,
+          17.54079700000011,
+          18.842893999999887,
+          14.135891999999785
+        ]
+      },
+      "listOperations": {
+        "count": 10,
+        "p50Ms": 4.270119999999906,
+        "p95Ms": 5.965733700000032,
+        "rawSamplesMs": [
+          5.59139899999991,
+          4.693368999999848,
+          3.580246999999872,
+          4.635831000000053,
+          3.6901610000002165,
+          6.19728299999997,
+          3.9044089999997595,
+          3.353491999999733,
+          3.25707599999987,
+          5.6827290000001085
+        ]
+      }
+    },
+    {
+      "operationCount": 5000,
+      "storageBackend": "FileJournalStorage",
+      "journalPath": "temporary JSONL (removed after run)",
+      "hydrate": {
+        "count": 10,
+        "p50Ms": 109.83607699999993,
+        "p95Ms": 142.02222979999988,
+        "rawSamplesMs": [
+          125.02280000000064,
+          145.70900599999914,
+          110.68668900000011,
+          128.5311899999997,
+          100.60968999999932,
+          100.69241900000088,
+          108.98546499999975,
+          137.51617000000078,
+          98.19497700000102,
+          99.08516299999974
+        ]
+      },
+      "listOperations": {
+        "count": 10,
+        "p50Ms": 18.08232500000031,
+        "p95Ms": 24.999417599999276,
+        "rawSamplesMs": [
+          28.937355000000025,
+          18.879845999999816,
+          17.543202999999266,
+          19.542825000000448,
+          17.89169799999945,
+          17.4649100000006,
+          20.186382999998386,
+          13.614111000000776,
+          18.27295200000117,
+          16.437959999999293
+        ]
+      }
+    }
+  ]
+}

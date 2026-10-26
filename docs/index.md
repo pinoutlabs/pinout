@@ -11,6 +11,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 - [Hardware support](hardware-support.md) — statuses generated from `hardware/catalog.json`.
 - [Evidence levels](evidence-levels.md) — canonical SupportLevel mapping (`UNKNOWN` → `HARDWARE_VERIFIED`).
 - [Acceptance ledger](acceptance-ledger.md) — phase-by-phase implementation and verification status matrix.
+- [Benchmarks](benchmarks.md) - reproduce guide for host/simulator benches (`SIMULATED` only; no LLM task-time comparison yet).
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.
 - [Safety model](safety-model.md) and [security model](security-model.md).
 - [State evidence contract](state-evidence.md) — commanded vs acknowledged vs independently observed physical state.

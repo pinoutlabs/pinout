@@ -714,6 +714,7 @@ Experimental and changing. Protocol, package layout, and APIs may evolve. The re
 ## Read next
 
 - [Spec v1 overview](docs/spec/overview.md) — device, capability, operations, leases, safety, errors, journal contracts
+- [Benchmarks](docs/benchmarks.md) - reproduce host/simulator benches (`SIMULATED`); no LLM task-time comparison is included yet
 - [pinoutd daemon](docs/daemon.md)
 - [Company and product](docs/company.md) · [Architecture](docs/architecture.md) · [Production architecture](docs/production-architecture.md)
 - [Safety and policies](docs/policies.md)

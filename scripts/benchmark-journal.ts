@@ -62,6 +62,9 @@ async function fixture(count: number, journalPath: string): Promise<void> {
         body: JSON.stringify({
           capability: 'relay.set',
           args: { on: index % 2 === 0 },
+          // Unique keys required: physical outputs auto-generate deterministic
+          // idempotency keys from args, which would collapse N fixtures into 2 ops.
+          idempotencyKey: `journal-bench-${count}-${index}`,
           owner: 'journal-benchmark',
           waitFor: 'result',
         }),
@@ -142,7 +145,8 @@ async function main(): Promise<void> {
     method: {
       operationCounts,
       restartSamples,
-      fixture: 'completed relay.set operations through POST /v1/devices/:id/invoke on pinoutd',
+      fixture:
+        'completed relay.set operations through POST /v1/devices/:id/invoke on pinoutd with unique idempotencyKey per invoke',
       restart:
         'fresh DaemonContext and DaemonHttpServer against the same FileJournalStorage JSONL file',
       list: 'GET /v1/operations response fully parsed and operation count asserted',
