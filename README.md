@@ -718,6 +718,7 @@ Experimental and changing. Protocol, package layout, and APIs may evolve. The re
 - [pinoutd daemon](docs/daemon.md)
 - [Company and product](docs/company.md) · [Architecture](docs/architecture.md) · [Production architecture](docs/production-architecture.md)
 - [Safety and policies](docs/policies.md)
+- [OAHL comparison](docs/oahl-comparison.md) - Pinout vs Open Agent Hardware Layer (sourced)
 - [Modules](docs/modules.md) and [build a module](docs/build-a-module.md)
 - [Generator](docs/generator.md) and [generator safety](docs/generator-safety.md)
 - [Roadmap](ROADMAP.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)

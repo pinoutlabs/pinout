@@ -14,6 +14,7 @@ Pinout is an alpha hardware-control platform. Read the [README](../README.md) fo
 - [Benchmarks](benchmarks.md) - reproduce guide for host/simulator benches (`SIMULATED` only; no LLM task-time comparison yet).
 - [Setup guide](setup.md) — breadboard reference wiring, manual firmware flashing, and 15-minute diagnostic verification.
 - [Safety model](safety-model.md) and [security model](security-model.md).
+- [OAHL comparison](oahl-comparison.md) - sourced comparison of Pinout vs Open Agent Hardware Layer (OAHL).
 - [State evidence contract](state-evidence.md) — commanded vs acknowledged vs independently observed physical state.
 - [Recovery and reconciliation model](recovery-model.md) — operation persistence, crash recovery windows, and mandatory reconciliation.
 
