@@ -126,8 +126,20 @@ for (const board of builtinBoards)
         });
       }
       await client.callTool({ name: 'pinout__acquire_lease', arguments: { deviceId: id } });
-      const invoke = (capability: string, args: Record<string, unknown>) =>
-        client.callTool({ name: 'pinout__invoke', arguments: { deviceId: id, capability, args } });
+      const invoke = (
+        capability: string,
+        args: Record<string, unknown>,
+        idempotencyKey?: string,
+      ) =>
+        client.callTool({
+          name: 'pinout__invoke',
+          arguments: {
+            deviceId: id,
+            capability,
+            args,
+            ...(idempotencyKey ? { idempotencyKey } : {}),
+          },
+        });
       const pin = board.family === 'avr' ? 15 : 4;
       expect((await invoke('gpio.write', { pin, value: true })).isError).toBe(true);
       expect((await invoke('sys.arm', { timeoutMs: 0 })).isError).toBe(true);
@@ -146,14 +158,19 @@ for (const board of builtinBoards)
       expect(kicks).toBeGreaterThan(0);
       ports = [];
       await discovery.scan();
-      expect((await invoke('gpio.write', { pin, value: true })).isError).toBe(true);
+      // Fresh keys: intentional new attempts must not observe the prior successful write.
+      expect((await invoke('gpio.write', { pin, value: true }, 'after-unplug-1')).isError).toBe(
+        true,
+      );
       expect(await client.listTools()).toEqual(before);
       // Simulate a new enumeration path after unplug; the USB serial keeps the device ID stable.
       ports = [
         { path: '/dev/cu.test2', vendorId: '2341', productId: '0043', serialNumber: 'test' },
       ];
       await discovery.scan();
-      expect((await invoke('gpio.write', { pin, value: true })).isError).toBe(true);
+      expect((await invoke('gpio.write', { pin, value: true }, 'after-replug-1')).isError).toBe(
+        true,
+      );
       expect(await client.listTools()).toEqual(before);
     } finally {
       await client.close();

@@ -60,7 +60,7 @@ Clients interacting with `pinoutd` (CLI daemon commands, Python SDK, MCP adapter
 | `GET /v1/operations`, `GET /v1/operations/:id` | Operation inspection |
 | `POST /v1/operations/:id/cancel` | Cooperative cancellation |
 | `POST /v1/operations/:id/reconcile` | Reconcile uncertain operation outcome (`observedComplete`, `observedNotDone`, `abandoned`) |
-| `GET/POST /v1/leases`, `POST /v1/leases/:id/renew`, `DELETE /v1/leases/:id` | Lease management |
+| `GET/POST /v1/leases`, `POST /v1/leases/:id/renew`, `DELETE /v1/leases/:id` | Lease management (TTL clamped by `maxLeaseTtlMs`, default 5 minutes; expired leases are reaped on a timer) |
 | `GET /v1/safety`, `POST /v1/halt`, `POST /v1/resume`, `POST /v1/estop`, `POST /v1/estop/clear` | Safety state |
 | `GET /v1/events` | Server-Sent Events stream of runtime/operation/safety events |
 | `POST /v1/approvals` | Record policy approval token for privileged capabilities |
@@ -94,8 +94,20 @@ executing** — allowed even while halted (planning is safe, execution is not).
 It checks device and daemon policies without consuming approvals, rate slots,
 or resource budgets. Idempotency keys are scoped to device, capability and
 caller; retries return the original operation without executing policy charges
-again. The caller name is supplied by the client, not an authenticated user
-identity: the daemon still uses a shared bearer token.
+again. **Physical-output** invokes always receive an idempotency key: if the
+client omits one, the daemon generates a deterministic `auto-…` key and returns
+it so agent pauses/retries cannot double-actuate. The caller name is supplied by
+the client, not an authenticated user identity: the daemon still uses a shared
+bearer token.
+
+### Fail-safe on authority loss
+
+By default (`failSafeOnAuthorityLoss: true`), when a lease expires or a deadman
+heartbeat goes stale the daemon disarms (when supported) and applies the
+device `safeState`, journaling `lease.expired` / `fail_safe.applied`. Arming
+(`sys.arm`) requires an active lease when `requireLeases` is enabled. This
+complements — it does not replace — the firmware watchdog; see
+[Infinity + MCP](infinity.md) and [Safety model](safety-model.md).
 
 ### Operation reconciliation
 

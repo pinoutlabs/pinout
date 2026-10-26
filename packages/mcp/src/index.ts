@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { runStdioServer } from './runStdio.js';
 
-export { createDaemonMcpServer } from './createDaemonServer.js';
+export { createDaemonMcpServer, DEFAULT_INVOKE_WAIT_MS } from './createDaemonServer.js';
 export type { DaemonMcpServerOptions } from './createDaemonServer.js';
+export { runHttpServer } from './runHttp.js';
+export type { HttpMcpListenOptions } from './runHttp.js';
 export {
   awarenessControlPlaneTools,
   awarenessToolNames,

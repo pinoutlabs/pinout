@@ -13,7 +13,7 @@
  * never sensible to expose physical control to a network without auth.
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { attachStreamSockets } from './streamSocket.js';
 import {
   Journal,
@@ -29,6 +29,7 @@ import {
   PinoutError,
   FileJournalStorage,
   resolvePinoutHome,
+  DEFAULT_MAX_LEASE_TTL_MS,
   type PinoutRuntime,
   type RuntimeEventEnvelope,
   type JournalEntryKind,
@@ -48,6 +49,7 @@ import {
   type GenerateConnectorFn,
 } from './connectors/index.js';
 import { serializeConnectorRecord } from './connectors/serialize.js';
+import { FailSafeMonitor } from './failSafeMonitor.js';
 
 export interface DaemonConfig {
   host?: string;
@@ -64,6 +66,22 @@ export interface DaemonConfig {
   safetyRules?: SafetyRule[];
   /** Require an exclusive caller lease for physical outputs. Defaults to true. */
   requireLeases?: boolean;
+  /**
+   * Maximum lease TTL in milliseconds (acquire/renew clamped). Default 5 minutes.
+   * Prevents a crashed agent from holding hardware for unbounded time via a huge TTL.
+   */
+  maxLeaseTtlMs?: number;
+  /**
+   * Interval for proactive lease expiry reaping + deadman fail-safe. Default 1000ms.
+   * Expired leases are cleaned on a timer, not only when touched.
+   */
+  leaseReapIntervalMs?: number;
+  /**
+   * When true (default), lease expiry or a stale deadman heartbeat disarms the
+   * device and applies safeState, then journals the event. Safe default for
+   * armed physical capabilities.
+   */
+  failSafeOnAuthorityLoss?: boolean;
   /** Optional device-awareness service (discovery + persistent registry). */
   awareness?: AwarenessService;
   /** Override Pinout home (`~/.pinout`) for connector/module persistence. */
@@ -139,9 +157,12 @@ export class DaemonContext {
   readonly events: EventHub;
   readonly awareness: AwarenessService | undefined;
   readonly connectors: ConnectorPipeline;
+  readonly failSafe: FailSafeMonitor;
   readonly pinoutHome: string;
   readonly startedAt: number;
   readonly ready: Promise<void>;
+  readonly maxLeaseTtlMs: number;
+  readonly requireLeases: boolean;
 
   constructor(runtime: PinoutRuntime, config: DaemonConfig = {}) {
     this.runtime = runtime;
@@ -150,6 +171,8 @@ export class DaemonContext {
     this.streams = new StreamBus();
     this.awareness = config.awareness;
     this.pinoutHome = resolvePinoutHome(config.pinoutHome);
+    this.maxLeaseTtlMs = config.maxLeaseTtlMs ?? DEFAULT_MAX_LEASE_TTL_MS;
+    this.requireLeases = config.requireLeases !== false;
 
     this.journal = new Journal(
       config.journalPath ? { storage: new FileJournalStorage(config.journalPath) } : {},
@@ -216,21 +239,32 @@ export class DaemonContext {
       },
     });
 
-    this.leases = new LeaseManager();
+    this.leases = new LeaseManager({ maxTtlMs: this.maxLeaseTtlMs });
 
-    const leaseRules: SafetyRule[] =
-      config.requireLeases === false
-        ? []
-        : runtime.devices().flatMap((summary) =>
-            runtime
-              .getDevice(summary.id)
-              .capabilities.filter((capability) => capability.safety.physicalOutput)
-              .map((capability) => ({
-                kind: 'lease' as const,
-                capability: capability.name,
-                id: `daemon.default-lease.${summary.id}.${capability.name}`,
-              })),
-          );
+    const leaseRules: SafetyRule[] = !this.requireLeases
+      ? []
+      : runtime.devices().flatMap((summary) => {
+          const device = runtime.getDevice(summary.id);
+          const physical = device.capabilities
+            .filter((capability) => capability.safety.physicalOutput)
+            .map((capability) => ({
+              kind: 'lease' as const,
+              capability: capability.name,
+              id: `daemon.default-lease.${summary.id}.${capability.name}`,
+            }));
+          // Arming must require an active lease even though sys.arm is not
+          // itself classified as a physicalOutput side-effect capability.
+          const armRules = device.supports('sys.arm')
+            ? [
+                {
+                  kind: 'lease' as const,
+                  capability: 'sys.arm',
+                  id: `daemon.default-lease.${summary.id}.sys.arm`,
+                },
+              ]
+            : [];
+          return [...physical, ...armRules];
+        });
     this.safety = new SafetyEngine({
       rules: [...leaseRules, ...(config.safetyRules ?? [])],
       leaseManager: this.leases,
@@ -254,6 +288,20 @@ export class DaemonContext {
       { journal: this.journal },
     );
     this.ready = this.operations.hydrate();
+
+    this.failSafe = new FailSafeMonitor({
+      runtime: this.runtime,
+      leases: this.leases,
+      safety: this.safety,
+      journal: this.journal,
+      failSafeOnAuthorityLoss: config.failSafeOnAuthorityLoss !== false,
+      ...(config.leaseReapIntervalMs !== undefined
+        ? { intervalMs: config.leaseReapIntervalMs }
+        : {}),
+      publishEvent: (kind, data) => {
+        this.events.publish({ kind, at: Date.now(), data });
+      },
+    });
 
     // The daemon is the policy authority for an already-registered runtime.
     // Reattach every device before accepting requests so direct runtime calls
@@ -300,6 +348,7 @@ export class DaemonContext {
         mode,
         scope,
         expiresAt: lease.expiresAt,
+        maxTtlMs: this.maxLeaseTtlMs,
       },
     );
     return lease;
@@ -312,6 +361,14 @@ export class DaemonContext {
       leaseId,
       owner,
     });
+  }
+
+  startFailSafeMonitor(): void {
+    this.failSafe.start();
+  }
+
+  stopFailSafeMonitor(): void {
+    this.failSafe.stop();
   }
 }
 
@@ -569,15 +626,27 @@ export class DaemonHttpServer {
       if (!device.supports(capability)) {
         throw new UnsupportedCapabilityError(capability);
       }
+      const descriptor = device.capabilities.find((cap) => cap.name === capability)!;
       const args = (body?.args ?? {}) as Record<string, unknown>;
       const owner = typeof body?.owner === 'string' ? body.owner : undefined;
       const dryRun = body?.dryRun === true;
       const waitFor = body?.waitFor === 'result' ? 'result' : 'accepted';
-      const idempotencyKey =
+      const physicalOutput = descriptor.safety.physicalOutput === true;
+      let idempotencyKey =
         typeof body?.idempotencyKey === 'string' ? body.idempotencyKey : undefined;
+      let idempotencyKeyGenerated = false;
+      // Physical outputs always carry an idempotency key so retries after an
+      // agent pause / MCP wait timeout cannot double-actuate.
+      if (!dryRun && physicalOutput && !idempotencyKey) {
+        idempotencyKey = deterministicIdempotencyKey(deviceId, capability, args, owner);
+        idempotencyKeyGenerated = true;
+      }
 
       // A retry observes an existing operation, even after its approval was
       // consumed or the machine halted. It must never spend policy state again.
+      // Exception: auto-generated keys after a terminal failure may retry — the
+      // failure may have been a precondition (e.g. NOT_ARMED) that the caller
+      // has since fixed; explicit client keys still observe the failed op.
       const existing =
         !dryRun && idempotencyKey
           ? c.operations.idempotencyStore.lookup(deviceId, capability, owner, idempotencyKey)
@@ -585,38 +654,54 @@ export class DaemonHttpServer {
       if (existing?.operationId && c.operations.get(existing.operationId)) {
         const handle = c.operations.getHandle(existing.operationId);
         const snapshot = handle.snapshot();
-        if (snapshot.status === 'requires_reconciliation' || snapshot.status === 'uncertain') {
-          sendJson(res, 409, {
-            error: {
-              code: 'OPERATION_REQUIRES_RECONCILIATION',
-              category: 'OPERATION',
-              message:
-                'Operation outcome is uncertain after process restart and requires reconciliation before reuse.',
-              operation: snapshot.id,
-              status: snapshot.status,
-            },
-            operation: snapshot,
-            deduped: true,
-          });
+        const failedTerminal =
+          snapshot.status === 'failed' ||
+          snapshot.status === 'cancelled' ||
+          snapshot.status === 'rejected' ||
+          snapshot.status === 'timed_out';
+        if (failedTerminal && idempotencyKeyGenerated && idempotencyKey) {
+          c.operations.idempotencyStore.remove(deviceId, capability, owner, idempotencyKey);
+        } else {
+          if (snapshot.status === 'requires_reconciliation' || snapshot.status === 'uncertain') {
+            sendJson(res, 409, {
+              error: {
+                code: 'OPERATION_REQUIRES_RECONCILIATION',
+                category: 'OPERATION',
+                message:
+                  'Operation outcome is uncertain after process restart and requires reconciliation before reuse.',
+                operation: snapshot.id,
+                status: snapshot.status,
+              },
+              operation: snapshot,
+              deduped: true,
+              ...(idempotencyKey ? { idempotencyKey } : {}),
+            });
+            return;
+          }
+          if (waitFor === 'result') {
+            const result = await handle.waitForResult();
+            sendJson(res, 200, {
+              operation: handle.snapshot(),
+              result,
+              deduped: true,
+              ...(idempotencyKey ? { idempotencyKey } : {}),
+            });
+          } else {
+            sendJson(res, 202, {
+              operation: handle.snapshot(),
+              deduped: true,
+              ...(idempotencyKey ? { idempotencyKey } : {}),
+            });
+          }
           return;
         }
-        if (waitFor === 'result') {
-          const result = await handle.waitForResult();
-          sendJson(res, 200, { operation: handle.snapshot(), result, deduped: true });
-        } else {
-          sendJson(res, 202, { operation: handle.snapshot(), deduped: true });
-        }
-        return;
       }
 
       // Dry-run plans without executing; the halt gate applies to execution.
       if (!dryRun) {
         c.halt.enforceGate();
       }
-      const validated = validateInputSchema(
-        device.capabilities.find((cap) => cap.name === capability)!.inputSchema,
-        args,
-      );
+      const validated = validateInputSchema(descriptor.inputSchema, args);
       // Include the device's own baseline/deployment policies in planning.
       await c.runtime.invoke(deviceId, capability, validated, {
         dryRun: true,
@@ -649,17 +734,32 @@ export class DaemonHttpServer {
             signal: runCtx.signal,
             reportProgress: runCtx.reportProgress,
           });
+          if (capability === 'sys.arm') {
+            const timeoutMs =
+              typeof validated.timeoutMs === 'number'
+                ? validated.timeoutMs
+                : typeof result.timeoutMs === 'number'
+                  ? result.timeoutMs
+                  : undefined;
+            c.failSafe.markArmed(deviceId, timeoutMs, owner);
+          } else if (capability === 'sys.disarm') {
+            c.failSafe.markDisarmed(deviceId);
+          }
           runCtx.reportProgress(1, 'completed');
           return result;
         },
       });
 
+      const keyMeta = {
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+        ...(idempotencyKeyGenerated ? { idempotencyKeyGenerated: true } : {}),
+      };
       if (waitFor === 'result') {
         const result = await handle.waitForResult();
-        sendJson(res, 200, { operation: handle.snapshot(), result });
+        sendJson(res, 200, { operation: handle.snapshot(), result, ...keyMeta });
         return;
       }
-      sendJson(res, 202, { operation: handle.snapshot(), deduped });
+      sendJson(res, 202, { operation: handle.snapshot(), deduped, ...keyMeta });
     });
 
     // -- Operations ----------------------------------------------------------
@@ -733,7 +833,18 @@ export class DaemonHttpServer {
         owner,
         typeof body?.ttlMs === 'number' ? body.ttlMs : undefined,
       );
-      sendJson(res, 200, { lease });
+      c.journal.append(
+        'lease.acquired',
+        { deviceId: lease.scope.deviceId },
+        {
+          event: 'lease.renewed',
+          leaseId: lease.id,
+          owner,
+          expiresAt: lease.expiresAt,
+          maxTtlMs: c.maxLeaseTtlMs,
+        },
+      );
+      sendJson(res, 200, { lease, maxTtlMs: c.maxLeaseTtlMs });
     });
 
     this.route('DELETE', '/v1/leases/:id', async (c, req, res, match, body) => {
@@ -1156,6 +1267,30 @@ function encodeFrameData(data: unknown): unknown {
     return { encoding: 'base64', bytes: Buffer.from(data).toString('base64') };
   }
   return data;
+}
+
+/** Deterministic idempotency key for physical-output retries (pause-safe). */
+function deterministicIdempotencyKey(
+  deviceId: string,
+  capability: string,
+  args: Record<string, unknown>,
+  owner: string | undefined,
+): string {
+  const payload = stableStringify({ deviceId, capability, args, owner: owner ?? null });
+  const digest = createHash('sha256').update(payload).digest('hex').slice(0, 32);
+  return `auto-${digest}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
+  }
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
 }
 
 export { randomUUID };
