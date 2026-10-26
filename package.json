@@ -48,6 +48,7 @@
     "example:mcp-heterogeneous": "npm run build --silent && tsx examples/mcp-heterogeneous.ts",
     "mcp": "npm run build --silent && node scripts/mcp-bootstrap.js",
     "mcp:heterogeneous": "npm run build --silent && PINOUT_DEMO=heterogeneous node packages/mcp/dist/index.js",
+    "rap": "npm run build --silent && node packages/rap/dist/main.js",
     "demo:physical-intelligence": "npm run build --silent && tsx examples/physical-intelligence.ts",
     "demo:generate-device": "npm run build --silent && tsx examples/generate-device.ts",
     "demo:coffee": "npm run build --silent && tsx examples/coffee-machine.ts",
