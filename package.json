@@ -57,6 +57,9 @@
     "bench:mcp": "npm run build --silent && tsx scripts/benchmark-mcp.ts",
     "bench:watchdog": "npm run build --silent && tsx scripts/benchmark-watchdog.ts",
     "bench:journal": "npm run build --silent && tsx scripts/benchmark-journal.ts",
+    "bench:agent": "npm run build --silent && tsx benchmarks/agent-task-time/src/cli.ts",
+    "bench:agent:markdown": "tsx benchmarks/agent-task-time/src/report/regenerateMarkdownCli.ts",
+    "typecheck:bench": "tsc -p benchmarks/agent-task-time/tsconfig.json --pretty",
     "hardware:smoke": "npm run build --silent && node scripts/hardware-smoke.mjs",
     "test:firmware:uno": "node scripts/test-uno-firmware.mjs"
   },

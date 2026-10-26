@@ -11,7 +11,10 @@ export default tseslint.config(
       'firmware/**',
       'coverage/**',
       'sdk/**',
-      'benchmarks/**',
+      'benchmarks/*.json',
+      'benchmarks/results/**',
+      'benchmarks/agent-task-time/dist/**',
+      'benchmarks/agent-task-time/results/**',
     ],
   },
   eslint.configs.recommended,
@@ -50,7 +53,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/**/*.ts', 'examples/**/*.ts', 'eslint.config.js', 'vitest.config.ts'],
+    files: [
+      'packages/**/*.ts',
+      'examples/**/*.ts',
+      'benchmarks/agent-task-time/**/*.ts',
+      'eslint.config.js',
+      'vitest.config.ts',
+    ],
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
