@@ -1,7 +1,14 @@
 import { getProfile } from '../devices/profiles.js';
 import type { LlmClient, LlmCompletion } from './client.js';
 import { encodeToolNameForLlm } from './toolNames.js';
-import type { ArmId, LlmMessage, LlmToolDefinition, ProfileId, TaskId } from '../types.js';
+import type {
+  ArmId,
+  DeviceMode,
+  LlmMessage,
+  LlmToolDefinition,
+  ProfileId,
+  TaskId,
+} from '../types.js';
 
 /**
  * Deterministic fake agent used ONLY to test the harness.
@@ -11,8 +18,14 @@ export function createScriptedClient(options: {
   arm: ArmId;
   taskId: TaskId;
   profileId: ProfileId;
+  deviceMode?: DeviceMode;
 }): LlmClient {
-  return new ScriptedLlmClient(options.arm, options.taskId, options.profileId);
+  return new ScriptedLlmClient(
+    options.arm,
+    options.taskId,
+    options.profileId,
+    options.deviceMode ?? 'simulated',
+  );
 }
 
 class ScriptedLlmClient implements LlmClient {
@@ -24,15 +37,19 @@ class ScriptedLlmClient implements LlmClient {
     private readonly arm: ArmId,
     private readonly taskId: TaskId,
     private readonly profileId: ProfileId,
+    private readonly deviceMode: DeviceMode,
   ) {}
 
   async complete(options: {
     messages: LlmMessage[];
     tools: LlmToolDefinition[];
-    temperature: number;
+    temperature?: number;
   }): Promise<LlmCompletion> {
     void options.temperature;
-    const plan = this.arm === 'raw' ? rawPlan(this.taskId, this.profileId) : pinoutPlan(this.taskId, this.profileId);
+    const plan =
+      this.arm === 'raw'
+        ? rawPlan(this.taskId, this.profileId, this.deviceMode)
+        : pinoutPlan(this.taskId, this.profileId);
     const current = plan[this.step];
     this.step += 1;
     const available = new Set(options.tools.map((tool) => tool.name));
@@ -63,10 +80,33 @@ interface ScriptStep {
   toolCalls?: Array<{ id: string; name: string; arguments: Record<string, unknown> }>;
 }
 
-function rawPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
+function rawPlan(taskId: TaskId, profileId: ProfileId, deviceMode: DeviceMode): ScriptStep[] {
   const profile = getProfile(profileId);
   const steps = buildRawFirmwareSteps(taskId, profileId);
-  const firmware = JSON.stringify({ evidence: 'SIMULATED', steps }, null, 2);
+  const firmware = JSON.stringify({ evidence: 'HARNESS_TEST_NOT_LLM', steps }, null, 2);
+  if (deviceMode === 'real') {
+    return [
+      {
+        content: 'HARNESS_TEST_NOT_LLM: reading datasheet.',
+        toolCalls: [{ id: 'c1', name: 'read_file', arguments: { path: 'DATASHEET.md' } }],
+      },
+      {
+        content: 'HARNESS_TEST_NOT_LLM: writing firmware sketch.',
+        toolCalls: [
+          { id: 'c2', name: 'write_file', arguments: { path: 'firmware.json', content: firmware } },
+        ],
+      },
+      {
+        content: 'HARNESS_TEST_NOT_LLM: compile.',
+        toolCalls: [{ id: 'c3', name: 'compile_firmware', arguments: { path: 'firmware.json' } }],
+      },
+      {
+        content: 'HARNESS_TEST_NOT_LLM: flash.',
+        toolCalls: [{ id: 'c4', name: 'flash_firmware', arguments: { path: 'firmware.json' } }],
+      },
+      { content: `HARNESS_TEST_NOT_LLM: done on ${profile.displayName}.` },
+    ];
+  }
   return [
     {
       content: 'HARNESS_TEST_NOT_LLM: reading datasheet.',
@@ -75,20 +115,14 @@ function rawPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
     {
       content: 'HARNESS_TEST_NOT_LLM: writing firmware sketch.',
       toolCalls: [
-        {
-          id: 'c2',
-          name: 'write_file',
-          arguments: { path: 'firmware.json', content: firmware },
-        },
+        { id: 'c2', name: 'write_file', arguments: { path: 'firmware.json', content: firmware } },
       ],
     },
     {
       content: 'HARNESS_TEST_NOT_LLM: compile/flash sketch.',
       toolCalls: [{ id: 'c3', name: 'compile_flash', arguments: { path: 'firmware.json' } }],
     },
-    {
-      content: `HARNESS_TEST_NOT_LLM: done on ${profile.displayName}.`,
-    },
+    { content: `HARNESS_TEST_NOT_LLM: done on ${profile.displayName}.` },
   ];
 }
 
@@ -106,13 +140,7 @@ function pinoutPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
     },
     {
       content: 'HARNESS_TEST_NOT_LLM: arm device.',
-      toolCalls: [
-        {
-          id: 'p3',
-          name: 'sys.arm',
-          arguments: { timeoutMs: 5000 },
-        },
-      ],
+      toolCalls: [{ id: 'p3', name: 'sys.arm', arguments: { timeoutMs: 5000 } }],
     },
   ];
 
@@ -122,21 +150,13 @@ function pinoutPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
       {
         content: 'HARNESS_TEST_NOT_LLM: LED high.',
         toolCalls: [
-          {
-            id: 'p4',
-            name: 'gpio.write',
-            arguments: { pin: profile.ledPin, value: true },
-          },
+          { id: 'p4', name: 'gpio.write', arguments: { pin: profile.ledPin, value: true } },
         ],
       },
       {
         content: 'HARNESS_TEST_NOT_LLM: LED low.',
         toolCalls: [
-          {
-            id: 'p5',
-            name: 'gpio.write',
-            arguments: { pin: profile.ledPin, value: false },
-          },
+          { id: 'p5', name: 'gpio.write', arguments: { pin: profile.ledPin, value: false } },
         ],
       },
       { content: 'HARNESS_TEST_NOT_LLM: blink complete.' },
@@ -149,21 +169,13 @@ function pinoutPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
       {
         content: 'HARNESS_TEST_NOT_LLM: servo to 90.',
         toolCalls: [
-          {
-            id: 'p4',
-            name: 'gpio.servo',
-            arguments: { pin: profile.servoPin, angle: 90 },
-          },
+          { id: 'p4', name: 'gpio.servo', arguments: { pin: profile.servoPin, angle: 90 } },
         ],
       },
       {
         content: 'HARNESS_TEST_NOT_LLM: servo to 0.',
         toolCalls: [
-          {
-            id: 'p5',
-            name: 'gpio.servo',
-            arguments: { pin: profile.servoPin, angle: 0 },
-          },
+          { id: 'p5', name: 'gpio.servo', arguments: { pin: profile.servoPin, angle: 0 } },
         ],
       },
       { content: 'HARNESS_TEST_NOT_LLM: servo sweep complete.' },
@@ -175,11 +187,7 @@ function pinoutPlan(taskId: TaskId, profileId: ProfileId): ScriptStep[] {
     {
       content: 'HARNESS_TEST_NOT_LLM: analog read.',
       toolCalls: [
-        {
-          id: 'p4',
-          name: 'gpio.analogRead',
-          arguments: { pin: profile.adcPin },
-        },
+        { id: 'p4', name: 'gpio.analogRead', arguments: { pin: profile.adcPin } },
       ],
     },
     { content: 'HARNESS_TEST_NOT_LLM: sensor read complete.' },
@@ -217,12 +225,7 @@ function completion(
   content: string,
   toolCalls?: Array<{ id: string; name: string; arguments: Record<string, unknown> }>,
 ): LlmCompletion {
-  // Non-zero synthetic usage lets --max-tokens / --budget-usd guards be unit-tested
-  // without calling a real provider. Still stamped HARNESS_TEST_NOT_LLM.
-  const message: LlmCompletion['message'] = {
-    role: 'assistant',
-    content,
-  };
+  const message: LlmCompletion['message'] = { role: 'assistant', content };
   if (toolCalls && toolCalls.length > 0) message.toolCalls = toolCalls;
   return {
     message,

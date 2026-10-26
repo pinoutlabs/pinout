@@ -23,7 +23,7 @@ function fakeRun(overrides: Partial<RunRecord>): RunRecord {
     provider: 'test',
     modelRequested: 'm',
     modelReported: 'm',
-    temperature: 0,
+    temperature: 'model default',
     toolNames: [],
     harnessGitSha: 'abc',
     os: 'linux',

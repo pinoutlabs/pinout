@@ -1,5 +1,9 @@
 /** Shared types for the agent task-time benchmark. */
 
+import type { TemperatureRecord } from './llm/temperature.js';
+
+export type { TemperatureRecord };
+
 export type ArmId = 'raw' | 'pinout';
 
 export type DeviceMode = 'simulated' | 'real';
@@ -82,9 +86,7 @@ export interface TaskDefinition {
   title: string;
   intent: string;
   profiles: ProfileId[];
-  /** Build the user prompt for a given profile (same intent, profile-specific pins). */
   buildPrompt: (profileId: ProfileId) => string;
-  /** Automatic success check against device state (never the model's claim). */
   checkSuccess: (snapshot: DeviceSnapshot, profileId: ProfileId) => CheckerResult;
 }
 
@@ -103,6 +105,20 @@ export interface TurnRecord {
   llmLatencyMs?: number;
   toolLatencyMs?: number;
   usage?: LlmUsage;
+}
+
+export interface PhysicalConfirmRecord {
+  prompted: boolean;
+  operatorAnswer?: 'yes' | 'no' | 'skipped';
+  promptText: string;
+}
+
+export interface ColdWarmRecord {
+  pinoutdAlreadyRunning: boolean | null;
+  firstFlashInSuite: boolean;
+  flashDurationMs?: number;
+  boardResetMs?: number;
+  note: string;
 }
 
 export interface RunRecord {
@@ -126,7 +142,8 @@ export interface RunRecord {
   provider: string;
   modelRequested: string;
   modelReported: string;
-  temperature: number;
+  /** Actual temperature sent, or "model default" when omitted. */
+  temperature: TemperatureRecord;
   toolNames: string[];
   harnessGitSha: string;
   os: string;
@@ -135,12 +152,20 @@ export interface RunRecord {
   finishedAt: string;
   transcript: TurnRecord[];
   scripted: boolean;
+  physicalConfirm?: PhysicalConfirmRecord;
+  coldWarm?: ColdWarmRecord;
+  hardwareStatus?: 'UNTESTED' | 'OPERATOR_CONFIRMED' | 'JOURNAL_ONLY';
 }
 
 export interface BenchConfig {
   provider: string;
   model: string;
-  temperature: number;
+  /** Operator-requested temperature, if any. */
+  temperatureRequested?: number;
+  temperatureExplicitlySet: boolean;
+  /** What will be recorded / what the client should send. */
+  temperatureRecorded: TemperatureRecord;
+  temperatureSend?: number;
   runs: number;
   timeoutMs: number;
   maxTurns: number;
@@ -152,16 +177,19 @@ export interface BenchConfig {
   scriptedAgent: boolean;
   resultsDir: string;
   seed: number;
-  /** Soft USD budget; when estimated spend exceeds this, remaining runs are skipped. */
   budgetUsd?: number;
-  /** Hard cap on cumulative prompt+completion tokens across the suite. */
   maxTokens?: number;
-  /** Optional USD per 1M prompt tokens for budget estimates (default conservative). */
   promptUsdPerMillion: number;
-  /** Optional USD per 1M completion tokens for budget estimates. */
   completionUsdPerMillion: number;
   apiKey?: string;
   apiBaseUrl?: string;
+  /** Real-board options */
+  confirmPhysical: boolean;
+  serialPort?: string;
+  baudRate: number;
+  daemonUrl?: string;
+  daemonToken?: string;
+  skipPreflight: boolean;
 }
 
 export interface AggregateStats {
@@ -188,11 +216,12 @@ export interface SummaryReport {
   provider: string;
   modelRequested: string;
   modelReported: string;
-  temperature: number;
+  temperature: TemperatureRecord;
   runsPerCell: number;
   deviceMode: DeviceMode;
   scripted: boolean;
   note: string;
+  hardwareStatus?: string;
   cells: Array<{
     arm: ArmId;
     taskId: TaskId;

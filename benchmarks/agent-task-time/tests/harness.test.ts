@@ -10,7 +10,8 @@ function baseConfig(overrides: Partial<BenchConfig> = {}): BenchConfig {
   return {
     provider: 'scripted',
     model: 'HARNESS_TEST_NOT_LLM',
-    temperature: 0,
+    temperatureExplicitlySet: false,
+    temperatureRecorded: 'model default',
     runs: 1,
     timeoutMs: 30_000,
     maxTurns: 20,
@@ -24,6 +25,9 @@ function baseConfig(overrides: Partial<BenchConfig> = {}): BenchConfig {
     seed: 7,
     promptUsdPerMillion: 0.15,
     completionUsdPerMillion: 0.6,
+    confirmPhysical: false,
+    baudRate: 115200,
+    skipPreflight: false,
     ...overrides,
   };
 }
@@ -33,6 +37,7 @@ describe('harness dry-run / scripted agent', () => {
     const { summary, outputDir } = await runHarness(baseConfig());
     expect(summary.evidence).toBe('HARNESS_TEST_NOT_LLM');
     expect(summary.scripted).toBe(true);
+    expect(summary.temperature).toBe('model default');
     expect(summary.runs.length).toBe(2);
     expect(summary.runs.every((run) => run.success)).toBe(true);
     expect(summary.note).toMatch(/HARNESS_TEST_NOT_LLM/);

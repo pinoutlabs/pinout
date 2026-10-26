@@ -26,7 +26,7 @@ export function renderResultsMarkdown(
   lines.push(`- Provider: \`${summary.provider}\``);
   lines.push(`- Model requested: \`${summary.modelRequested}\``);
   lines.push(`- Model reported by API: \`${summary.modelReported}\``);
-  lines.push(`- Temperature: \`${summary.temperature}\``);
+  lines.push(`- Temperature: \`${String(summary.temperature)}\``);
   lines.push(`- Device mode: \`${summary.deviceMode}\``);
   lines.push(`- Scheduled runs per cell: \`${summary.runsPerCell}\``);
   lines.push(`- Note: ${summary.note}`);

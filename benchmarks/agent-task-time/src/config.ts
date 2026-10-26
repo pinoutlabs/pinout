@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { resolveTemperaturePolicy } from './llm/temperature.js';
 import type { ArmId, BenchConfig, DeviceMode, ProfileId, TaskId } from './types.js';
 
 const benchRoot = resolve(import.meta.dirname, '..');
@@ -13,10 +14,18 @@ export function parseCliArgs(argv: string[]): BenchConfig {
   let runs = readPositiveInt(env.PINOUT_BENCH_RUNS, 10);
   let timeoutMs = readPositiveInt(env.PINOUT_BENCH_TIMEOUT_MS, 180_000);
   let maxTurns = readPositiveInt(env.PINOUT_BENCH_MAX_TURNS, 40);
-  let temperature = readFloat(env.PINOUT_BENCH_TEMPERATURE, 0);
+  let temperatureRequested: number | undefined;
+  let temperatureExplicitlySet = false;
+  if (env.PINOUT_BENCH_TEMPERATURE !== undefined && env.PINOUT_BENCH_TEMPERATURE !== '') {
+    temperatureRequested = readFloat(env.PINOUT_BENCH_TEMPERATURE, Number.NaN);
+    temperatureExplicitlySet = true;
+  }
   let provider = env.PINOUT_BENCH_PROVIDER ?? 'openai';
   let model = env.PINOUT_BENCH_MODEL ?? 'gpt-4o-mini';
-  let deviceMode: DeviceMode = 'simulated';
+  let deviceMode: DeviceMode =
+    env.PINOUT_BENCH_DEVICE === 'real' || env.PINOUT_BENCH_DEVICE === 'simulated'
+      ? env.PINOUT_BENCH_DEVICE
+      : 'simulated';
   let dryRun = false;
   let scriptedAgent = false;
   let seed = readPositiveInt(env.PINOUT_BENCH_SEED, 42);
@@ -29,6 +38,12 @@ export function parseCliArgs(argv: string[]): BenchConfig {
   let maxTokens = readOptionalPositiveInt(env.PINOUT_BENCH_MAX_TOKENS);
   let promptUsdPerMillion = readFloat(env.PINOUT_BENCH_PROMPT_USD_PER_MILLION, 0.15);
   let completionUsdPerMillion = readFloat(env.PINOUT_BENCH_COMPLETION_USD_PER_MILLION, 0.6);
+  let confirmPhysical = env.PINOUT_BENCH_CONFIRM_PHYSICAL === '1';
+  let serialPort = env.PINOUT_BENCH_SERIAL_PORT ?? env.PINOUT_PORT;
+  let baudRate = readPositiveInt(env.PINOUT_BENCH_BAUD ?? env.PINOUT_BAUD, 115200);
+  let daemonUrl = env.PINOUT_BENCH_DAEMON_URL ?? env.PINOUT_DAEMON_URL;
+  let daemonToken = env.PINOUT_BENCH_DAEMON_TOKEN ?? env.PINOUT_TOKEN;
+  let skipPreflight = env.PINOUT_BENCH_SKIP_PREFLIGHT === '1';
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -43,7 +58,8 @@ export function parseCliArgs(argv: string[]): BenchConfig {
       maxTurns = readPositiveInt(next, maxTurns);
       index += 1;
     } else if (arg === '--temperature' && next) {
-      temperature = readFloat(next, temperature);
+      temperatureRequested = readFloat(next, Number.NaN);
+      temperatureExplicitlySet = true;
       index += 1;
     } else if (arg === '--provider' && next) {
       provider = next;
@@ -88,6 +104,22 @@ export function parseCliArgs(argv: string[]): BenchConfig {
     } else if (arg === '--completion-usd-per-million' && next) {
       completionUsdPerMillion = readFloat(next, completionUsdPerMillion);
       index += 1;
+    } else if (arg === '--serial-port' && next) {
+      serialPort = next;
+      index += 1;
+    } else if (arg === '--baud' && next) {
+      baudRate = readPositiveInt(next, baudRate);
+      index += 1;
+    } else if (arg === '--daemon-url' && next) {
+      daemonUrl = next;
+      index += 1;
+    } else if (arg === '--daemon-token' && next) {
+      daemonToken = next;
+      index += 1;
+    } else if (arg === '--confirm-physical') {
+      confirmPhysical = true;
+    } else if (arg === '--skip-preflight') {
+      skipPreflight = true;
     } else if (arg === '--dry-run') {
       dryRun = true;
       scriptedAgent = true;
@@ -100,11 +132,11 @@ export function parseCliArgs(argv: string[]): BenchConfig {
     }
   }
 
-  if (deviceMode === 'real') {
-    throw new Error(
-      'Real device mode (--device real) is hooked but not yet implemented. Use --device simulated.',
-    );
-  }
+  const temperaturePolicy = resolveTemperaturePolicy({
+    modelId: model,
+    requested: temperatureRequested,
+    temperatureExplicitlySet,
+  });
 
   const apiKey = resolveApiKey(provider, env);
   if (!scriptedAgent && !apiKey) {
@@ -118,7 +150,8 @@ export function parseCliArgs(argv: string[]): BenchConfig {
   const config: BenchConfig = {
     provider,
     model,
-    temperature,
+    temperatureExplicitlySet,
+    temperatureRecorded: temperaturePolicy.record,
     runs,
     timeoutMs,
     maxTurns,
@@ -132,11 +165,19 @@ export function parseCliArgs(argv: string[]): BenchConfig {
     seed,
     promptUsdPerMillion,
     completionUsdPerMillion,
+    confirmPhysical,
+    baudRate,
+    skipPreflight,
   };
+  if (temperatureRequested !== undefined) config.temperatureRequested = temperatureRequested;
+  if (temperaturePolicy.send !== undefined) config.temperatureSend = temperaturePolicy.send;
   if (budgetUsd !== undefined) config.budgetUsd = budgetUsd;
   if (maxTokens !== undefined) config.maxTokens = maxTokens;
   if (apiKey !== undefined) config.apiKey = apiKey;
   if (apiBaseUrl !== undefined) config.apiBaseUrl = apiBaseUrl;
+  if (serialPort !== undefined) config.serialPort = serialPort;
+  if (daemonUrl !== undefined) config.daemonUrl = daemonUrl;
+  if (daemonToken !== undefined) config.daemonToken = daemonToken;
   return config;
 }
 
@@ -204,11 +245,15 @@ function printHelpAndExit(): never {
   console.log(`Usage: npm run bench:agent -- [options]
 
 Measure wall-clock time for an LLM agent on the same hardware tasks with and
-without Pinout. Default runs are SIMULATED.
+without Pinout.
 
-Example (real LLM, modest N):
+Simulated (default, labelled SIMULATED):
   PINOUT_BENCH_PROVIDER=openai PINOUT_BENCH_MODEL=gpt-6.1-sol OPENAI_API_KEY=... \\
     npm run bench:agent -- --runs 5
+
+Real boards (labelled REAL_HARDWARE; UNTESTED until a dated hardware record exists):
+  PINOUT_BENCH_PROVIDER=openai PINOUT_BENCH_MODEL=gpt-6.1-sol OPENAI_API_KEY=... \\
+    npm run bench:agent -- --device real --profiles esp32 --runs 5 --serial-port /dev/ttyUSB0
 
 Options:
   --runs N              Repeats per arm per task per profile (default 10)
@@ -216,25 +261,24 @@ Options:
   --max-turns N         Max agent turns per run (default 40)
   --provider NAME       LLM provider (default openai)
   --model NAME          Model id
-  --temperature N       Sampling temperature (default 0)
+  --temperature N       Sampling temperature (omitted for models that reject it)
   --profiles LIST       Comma list: esp32,pico,uno
   --tasks LIST          Comma list: blinkLed,servoSweep,readSensor
   --arms LIST           Comma list: raw,pinout
-  --device MODE         simulated (default) or real (hook only; not yet run)
-  --budget-usd N        Stop scheduling new runs after estimated spend reaches N
-  --max-tokens N        Stop scheduling new runs after cumulative tokens reach N
-  --prompt-usd-per-million N       Pricing hint for budget estimates
-  --completion-usd-per-million N   Pricing hint for budget estimates
+  --device MODE         simulated (default) or real
+  --serial-port PATH    Hardware serial port (or PINOUT_PORT / PINOUT_BENCH_SERIAL_PORT)
+  --baud N              Serial baud (default 115200)
+  --daemon-url URL      pinoutd base URL for Arm B
+  --daemon-token TOKEN  pinoutd token
+  --confirm-physical    Prompt operator yes/no after each real run
+  --skip-preflight      Skip real-board preflight (tests only)
+  --budget-usd N        Stop after estimated spend reaches N
+  --max-tokens N        Stop after cumulative tokens reach N
   --dry-run             Scripted fake agent; stamps HARNESS_TEST_NOT_LLM
-  --scripted-agent      Same scripted agent without implying a dry config pass
+  --scripted-agent      Scripted agent without implying a dry config pass
   --seed N              RNG seed for arm interleaving (default 42)
-  --results-dir PATH    Output directory root
+  --results-dir PATH    Output directory root (created at run time)
   --api-base-url URL    OpenAI-compatible base URL
-
-Env:
-  PINOUT_BENCH_PROVIDER, PINOUT_BENCH_MODEL, PINOUT_BENCH_TEMPERATURE
-  PINOUT_BENCH_BUDGET_USD, PINOUT_BENCH_MAX_TOKENS
-  OPENAI_API_KEY / ANTHROPIC_API_KEY / PINOUT_BENCH_API_KEY
 
 API keys are never written to transcripts, summary JSON, or markdown.
 `);

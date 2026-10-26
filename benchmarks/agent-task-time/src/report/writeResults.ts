@@ -52,7 +52,10 @@ export function writeSuiteArtifacts(
   const redactedConfig = {
     provider: config.provider,
     model: config.model,
-    temperature: config.temperature,
+    temperatureRequested: config.temperatureRequested ?? null,
+    temperatureExplicitlySet: config.temperatureExplicitlySet,
+    temperatureRecorded: config.temperatureRecorded,
+    temperatureSend: config.temperatureSend ?? null,
     runs: config.runs,
     timeoutMs: config.timeoutMs,
     maxTurns: config.maxTurns,
@@ -68,8 +71,13 @@ export function writeSuiteArtifacts(
     promptUsdPerMillion: config.promptUsdPerMillion,
     completionUsdPerMillion: config.completionUsdPerMillion,
     apiBaseUrl: config.apiBaseUrl,
+    confirmPhysical: config.confirmPhysical,
+    serialPort: config.serialPort,
+    baudRate: config.baudRate,
+    daemonUrl: config.daemonUrl,
     apiKeyPresent: Boolean(config.apiKey),
     apiKey: '[REDACTED]',
+    daemonToken: config.daemonToken ? '[REDACTED]' : null,
   };
   const configText = `${JSON.stringify(redactedConfig, null, 2)}\n`;
   assertNoSecretLeak(configText);

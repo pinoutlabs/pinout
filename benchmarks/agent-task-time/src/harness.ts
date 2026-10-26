@@ -1,11 +1,27 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { arch, platform, release, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { platform, release, arch } from 'node:os';
-import { createRawArmTools } from './arms/rawArm.js';
 import { createPinoutArmTools } from './arms/pinoutArm.js';
+import {
+  createHttpPinoutDaemonClient,
+  createPinoutRealArmTools,
+  type PinoutDaemonClient,
+} from './arms/pinoutRealArm.js';
+import { createRawArmTools } from './arms/rawArm.js';
+import { createRawRealArmTools } from './arms/rawRealArm.js';
 import { BenchDevice } from './devices/benchDevice.js';
+import { createProcessCommandRunner, type CommandRunner } from './devices/commandRunner.js';
+import { promptPhysicalConfirm, type PhysicalConfirmDeps } from './devices/physicalConfirm.js';
+import {
+  defaultProbeDaemon,
+  runRealBoardPreflight,
+  type PreflightDeps,
+  type PreflightResult,
+  type SerialPortInfo,
+} from './devices/preflight.js';
+import { RealBoardSession, resetBoardBetweenRuns } from './devices/realBoardSession.js';
+import { getProfile } from './devices/profiles.js';
 import { createLlmClient, type LlmClient } from './llm/client.js';
 import { createScriptedClient } from './llm/scriptedAgent.js';
 import { encodeToolNameForLlm, resolveEncodedToolName } from './llm/toolNames.js';
@@ -17,9 +33,11 @@ import type {
   AgentTool,
   ArmId,
   BenchConfig,
+  ColdWarmRecord,
   EvidenceLabel,
   LlmMessage,
   LlmUsage,
+  PhysicalConfirmRecord,
   ProfileId,
   RunRecord,
   SummaryReport,
@@ -34,12 +52,24 @@ interface ScheduledCell {
   repeatIndex: number;
 }
 
+export interface HarnessDeps {
+  commandRunner?: CommandRunner;
+  listSerialPorts?: () => Promise<SerialPortInfo[]>;
+  probeDaemon?: PreflightDeps['probeDaemon'];
+  pinoutDaemonClient?: PinoutDaemonClient;
+  physicalConfirm?: PhysicalConfirmDeps;
+}
+
 export interface HarnessResult {
   summary: SummaryReport;
   outputDir: string;
+  preflight?: PreflightResult;
 }
 
-export async function runHarness(config: BenchConfig): Promise<HarnessResult> {
+export async function runHarness(
+  config: BenchConfig,
+  deps: HarnessDeps = {},
+): Promise<HarnessResult> {
   const harnessGitSha = readGitSha();
   const startedSuite = new Date();
   const dateStamp = startedSuite.toISOString().replace(/[:.]/g, '-').replace(/Z$/, 'Z');
@@ -49,6 +79,73 @@ export async function runHarness(config: BenchConfig): Promise<HarnessResult> {
     : config.deviceMode === 'real'
       ? 'REAL_HARDWARE'
       : 'SIMULATED';
+
+  const commandRunner = deps.commandRunner ?? createProcessCommandRunner();
+  const listSerialPorts =
+    deps.listSerialPorts ??
+    (async () => {
+      const { listSerialPorts: list } = await import('@pinout/core');
+      return list();
+    });
+
+  let preflight: PreflightResult | undefined;
+  let selectedPort = config.serialPort;
+  let pinoutdAlreadyRunning: boolean | null = null;
+
+  if (config.deviceMode === 'real' && !config.skipPreflight) {
+    const preflightArgs: Parameters<typeof runRealBoardPreflight>[0] = {
+      profiles: config.profiles,
+      arms: config.arms,
+      deps: {
+        commandRunner,
+        listSerialPorts,
+        probeDaemon: deps.probeDaemon ?? defaultProbeDaemon,
+      },
+    };
+    if (config.serialPort !== undefined) preflightArgs.serialPort = config.serialPort;
+    if (config.daemonUrl !== undefined) preflightArgs.daemonUrl = config.daemonUrl;
+    if (config.daemonToken !== undefined) preflightArgs.daemonToken = config.daemonToken;
+    preflight = await runRealBoardPreflight(preflightArgs);
+    if (!preflight.ok) {
+      throw new Error(
+        `Real-board preflight failed:\n- ${preflight.errors.join('\n- ')}\nWarnings: ${
+          preflight.warnings.join('; ') || '(none)'
+        }`,
+      );
+    }
+    selectedPort = preflight.selectedPort ?? selectedPort;
+    pinoutdAlreadyRunning = preflight.daemon.alreadyRunning;
+    for (const warning of preflight.warnings) {
+      console.log(redactSecrets(`[preflight] ${warning}`));
+    }
+  }
+
+  if (config.deviceMode === 'real' && !selectedPort && !config.scriptedAgent) {
+    throw new Error('Real-board mode requires --serial-port (or a single detected port).');
+  }
+
+  const realSessions = new Map<ProfileId, RealBoardSession>();
+  const ensureRealSession = (profileId: ProfileId): RealBoardSession => {
+    const existing = realSessions.get(profileId);
+    if (existing) return existing;
+    const session = new RealBoardSession({
+      profileId,
+      port: selectedPort ?? 'fake-port',
+      baudRate: config.baudRate,
+      pinoutdAlreadyRunning,
+    });
+    realSessions.set(profileId, session);
+    return session;
+  };
+
+  let pinoutClient = deps.pinoutDaemonClient;
+  if (!pinoutClient && config.deviceMode === 'real') {
+    const clientOpts: { baseUrl: string; token?: string } = {
+      baseUrl: config.daemonUrl ?? 'http://127.0.0.1:8787',
+    };
+    if (config.daemonToken !== undefined) clientOpts.token = config.daemonToken;
+    pinoutClient = createHttpPinoutDaemonClient(clientOpts);
+  }
 
   const schedule = buildSchedule(config);
   const runs: RunRecord[] = [];
@@ -68,7 +165,23 @@ export async function runHarness(config: BenchConfig): Promise<HarnessResult> {
       break;
     }
 
-    const run = await executeRun(config, cell, evidence, harnessGitSha);
+    if (config.deviceMode === 'real') {
+      const session = ensureRealSession(cell.profileId);
+      await resetBoardBetweenRuns(session, { commandRunner });
+    }
+
+    const runArgs: Parameters<typeof executeRun>[0] = {
+      config,
+      cell,
+      evidence,
+      harnessGitSha,
+      commandRunner,
+      listSerialPorts,
+    };
+    if (pinoutClient) runArgs.pinoutClient = pinoutClient;
+    if (config.deviceMode === 'real') runArgs.realSession = ensureRealSession(cell.profileId);
+    if (deps.physicalConfirm) runArgs.physicalConfirmDeps = deps.physicalConfirm;
+    const run = await executeRun(runArgs);
     if (run.modelReported && run.modelReported !== 'unknown') {
       modelReported = run.modelReported;
     }
@@ -103,7 +216,7 @@ export async function runHarness(config: BenchConfig): Promise<HarnessResult> {
     provider: config.scriptedAgent ? 'scripted' : config.provider,
     modelRequested: config.model,
     modelReported,
-    temperature: config.temperature,
+    temperature: config.temperatureRecorded,
     runsPerCell: config.runs,
     deviceMode: config.deviceMode,
     scripted: config.scriptedAgent,
@@ -111,9 +224,15 @@ export async function runHarness(config: BenchConfig): Promise<HarnessResult> {
     cells,
     runs: runs.map((run) => redactRunForSummary(run)),
   };
+  if (config.deviceMode === 'real') {
+    summary.hardwareStatus =
+      'UNTESTED on physical hardware in this repository until a dated hardware record exists.';
+  }
 
   writeSuiteArtifacts(outputDir, summary, config);
-  return { summary, outputDir };
+  const result: HarnessResult = { summary, outputDir };
+  if (preflight) result.preflight = preflight;
+  return result;
 }
 
 function buildSchedule(config: BenchConfig): ScheduledCell[] {
@@ -130,12 +249,18 @@ function buildSchedule(config: BenchConfig): ScheduledCell[] {
   return shuffleInPlace(cells, config.seed);
 }
 
-async function executeRun(
-  config: BenchConfig,
-  cell: ScheduledCell,
-  evidence: EvidenceLabel,
-  harnessGitSha: string,
-): Promise<RunRecord> {
+async function executeRun(options: {
+  config: BenchConfig;
+  cell: ScheduledCell;
+  evidence: EvidenceLabel;
+  harnessGitSha: string;
+  commandRunner: CommandRunner;
+  listSerialPorts: () => Promise<SerialPortInfo[]>;
+  pinoutClient?: PinoutDaemonClient;
+  realSession?: RealBoardSession;
+  physicalConfirmDeps?: PhysicalConfirmDeps;
+}): Promise<RunRecord> {
+  const { config, cell, evidence, harnessGitSha } = options;
   const runId = [
     cell.arm,
     cell.taskId,
@@ -147,7 +272,6 @@ async function executeRun(
   const wallStarted = performance.now();
   const task = getTask(cell.taskId);
   const workspaceDir = mkdtempSync(join(tmpdir(), `pinout-bench-${cell.arm}-`));
-  const bench = new BenchDevice(cell.profileId, config.deviceMode);
   const transcript: TurnRecord[] = [];
   let llmTimeMs = 0;
   let toolTimeMs = 0;
@@ -157,16 +281,32 @@ async function executeRun(
   let toolNames: string[] = [];
   let outcome: RunRecord['outcome'] = 'failure';
   let errorMessage: string | undefined;
-  let checker = task.checkSuccess(bench.snapshot(), cell.profileId);
+  let physicalConfirm: PhysicalConfirmRecord | undefined;
+  let coldWarm: ColdWarmRecord | undefined;
 
+  const simulated =
+    config.deviceMode === 'simulated'
+      ? new BenchDevice(cell.profileId, 'simulated')
+      : undefined;
+  const snapshotProvider = () =>
+    simulated ? simulated.snapshot() : options.realSession!.snapshot();
+
+  let checker = task.checkSuccess(snapshotProvider(), cell.profileId);
   const abort = new AbortController();
   const timeout = setTimeout(() => abort.abort(), config.timeoutMs);
 
   try {
-    const tools =
-      cell.arm === 'raw'
-        ? createRawArmTools(bench, workspaceDir)
-        : await createPinoutArmTools(bench);
+    const toolArgs: Parameters<typeof createToolsForRun>[0] = {
+      config,
+      cell,
+      workspaceDir,
+      commandRunner: options.commandRunner,
+      listSerialPorts: options.listSerialPorts,
+    };
+    if (simulated) toolArgs.simulated = simulated;
+    if (options.realSession) toolArgs.realSession = options.realSession;
+    if (options.pinoutClient) toolArgs.pinoutClient = options.pinoutClient;
+    const tools = await createToolsForRun(toolArgs);
     toolNames = tools.map((tool) => tool.name);
     const toolByName = new Map(tools.map((tool) => [tool.name, tool]));
     const llmToolDefs = tools.map((tool) => ({
@@ -184,11 +324,15 @@ async function executeRun(
         break;
       }
 
-      const completion = await client.complete({
-        messages,
-        tools: llmToolDefs,
-        temperature: config.temperature,
-      });
+      const completionArgs: {
+        messages: LlmMessage[];
+        tools: typeof llmToolDefs;
+        temperature?: number;
+      } = { messages, tools: llmToolDefs };
+      if (config.temperatureSend !== undefined) {
+        completionArgs.temperature = config.temperatureSend;
+      }
+      const completion = await client.complete(completionArgs);
       llmTimeMs += completion.latencyMs;
       modelReported = completion.rawModelId;
       tokens = addUsage(tokens, completion.usage);
@@ -202,9 +346,7 @@ async function executeRun(
       });
 
       const toolCalls = completion.message.toolCalls ?? [];
-      if (toolCalls.length === 0) {
-        break;
-      }
+      if (toolCalls.length === 0) break;
 
       for (const call of toolCalls) {
         if (abort.signal.aborted) {
@@ -247,15 +389,26 @@ async function executeRun(
       if (outcome === 'timeout') break;
     }
 
-    checker = task.checkSuccess(bench.snapshot(), cell.profileId);
+    checker = task.checkSuccess(snapshotProvider(), cell.profileId);
     if (outcome !== 'timeout') {
       outcome = checker.success ? 'success' : 'failure';
+    }
+
+    if (config.deviceMode === 'real') {
+      const confirmArgs: Parameters<typeof promptPhysicalConfirm>[0] = {
+        taskId: cell.taskId,
+        profileLabel: getProfile(cell.profileId).displayName,
+        enabled: config.confirmPhysical,
+      };
+      if (options.physicalConfirmDeps) confirmArgs.deps = options.physicalConfirmDeps;
+      physicalConfirm = await promptPhysicalConfirm(confirmArgs);
+      coldWarm = options.realSession?.coldWarmNote(cell.arm);
     }
   } catch (error) {
     outcome = abort.signal.aborted ? 'timeout' : 'error';
     errorMessage = redactSecrets(error instanceof Error ? error.message : String(error));
     try {
-      checker = task.checkSuccess(bench.snapshot(), cell.profileId);
+      checker = task.checkSuccess(snapshotProvider(), cell.profileId);
     } catch {
       checker = {
         success: false,
@@ -265,10 +418,10 @@ async function executeRun(
     }
   } finally {
     clearTimeout(timeout);
-    await bench.close().catch(() => undefined);
+    await simulated?.close().catch(() => undefined);
   }
 
-  const finalized = {
+  const finalized: Parameters<typeof finalizeRun>[0] = {
     runId,
     evidence,
     cell,
@@ -288,20 +441,48 @@ async function executeRun(
     checker,
     turnCount: transcript.filter((entry) => entry.role === 'assistant').length,
   };
-  return finalizeRun(
-    errorMessage === undefined ? finalized : { ...finalized, errorMessage },
-  );
+  if (errorMessage !== undefined) finalized.errorMessage = errorMessage;
+  if (physicalConfirm !== undefined) finalized.physicalConfirm = physicalConfirm;
+  if (coldWarm !== undefined) finalized.coldWarm = coldWarm;
+  return finalizeRun(finalized);
 }
 
-function createClientForRun(
-  config: BenchConfig,
-  cell: ScheduledCell,
-): LlmClient {
+async function createToolsForRun(options: {
+  config: BenchConfig;
+  cell: ScheduledCell;
+  workspaceDir: string;
+  simulated?: BenchDevice;
+  realSession?: RealBoardSession;
+  commandRunner: CommandRunner;
+  listSerialPorts: () => Promise<SerialPortInfo[]>;
+  pinoutClient?: PinoutDaemonClient;
+}): Promise<AgentTool[]> {
+  if (options.config.deviceMode === 'simulated') {
+    if (!options.simulated) throw new Error('Missing simulated bench device.');
+    return options.cell.arm === 'raw'
+      ? createRawArmTools(options.simulated, options.workspaceDir)
+      : createPinoutArmTools(options.simulated);
+  }
+  if (!options.realSession) throw new Error('Missing real board session.');
+  if (options.cell.arm === 'raw') {
+    return createRawRealArmTools(options.realSession, options.workspaceDir, {
+      commandRunner: options.commandRunner,
+      listSerialPorts: options.listSerialPorts,
+    });
+  }
+  if (!options.pinoutClient) {
+    throw new Error('Pinout real arm requires a pinoutd client.');
+  }
+  return createPinoutRealArmTools(options.realSession, options.pinoutClient);
+}
+
+function createClientForRun(config: BenchConfig, cell: ScheduledCell): LlmClient {
   if (config.scriptedAgent) {
     return createScriptedClient({
       arm: cell.arm,
       taskId: cell.taskId,
       profileId: cell.profileId,
+      deviceMode: config.deviceMode,
     });
   }
   const options: {
@@ -323,15 +504,15 @@ function buildInitialMessages(
   taskPrompt: string,
   evidence: EvidenceLabel,
 ): LlmMessage[] {
+  // Keep prompts short and parallel across arms (fairness).
   if (cell.arm === 'raw') {
     return [
       {
         role: 'system',
         content: [
-          `You are controlling a ${evidence} microcontroller through a raw serial/firmware sandbox.`,
-          'You do not have Pinout. Read DATASHEET.md, write firmware.json, compile_flash it, and verify via serial if needed.',
-          'Never invent device state. Prefer tool results over assumptions.',
-          'API keys must never be echoed.',
+          `${evidence} raw baseline: no Pinout.`,
+          'Use datasheet + compile/flash + serial tools only.',
+          'Do not invent device state.',
         ].join(' '),
       },
       { role: 'user', content: taskPrompt },
@@ -341,10 +522,8 @@ function buildInitialMessages(
     {
       role: 'system',
       content: [
-        `You are controlling a ${evidence} microcontroller through Pinout MCP/SDK tools.`,
-        'Discover devices and capabilities, then invoke the needed tools to complete the task.',
-        'Never invent device state. Prefer tool results over assumptions.',
-        'API keys must never be echoed.',
+        `${evidence} Pinout tools: list/describe/read_state and task capabilities.`,
+        'Do not invent device state.',
       ].join(' '),
     },
     { role: 'user', content: taskPrompt },
@@ -392,6 +571,8 @@ function finalizeRun(input: {
   checker: RunRecord['checker'];
   turnCount: number;
   errorMessage?: string;
+  physicalConfirm?: PhysicalConfirmRecord;
+  coldWarm?: ColdWarmRecord;
 }): RunRecord {
   const record: RunRecord = {
     runId: input.runId,
@@ -413,7 +594,7 @@ function finalizeRun(input: {
     provider: input.config.scriptedAgent ? 'scripted' : input.config.provider,
     modelRequested: input.config.model,
     modelReported: input.modelReported,
-    temperature: input.config.temperature,
+    temperature: input.config.temperatureRecorded,
     toolNames: input.toolNames,
     harnessGitSha: input.harnessGitSha,
     os: `${platform()} ${release()} ${arch()}`,
@@ -424,6 +605,12 @@ function finalizeRun(input: {
     scripted: input.config.scriptedAgent,
   };
   if (input.errorMessage) record.errorMessage = input.errorMessage;
+  if (input.physicalConfirm) record.physicalConfirm = input.physicalConfirm;
+  if (input.coldWarm) record.coldWarm = input.coldWarm;
+  if (input.config.deviceMode === 'real') {
+    record.hardwareStatus =
+      input.physicalConfirm?.operatorAnswer === 'yes' ? 'OPERATOR_CONFIRMED' : 'JOURNAL_ONLY';
+  }
   return record;
 }
 
@@ -439,12 +626,7 @@ function aggregateCells(runs: RunRecord[]): SummaryReport['cells'] {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, group]) => {
       const [arm, taskId, profileId] = key.split('|') as [ArmId, TaskId, ProfileId];
-      return {
-        arm,
-        taskId,
-        profileId,
-        stats: summarizeRuns(group),
-      };
+      return { arm, taskId, profileId, stats: summarizeRuns(group) };
     });
 }
 
@@ -472,10 +654,16 @@ function buildNote(
 ): string {
   const parts = [
     `Evidence=${evidence}.`,
-    'All automatic checks use simulator GPIO/servo/ADC journal state, never the model claim.',
+    'Automatic checks use device journal/state, never the model claim.',
+    `Temperature recorded as ${JSON.stringify(config.temperatureRecorded)}.`,
     `Cumulative tokens=${cumulativeTokens}.`,
     `Estimated spend USD=${estimatedSpendUsd.toFixed(4)} (pricing hints only; not a bill).`,
   ];
+  if (config.deviceMode === 'real') {
+    parts.push(
+      'REAL_HARDWARE mode is UNTESTED on physical boards in this repository until a dated hardware record exists.',
+    );
+  }
   if (config.budgetUsd !== undefined) parts.push(`Budget USD cap=${config.budgetUsd}.`);
   if (config.maxTokens !== undefined) parts.push(`Max tokens cap=${config.maxTokens}.`);
   if (stopReason) parts.push(`Stopped early: ${stopReason}.`);
@@ -493,11 +681,8 @@ function redactRunForSummary(run: RunRecord): RunRecord {
       content: redactSecrets(turn.content),
     })),
   };
-  if (run.errorMessage !== undefined) {
-    next.errorMessage = redactSecrets(run.errorMessage);
-  } else {
-    delete next.errorMessage;
-  }
+  if (run.errorMessage !== undefined) next.errorMessage = redactSecrets(run.errorMessage);
+  else delete next.errorMessage;
   return next;
 }
 

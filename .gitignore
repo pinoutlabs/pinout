@@ -82,3 +82,6 @@ docs/mega-sprint-*.md
 
 # Cursor
 .cursor
+
+# Agent task-time outputs (created at run time; never pre-filled)
+benchmarks/agent-task-time/results/

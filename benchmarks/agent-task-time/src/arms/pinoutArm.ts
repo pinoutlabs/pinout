@@ -1,24 +1,34 @@
 import { toAgentTools, type Device } from '@pinout/core';
+import { pinoutTaskCapabilityNames } from './fairTools.js';
 import type { BenchDevice } from '../devices/benchDevice.js';
 import type { AgentTool, AgentToolResult } from '../types.js';
 
 /**
- * Arm B: agent uses Pinout through the same capability tools exposed by
- * packages/mcp (device.toAgentTools / runtime invoke), against the shared
- * SIMULATED board. Discovery tools mirror MCP list/describe/read_state.
+ * Arm B (SIMULATED): Pinout MCP/SDK-shaped tools against the shared simulator.
+ * Tool list is intentionally compact and task-relevant (fair vs raw arm).
  */
 export async function createPinoutArmTools(bench: BenchDevice): Promise<AgentTool[]> {
   const device = await bench.openPinoutDevice();
   const deviceId = `${bench.profile.id}-sim-01`;
+  const allowed = new Set<string>(pinoutTaskCapabilityNames);
 
-  const capabilityTools = toAgentTools(device.capabilities).map((tool) =>
-    wrapCapabilityTool(device, bench, tool.name, tool.description, tool.inputSchema as Record<string, unknown>),
-  );
+  const capabilityTools = toAgentTools(device.capabilities)
+    .filter((tool) => allowed.has(tool.name))
+    .map((tool) =>
+      wrapCapabilityTool(
+        device,
+        bench,
+        tool.name,
+        tool.description,
+        tool.inputSchema as Record<string, unknown>,
+        'SIMULATED',
+      ),
+    );
 
   const discoveryTools: AgentTool[] = [
     {
       name: 'pinout__list_devices',
-      description: 'List devices visible to the Pinout runtime (MCP control plane).',
+      description: 'List devices visible to Pinout.',
       inputSchema: { type: 'object', properties: {} },
       async invoke() {
         return ok({
@@ -29,7 +39,6 @@ export async function createPinoutArmTools(bench: BenchDevice): Promise<AgentToo
               displayName: bench.profile.displayName,
               simulated: true,
               evidence: 'SIMULATED',
-              mcu: bench.profile.mcu,
             },
           ],
           evidence: 'SIMULATED',
@@ -38,12 +47,10 @@ export async function createPinoutArmTools(bench: BenchDevice): Promise<AgentToo
     },
     {
       name: 'pinout__describe_device',
-      description: 'Describe a device identity, capabilities, and simulated flag.',
+      description: 'Describe device identity and task-relevant pins.',
       inputSchema: {
         type: 'object',
-        properties: {
-          deviceId: { type: 'string' },
-        },
+        properties: { deviceId: { type: 'string' } },
         required: ['deviceId'],
       },
       async invoke(args) {
@@ -55,19 +62,18 @@ export async function createPinoutArmTools(bench: BenchDevice): Promise<AgentToo
           },
           simulated: true,
           evidence: 'SIMULATED',
-          capabilities: device.capabilities.map((capability) => capability.name),
+          capabilities: [...allowed],
           pins: {
             ledPin: bench.profile.ledPin,
             servoPin: bench.profile.servoPin,
             adcPin: bench.profile.adcPin,
           },
-          info: device.info,
         });
       },
     },
     {
       name: 'pinout__read_state',
-      description: 'Read observed/commanded state evidence for the SIMULATED device.',
+      description: 'Read observed device state evidence.',
       inputSchema: {
         type: 'object',
         properties: { deviceId: { type: 'string' } },
@@ -95,22 +101,23 @@ function wrapCapabilityTool(
   name: string,
   description: string,
   inputSchema: Record<string, unknown>,
+  evidence: string,
 ): AgentTool {
   return {
     name,
-    description: `${description} (Pinout MCP/SDK capability; device is SIMULATED in this benchmark.)`,
+    description: `${description} (Pinout; evidence=${evidence}.)`,
     inputSchema,
     async invoke(args): Promise<AgentToolResult> {
       try {
         const result = await device.invoke(name, args);
         bench.syncJournal(name, args);
-        return ok({ action: name, result, evidence: 'SIMULATED' });
+        return ok({ action: name, result, evidence });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
           ok: false,
-          content: JSON.stringify({ ok: false, action: name, error: message, evidence: 'SIMULATED' }),
-          structured: { ok: false, action: name, error: message, evidence: 'SIMULATED' },
+          content: JSON.stringify({ ok: false, action: name, error: message, evidence }),
+          structured: { ok: false, action: name, error: message, evidence },
         };
       }
     },

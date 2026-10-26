@@ -1,3 +1,4 @@
+import { modelOmitsTemperature } from './temperature.js';
 import type {
   LlmCompletion,
   LlmMessage,
@@ -7,6 +8,8 @@ import type {
 } from '../types.js';
 
 export type { LlmCompletion };
+export { modelOmitsTemperature, resolveTemperaturePolicy } from './temperature.js';
+export type { TemperatureRecord } from './temperature.js';
 
 export interface LlmClient {
   readonly provider: string;
@@ -14,7 +17,8 @@ export interface LlmClient {
   complete(options: {
     messages: LlmMessage[];
     tools: LlmToolDefinition[];
-    temperature: number;
+    /** Value to send; omit (undefined) for models that reject temperature. */
+    temperature?: number;
   }): Promise<LlmCompletion>;
 }
 
@@ -27,6 +31,12 @@ export function createLlmClient(options: {
   const provider = options.provider.toLowerCase();
   if (provider === 'anthropic') {
     return new AnthropicClient(options.model, options.apiKey, options.apiBaseUrl);
+  }
+  if (provider === 'openai' && !options.apiBaseUrl) {
+    // Bug fix: newer OpenAI models (e.g. gpt-6.1-sol) reject function tools on
+    // /v1/chat/completions ("use /v1/responses"). Use the Responses API for the
+    // first-party OpenAI provider. Same request shape for both arms.
+    return new OpenAiResponsesClient(options.provider, options.model, options.apiKey);
   }
   return new OpenAiCompatibleClient(
     options.provider,
@@ -63,7 +73,7 @@ class OpenAiCompatibleClient implements LlmClient {
   async complete(options: {
     messages: LlmMessage[];
     tools: LlmToolDefinition[];
-    temperature: number;
+    temperature?: number;
   }): Promise<LlmCompletion> {
     if (!this.apiKey) {
       throw new Error('OpenAI-compatible client requires an API key.');
@@ -71,9 +81,11 @@ class OpenAiCompatibleClient implements LlmClient {
     const started = performance.now();
     const body: Record<string, unknown> = {
       model: this.modelRequested,
-      temperature: options.temperature,
       messages: options.messages.map(toOpenAiMessage),
     };
+    if (options.temperature !== undefined && !modelOmitsTemperature(this.modelRequested)) {
+      body.temperature = options.temperature;
+    }
     if (options.tools.length > 0) {
       body.tools = options.tools.map((tool) => ({
         type: 'function',
@@ -134,6 +146,140 @@ class OpenAiCompatibleClient implements LlmClient {
   }
 }
 
+/**
+ * OpenAI Responses API client (stateless: store=false, full transcript resent
+ * each turn exactly like the chat-completions path). Reasoning-family models
+ * (o*, gpt-5*, gpt-6*) reject `temperature`, so it is omitted for them.
+ */
+class OpenAiResponsesClient implements LlmClient {
+  readonly provider: string;
+  readonly modelRequested: string;
+
+  constructor(
+    provider: string,
+    model: string,
+    private readonly apiKey: string | undefined,
+  ) {
+    this.provider = provider;
+    this.modelRequested = model;
+  }
+
+  async complete(options: {
+    messages: LlmMessage[];
+    tools: LlmToolDefinition[];
+    temperature?: number;
+  }): Promise<LlmCompletion> {
+    if (!this.apiKey) {
+      throw new Error('OpenAI client requires an API key.');
+    }
+    const started = performance.now();
+    const input: Array<Record<string, unknown>> = [];
+    for (const message of options.messages) {
+      if (message.role === 'tool') {
+        input.push({
+          type: 'function_call_output',
+          call_id: message.toolCallId,
+          output: message.content,
+        });
+      } else if (message.role === 'assistant') {
+        if (message.content) input.push({ role: 'assistant', content: message.content });
+        for (const call of message.toolCalls ?? []) {
+          input.push({
+            type: 'function_call',
+            call_id: call.id,
+            name: call.name,
+            arguments: JSON.stringify(call.arguments),
+          });
+        }
+      } else {
+        input.push({ role: message.role, content: message.content });
+      }
+    }
+    const body: Record<string, unknown> = {
+      model: this.modelRequested,
+      input,
+      store: false,
+    };
+    if (
+      options.temperature !== undefined &&
+      !modelOmitsTemperature(this.modelRequested)
+    ) {
+      body.temperature = options.temperature;
+    }
+    if (options.tools.length > 0) {
+      body.tools = options.tools.map((tool) => ({
+        type: 'function',
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.inputSchema,
+        strict: false,
+      }));
+      body.tool_choice = 'auto';
+    }
+
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const latencyMs = performance.now() - started;
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`LLM provider error ${response.status}: ${text.slice(0, 500)}`);
+    }
+    const payload = (await response.json()) as OpenAiResponsesResponse;
+    const textParts: string[] = [];
+    const toolCalls: LlmToolCall[] = [];
+    for (const item of payload.output ?? []) {
+      if (item.type === 'message') {
+        for (const part of item.content ?? []) {
+          if (part.type === 'output_text' && part.text) textParts.push(part.text);
+        }
+      } else if (item.type === 'function_call') {
+        let parsed: Record<string, unknown> = {};
+        try {
+          parsed = JSON.parse(item.arguments || '{}') as Record<string, unknown>;
+        } catch {
+          parsed = { _raw: item.arguments };
+        }
+        toolCalls.push({
+          id: item.call_id ?? `call_${toolCalls.length}`,
+          name: item.name ?? 'unknown',
+          arguments: parsed,
+        });
+      }
+    }
+    const message: LlmMessage = { role: 'assistant', content: textParts.join('\n') };
+    if (toolCalls.length > 0) message.toolCalls = toolCalls;
+    return {
+      message,
+      model: payload.model ?? this.modelRequested,
+      rawModelId: payload.model ?? this.modelRequested,
+      usage: {
+        promptTokens: payload.usage?.input_tokens ?? 0,
+        completionTokens: payload.usage?.output_tokens ?? 0,
+        totalTokens: payload.usage?.total_tokens ?? 0,
+      },
+      latencyMs,
+    };
+  }
+}
+
+interface OpenAiResponsesResponse {
+  model?: string;
+  output?: Array<{
+    type: string;
+    content?: Array<{ type: string; text?: string }>;
+    call_id?: string;
+    name?: string;
+    arguments?: string;
+  }>;
+  usage?: { input_tokens?: number; output_tokens?: number; total_tokens?: number };
+}
+
 class AnthropicClient implements LlmClient {
   readonly provider = 'anthropic';
   readonly modelRequested: string;
@@ -149,7 +295,7 @@ class AnthropicClient implements LlmClient {
   async complete(options: {
     messages: LlmMessage[];
     tools: LlmToolDefinition[];
-    temperature: number;
+    temperature?: number;
   }): Promise<LlmCompletion> {
     if (!this.apiKey) {
       throw new Error('Anthropic client requires ANTHROPIC_API_KEY.');
@@ -195,7 +341,6 @@ class AnthropicClient implements LlmClient {
 
     const body: Record<string, unknown> = {
       model: this.modelRequested,
-      temperature: options.temperature,
       max_tokens: 4096,
       messages,
       tools: options.tools.map((tool) => ({
@@ -204,6 +349,7 @@ class AnthropicClient implements LlmClient {
         input_schema: tool.inputSchema,
       })),
     };
+    if (options.temperature !== undefined) body.temperature = options.temperature;
     if (system) body.system = system;
 
     const base = (this.apiBaseUrl ?? 'https://api.anthropic.com').replace(/\/$/, '');
