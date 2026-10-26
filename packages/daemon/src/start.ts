@@ -30,12 +30,15 @@ export async function startDaemon(
   const server = new DaemonHttpServer(context);
   const address = await server.listen(config);
 
+  context.startFailSafeMonitor();
+
   return {
     ...address,
     context,
     server,
     ...(config.awareness ? { awareness: config.awareness } : {}),
     close: async () => {
+      context.stopFailSafeMonitor();
       await config.awareness?.stop();
       await server.close();
       await runtime.close();

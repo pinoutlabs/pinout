@@ -14,7 +14,9 @@ const readStateToolName = 'pinout__read_state';
 const safetyStatusToolName = 'pinout__safety_status';
 const snapshotToolName = 'pinout__snapshot';
 const acquireLeaseToolName = 'pinout__acquire_lease';
+const renewLeaseToolName = 'pinout__renew_lease';
 const releaseLeaseToolName = 'pinout__release_lease';
+const heartbeatToolName = 'pinout__heartbeat';
 const dryRunToolName = 'pinout__dry_run';
 const operationStatusToolName = 'pinout__operation_status';
 const cancelOperationToolName = 'pinout__cancel_operation';
@@ -26,7 +28,9 @@ const reservedControlPlaneNames = new Set([
   safetyStatusToolName,
   snapshotToolName,
   acquireLeaseToolName,
+  renewLeaseToolName,
   releaseLeaseToolName,
+  heartbeatToolName,
   dryRunToolName,
   operationStatusToolName,
   cancelOperationToolName,
@@ -117,7 +121,9 @@ export function createRuntimeMcpServer(
     if (
       [
         acquireLeaseToolName,
+        renewLeaseToolName,
         releaseLeaseToolName,
+        heartbeatToolName,
         dryRunToolName,
         operationStatusToolName,
         cancelOperationToolName,
@@ -288,7 +294,7 @@ export function controlPlaneTools() {
     {
       name: acquireLeaseToolName,
       description:
-        'Acquire an exclusive or shared-read lease before physical actuation. Leases coordinate agents; they are not a certified safety control.',
+        'Acquire an exclusive or shared-read lease before physical actuation. Leases coordinate agents; they are not a certified safety control. Pass owner or threadId to isolate concurrent agent threads instead of sharing one PINOUT_OWNER.',
       inputSchema: {
         type: 'object' as const,
         additionalProperties: false,
@@ -297,6 +303,8 @@ export function controlPlaneTools() {
           deviceId: { type: 'string' },
           ttlMs: { type: 'number' },
           mode: { type: 'string', enum: ['exclusive', 'shared-read'] },
+          owner: { type: 'string' },
+          threadId: { type: 'string' },
         },
       },
       outputSchema: { type: 'object' as const },
@@ -308,13 +316,40 @@ export function controlPlaneTools() {
       },
     },
     {
+      name: renewLeaseToolName,
+      description:
+        'Renew a lease you own before it expires. Required while an Infinity (or similar) agent is paused mid-tool-call so the lease TTL does not elapse and trigger fail-safe disarm.',
+      inputSchema: {
+        type: 'object' as const,
+        additionalProperties: false,
+        required: ['leaseId'],
+        properties: {
+          leaseId: { type: 'string' },
+          ttlMs: { type: 'number' },
+          owner: { type: 'string' },
+          threadId: { type: 'string' },
+        },
+      },
+      outputSchema: { type: 'object' as const },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        title: 'Renew Pinout lease',
+      },
+    },
+    {
       name: releaseLeaseToolName,
       description: 'Release a lease owned by the calling principal.',
       inputSchema: {
         type: 'object' as const,
         additionalProperties: false,
         required: ['leaseId'],
-        properties: { leaseId: { type: 'string' } },
+        properties: {
+          leaseId: { type: 'string' },
+          owner: { type: 'string' },
+          threadId: { type: 'string' },
+        },
       },
       outputSchema: { type: 'object' as const },
       annotations: {
@@ -322,6 +357,28 @@ export function controlPlaneTools() {
         destructiveHint: false,
         idempotentHint: true,
         title: 'Release Pinout lease',
+      },
+    },
+    {
+      name: heartbeatToolName,
+      description:
+        'Send a deadman heartbeat for a device (`POST /v1/devices/:id/heartbeat`). While armed, the host must keep heartbeats fresh or the daemon fail-safe will disarm and apply safeState (firmware watchdog remains the last line of defense if the host freezes).',
+      inputSchema: {
+        type: 'object' as const,
+        additionalProperties: false,
+        required: ['deviceId'],
+        properties: {
+          deviceId: { type: 'string' },
+          owner: { type: 'string' },
+          threadId: { type: 'string' },
+        },
+      },
+      outputSchema: { type: 'object' as const },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        title: 'Pinout deadman heartbeat',
       },
     },
     {

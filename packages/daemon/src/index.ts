@@ -6,6 +6,7 @@ export {
   type DaemonEvent,
 } from './httpServer.js';
 export { startDaemon, type RunningDaemon } from './start.js';
+export { FailSafeMonitor, type FailSafeMonitorOptions, type ArmedDeviceRecord } from './failSafeMonitor.js';
 export { AwarenessService, type AwarenessServiceOptions } from './awareness/service.js';
 export {
   AwarenessDiscoveryScheduler,

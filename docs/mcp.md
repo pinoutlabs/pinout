@@ -6,9 +6,14 @@ The per-device tool examples below document compatibility mode (`PINOUT_MCP_DYNA
 
 `pinout-mcp` connects to the local `pinoutd` authority at
 `PINOUT_DAEMON_URL` (default `http://127.0.0.1:8787`) and uses
-`PINOUT_TOKEN`. Set `PINOUT_OWNER` to a stable agent principal. Embedded mode
+`PINOUT_TOKEN`. Set `PINOUT_OWNER` to a stable agent principal, or pass
+`owner` / `threadId` per tool call for concurrent agent threads. Embedded mode
 is limited to hardware-free development and requires
 `PINOUT_MCP_EMBEDDED=1`.
+
+For AWS Infinity (RAP async pause) setup, lease renew/heartbeat tools, bounded
+`pinout__invoke` waits (`OPERATION_PENDING`), and Streamable HTTP options, see
+[Infinity + MCP](infinity.md).
 
 The executable transcript is
 `packages/mcp/tests/daemonE2E.test.ts`. Against the simulated relay it proves

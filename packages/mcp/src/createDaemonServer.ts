@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { AwarenessClient } from '@pinout/awareness';
@@ -16,6 +17,9 @@ import {
 import { controlPlaneTools, formatToolError, success, toMcpTool } from './createRuntimeServer.js';
 
 const toolsCacheTtlMs = 2000;
+/** Default max time pinout__invoke blocks waiting for a terminal result. */
+export const DEFAULT_INVOKE_WAIT_MS = 10_000;
+const operationPollIntervalMs = 50;
 
 export interface DaemonMcpServerOptions {
   baseUrl?: string;
@@ -29,6 +33,11 @@ export interface DaemonMcpServerOptions {
    * Default true for daemon-backed servers.
    */
   awarenessWatch?: boolean;
+  /**
+   * Max milliseconds `pinout__invoke` (waitFor=result) will block before returning
+   * OPERATION_PENDING. Default 10_000. Aligns the client fetch timeout with this budget.
+   */
+  invokeWaitMs?: number;
 }
 
 interface DaemonDeviceSummary {
@@ -50,6 +59,7 @@ interface DaemonJsonResult {
 /** MCP client for the single authoritative pinoutd process. */
 export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Server {
   const client = new DaemonClient(options);
+  const invokeWaitMs = options.invokeWaitMs ?? DEFAULT_INVOKE_WAIT_MS;
   const baseUrl = (options.baseUrl ?? 'http://127.0.0.1:8787').replace(/\/$/, '');
   const awarenessClient = new AwarenessClient({
     baseUrl,
@@ -123,11 +133,13 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
             throw structured('VALIDATION_ERROR', 'args must be an object.');
           client.invalidateToolsCache();
           return success(
-            await client.call('POST', `/v1/devices/${segment(required(args, 'deviceId'))}/invoke`, {
+            await invokeWithBoundedWait(client, {
+              deviceId: required(args, 'deviceId'),
               capability: required(args, 'capability'),
-              args: args.args,
+              args: args.args as Record<string, unknown>,
               owner: client.ownerFor(args),
               waitFor: args.waitFor === 'accepted' ? 'accepted' : 'result',
+              invokeWaitMs,
               ...(typeof args.idempotencyKey === 'string'
                 ? { idempotencyKey: args.idempotencyKey }
                 : {}),
@@ -170,6 +182,16 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
               scope: { kind: 'device', deviceId: required(args, 'deviceId') },
             }),
           );
+        case 'pinout__renew_lease': {
+          client.invalidateToolsCache();
+          const owner = client.ownerFor(args);
+          return success(
+            await client.call('POST', `/v1/leases/${segment(required(args, 'leaseId'))}/renew`, {
+              owner,
+              ...(typeof args.ttlMs === 'number' ? { ttlMs: args.ttlMs } : {}),
+            }),
+          );
+        }
         case 'pinout__release_lease': {
           client.invalidateToolsCache();
           const owner = client.ownerFor(args);
@@ -181,6 +203,16 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
             ),
           );
         }
+        case 'pinout__heartbeat':
+          return success(
+            await client.call(
+              'POST',
+              `/v1/devices/${segment(required(args, 'deviceId'))}/heartbeat`,
+              {
+                actor: client.ownerFor(args),
+              },
+            ),
+          );
         case 'pinout__dry_run':
           return success(
             await client.call('POST', `/v1/devices/${segment(required(args, 'deviceId'))}/invoke`, {
@@ -209,13 +241,17 @@ export function createDaemonMcpServer(options: DaemonMcpServerOptions = {}): Ser
       const control = objectArg(args._pinout);
       const capabilityArgs = { ...args };
       delete capabilityArgs._pinout;
+      const physicalFromTool = resolved.physicalOutput;
       client.invalidateToolsCache();
       return success(
-        await client.call('POST', `/v1/devices/${segment(resolved.deviceId)}/invoke`, {
+        await invokeWithBoundedWait(client, {
+          deviceId: resolved.deviceId,
           capability: resolved.capability,
           args: capabilityArgs,
-          owner: client.ownerFor(control),
+          owner: client.ownerFor({ ...control, ...capabilityArgs }),
           waitFor: control.waitFor === 'accepted' ? 'accepted' : 'result',
+          invokeWaitMs,
+          ...(physicalFromTool !== undefined ? { physicalOutput: physicalFromTool } : {}),
           ...(typeof control.idempotencyKey === 'string'
             ? { idempotencyKey: control.idempotencyKey }
             : {}),
@@ -240,12 +276,25 @@ class DaemonClient {
   constructor(options: DaemonMcpServerOptions) {
     this.baseUrl = (options.baseUrl ?? 'http://127.0.0.1:8787').replace(/\/$/, '');
     this.token = options.token;
-    this.owner = options.owner ?? 'mcp-stdio';
+    this.owner = options.owner ?? process.env.PINOUT_OWNER ?? 'mcp-stdio';
     // Reuse one fetch so Node's undici dispatcher can keep-alive to pinoutd.
     this.fetchFn = options.fetch ?? globalThis.fetch;
   }
 
-  ownerFor(_args: Record<string, unknown>): string {
+  /**
+   * Resolve the lease/idempotency owner for a call.
+   * Preference: explicit `owner` arg → `threadId` / `ownerThreadId` → default owner.
+   * This lets Infinity (and similar runtimes) isolate per-thread principals without
+   * sharing one global PINOUT_OWNER across concurrent agent threads.
+   */
+  ownerFor(args: Record<string, unknown>): string {
+    if (typeof args.owner === 'string' && args.owner.length > 0) return args.owner;
+    if (typeof args.threadId === 'string' && args.threadId.length > 0) {
+      return `${this.owner}:${args.threadId}`;
+    }
+    if (typeof args.ownerThreadId === 'string' && args.ownerThreadId.length > 0) {
+      return `${this.owner}:${args.ownerThreadId}`;
+    }
     return this.owner;
   }
 
@@ -257,8 +306,9 @@ class DaemonClient {
     method: 'GET' | 'POST' | 'DELETE',
     path: string,
     body?: Record<string, unknown>,
+    callOptions?: { fetchTimeoutMs?: number },
   ): Promise<Record<string, unknown>> {
-    const result = await this.request(method, path, body);
+    const result = await this.request(method, path, body, callOptions?.fetchTimeoutMs);
     if (!result.response.ok) {
       throw daemonHttpError(result.response.status, result.payload);
     }
@@ -385,16 +435,18 @@ class DaemonClient {
     method: 'GET' | 'POST' | 'DELETE',
     path: string,
     body?: Record<string, unknown>,
+    fetchTimeoutMs = 30_000,
   ): Promise<DaemonJsonResult> {
     const headers: Record<string, string> = {};
     if (this.token) headers.authorization = `Bearer ${this.token}`;
     if (body !== undefined) headers['content-type'] = 'application/json';
+    const timeoutMs = Math.max(1_000, fetchTimeoutMs);
     let response: Response;
     try {
       response = await this.fetchFn(`${this.baseUrl}${path}`, {
         method,
         headers,
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(timeoutMs),
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
     } catch (networkError) {
@@ -413,17 +465,205 @@ class DaemonClient {
   }
 }
 
+interface InvokeBoundedOptions {
+  deviceId: string;
+  capability: string;
+  args: Record<string, unknown>;
+  owner: string;
+  waitFor: 'result' | 'accepted';
+  invokeWaitMs: number;
+  idempotencyKey?: string;
+  timeoutMs?: number;
+  /** When known (e.g. from dynamic tool annotations), skip the device GET. */
+  physicalOutput?: boolean;
+}
+
+/**
+ * Accept the operation immediately, then optionally wait up to `invokeWaitMs`
+ * for a terminal status. Long-running work returns OPERATION_PENDING with
+ * poll/cancel instructions instead of hanging until the fetch aborts as
+ * DAEMON_UNAVAILABLE (critical when Infinity pauses the agent mid-tool-call).
+ */
+async function invokeWithBoundedWait(
+  client: DaemonClient,
+  options: InvokeBoundedOptions,
+): Promise<Record<string, unknown>> {
+  // Prefer a caller key; otherwise generate only when we already know the
+  // capability is a physical output (dynamic tool annotations). Otherwise let
+  // the daemon auto-generate so we never N+1 GET /v1/devices/:id on invoke.
+  let idempotencyKey = options.idempotencyKey;
+  let idempotencyKeyGenerated = false;
+  if (!idempotencyKey && options.physicalOutput === true) {
+    idempotencyKey = deterministicIdempotencyKey(
+      options.deviceId,
+      options.capability,
+      options.args,
+      options.owner,
+    );
+    idempotencyKeyGenerated = true;
+  }
+
+  const waitBudgetMs = Math.max(1, options.invokeWaitMs);
+  const operationTimeoutMs = options.timeoutMs;
+  // Fetch timeout must cover the accept round-trip; keep it aligned with the
+  // caller's timeoutMs when provided, otherwise the wait budget (+slack).
+  const fetchTimeoutMs =
+    typeof operationTimeoutMs === 'number'
+      ? Math.max(operationTimeoutMs + 1_000, waitBudgetMs + 1_000)
+      : waitBudgetMs + 5_000;
+
+  const accepted = await client.call(
+    'POST',
+    `/v1/devices/${segment(options.deviceId)}/invoke`,
+    {
+      capability: options.capability,
+      args: options.args,
+      owner: options.owner,
+      waitFor: 'accepted',
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+      ...(typeof operationTimeoutMs === 'number' ? { timeoutMs: operationTimeoutMs } : {}),
+    },
+    { fetchTimeoutMs },
+  );
+
+  const operation = objectArg(accepted.operation);
+  const operationId = typeof operation.id === 'string' ? operation.id : undefined;
+  const keyMeta = {
+    ...(typeof accepted.idempotencyKey === 'string'
+      ? { idempotencyKey: accepted.idempotencyKey }
+      : idempotencyKey
+        ? { idempotencyKey }
+        : {}),
+    ...(idempotencyKeyGenerated || accepted.idempotencyKeyGenerated
+      ? { idempotencyKeyGenerated: true }
+      : {}),
+    ...(accepted.deduped === true ? { deduped: true } : {}),
+  };
+
+  if (options.waitFor === 'accepted' || !operationId) {
+    return { ...accepted, ...keyMeta };
+  }
+
+  if (isTerminalOperationStatus(operation.status)) {
+    throwIfOperationFailed(operation, keyMeta);
+    return { ...accepted, ...keyMeta };
+  }
+
+  const deadline = Date.now() + waitBudgetMs;
+  let latest: Record<string, unknown> = accepted;
+  while (Date.now() < deadline) {
+    await sleep(operationPollIntervalMs);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    const statusPayload = await client.call(
+      'GET',
+      `/v1/operations/${segment(operationId)}`,
+      undefined,
+      { fetchTimeoutMs: Math.max(1_000, remaining + 500) },
+    );
+    latest = statusPayload;
+    const snapshot = objectArg(statusPayload.operation);
+    if (isTerminalOperationStatus(snapshot.status)) {
+      throwIfOperationFailed(snapshot, keyMeta);
+      return {
+        operation: snapshot,
+        ...(snapshot.result !== undefined
+          ? { result: snapshot.result }
+          : statusPayload.result !== undefined
+            ? { result: statusPayload.result }
+            : {}),
+        ...keyMeta,
+      };
+    }
+  }
+
+  const pendingOperation = objectArg(latest.operation);
+  return {
+    code: 'OPERATION_PENDING',
+    message:
+      'Operation accepted but did not reach a terminal state within the invoke wait budget. Poll pinout__operation_status or cancel with pinout__cancel_operation; retry with the same idempotencyKey to observe the original operation without re-actuating.',
+    operationId,
+    operation: Object.keys(pendingOperation).length > 0 ? pendingOperation : operation,
+    waitMs: waitBudgetMs,
+    poll: { tool: 'pinout__operation_status', arguments: { operationId } },
+    cancel: { tool: 'pinout__cancel_operation', arguments: { operationId } },
+    retryable: true,
+    ...keyMeta,
+  };
+}
+
+function isTerminalOperationStatus(status: unknown): boolean {
+  return (
+    status === 'completed' ||
+    status === 'failed' ||
+    status === 'cancelled' ||
+    status === 'timed_out' ||
+    status === 'rejected'
+  );
+}
+
+function throwIfOperationFailed(
+  snapshot: Record<string, unknown>,
+  keyMeta: Record<string, unknown>,
+): void {
+  if (snapshot.status === 'completed') return;
+  const error = objectArg(snapshot.error);
+  throw structured(
+    typeof error.code === 'string' ? error.code : `OPERATION_${String(snapshot.status).toUpperCase()}`,
+    typeof error.message === 'string'
+      ? error.message
+      : `Operation ended with status '${String(snapshot.status)}'.`,
+    {
+      ...error,
+      operationId: snapshot.id,
+      status: snapshot.status,
+      ...keyMeta,
+    },
+  );
+}
+
+function deterministicIdempotencyKey(
+  deviceId: string,
+  capability: string,
+  args: Record<string, unknown>,
+  owner: string,
+): string {
+  const payload = stableStringify({ deviceId, capability, args, owner });
+  return `auto-${createHash('sha256').update(payload).digest('hex').slice(0, 32)}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
+  }
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function resolveCapabilityTarget(
   client: DaemonClient,
   mcpName: string,
-): Promise<{ deviceId: string; capability: string } | null> {
+): Promise<{ deviceId: string; capability: string; physicalOutput?: boolean } | null> {
+  // Prefer parsing the static MCP name so capability invokes do not N+1 GET devices.
   const parsed = parseMcpToolName(mcpName);
   if (parsed) {
     return parsed;
   }
   const tool = (await client.runtimeTools()).find((candidate) => candidate.mcpName === mcpName);
   if (!tool) return null;
-  return { deviceId: tool.deviceId, capability: tool.capability };
+  return {
+    deviceId: tool.deviceId,
+    capability: tool.capability,
+    physicalOutput: tool.annotations.physicalOutput,
+  };
 }
 
 function toolsFromDaemonPayload(payload: Record<string, unknown>): RuntimeAgentTool[] | null {
@@ -549,7 +789,7 @@ function structured(code: string, message: string, details?: Record<string, unkn
 const staticInvokeTool = {
   name: 'pinout__invoke',
   description:
-    'Invoke a supported capability on a currently connected device. First list and describe devices for capability schemas and board pin maps. Pins are numeric: Uno A0-A5 = 14-19. Acquire a lease, explicitly sys.arm before output, then gpio.write. Never guess wiring. Acknowledgment/readback is not proof an LED physically illuminated. Unsupported capabilities and pins are rejected by the runtime.',
+    'Invoke a supported capability on a currently connected device. First list and describe devices for capability schemas and board pin maps. Pins are numeric: Uno A0-A5 = 14-19. Acquire a lease, explicitly sys.arm before output, then gpio.write. Never guess wiring. Acknowledgment/readback is not proof an LED physically illuminated. Unsupported capabilities and pins are rejected by the runtime. waitFor=result blocks at most ~10s (configurable) then returns OPERATION_PENDING with operationId — poll pinout__operation_status or cancel with pinout__cancel_operation. Physical outputs auto-generate a deterministic idempotencyKey when omitted so retries after an agent pause never double-actuate.',
   inputSchema: {
     type: 'object' as const,
     additionalProperties: false,
@@ -561,6 +801,22 @@ const staticInvokeTool = {
       idempotencyKey: { type: 'string' },
       timeoutMs: { type: 'integer', minimum: 1 },
       waitFor: { type: 'string', enum: ['result', 'accepted'] },
+      owner: {
+        type: 'string',
+        description: 'Optional per-call owner / principal (overrides PINOUT_OWNER).',
+      },
+      threadId: {
+        type: 'string',
+        description: 'Optional agent thread id; scopes owner as <defaultOwner>:<threadId>.',
+      },
     },
+  },
+  annotations: {
+    readOnlyHint: false,
+    // Conservative: pinout__invoke can actuate physical outputs.
+    destructiveHint: true,
+    // Retries are only safe when the same idempotencyKey is reused.
+    idempotentHint: false,
+    title: 'Invoke Pinout capability',
   },
 };
