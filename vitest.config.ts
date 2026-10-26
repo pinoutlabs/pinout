@@ -48,6 +48,7 @@ export default defineConfig({
       'packages/*/tests/**/*.test.ts',
       'examples/external-module/*/test/**/*.test.ts',
       'examples/awareness-connector-demo/test/**/*.test.ts',
+      'benchmarks/agent-task-time/tests/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',
