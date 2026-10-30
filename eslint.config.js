@@ -21,7 +21,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
-    files: ['packages/module-host/**/*.mjs', 'packages/rap/**/*.mjs'],
+    files: ['packages/module-host/**/*.mjs', 'packages/rap/**/*.mjs', 'packages/daemon/**/*.mjs'],
     languageOptions: {
       globals: {
         process: 'readonly',
