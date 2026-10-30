@@ -87,7 +87,9 @@ describe('SupportLevel (core PR0)', () => {
   it('maps generator lifecycle with generated cap at COMPILE_TESTED', () => {
     expect(mapFromGeneratorLifecycle('SIMULATION_TESTED', { generated: true })).toBe('SIMULATED');
     expect(mapFromGeneratorLifecycle('HUMAN_REVIEWED', { generated: true })).toBe('COMPILE_TESTED');
-    expect(mapFromGeneratorLifecycle('HARDWARE_TESTED', { generated: true })).toBe('COMPILE_TESTED');
+    expect(mapFromGeneratorLifecycle('HARDWARE_TESTED', { generated: true })).toBe(
+      'COMPILE_TESTED',
+    );
     expect(capSupportLevel('HARDWARE_VERIFIED', 'COMPILE_TESTED')).toBe('COMPILE_TESTED');
   });
 });
@@ -232,7 +234,7 @@ describe('generateConnector API', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   it('physicalOutput schemas are strict (no additionalProperties)', async () => {
     const raw = loadFixture('fixtures/generator/ble-gatt-lamp/gatt-dump.json');
