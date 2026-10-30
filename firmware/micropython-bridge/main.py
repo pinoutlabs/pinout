@@ -618,6 +618,11 @@ def main():
     if HARDWARE and TRANSPORT == "uart":
         run_uart(bridge)
     else:
+        # A named hardware profile announces its identity before serving USB CDC.
+        if HARDWARE and BOARD_ID:
+            ready = {"v": PROTOCOL_VERSION, "event": "ready", "payload": bridge.sys_hello({})}
+            sys.stdout.write(json.dumps(ready) + "\n")
+            sys.stdout.flush()
         # MicroPython USB CDC and host validation both expose stdin/stdout.
         run_stdio(bridge)
 
