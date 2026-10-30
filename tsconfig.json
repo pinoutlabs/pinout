@@ -41,6 +41,9 @@
       "path": "packages/protocols-mqtt"
     },
     {
+      "path": "packages/protocols-ur"
+    },
+    {
       "path": "packages/ros2-sidecar"
     },
     {
