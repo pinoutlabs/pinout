@@ -8,8 +8,25 @@ export {
 } from './capabilities.js';
 export { FakeRosActionServer } from './fakeRosActionServer.js';
 export type { FakeRosActionServerOptions } from './fakeRosActionServer.js';
-export { RclnodejsActionTransport } from './rclnodejsTransport.js';
-export type { RclnodejsTransportOptions } from './rclnodejsTransport.js';
+export {
+  createRclnodejsTransport,
+  defaultFeedbackMapper,
+  defaultRclnodejsLoader,
+  RclnodejsActionTransport,
+  RCLNODEJS_DEFAULT_ACTION_TOPIC,
+  RCLNODEJS_DEFAULT_ACTION_TYPE,
+  RCLNODEJS_DEFAULT_NODE_NAME,
+} from './rclnodejsTransport.js';
+export type {
+  RclnodejsActionClientLike,
+  RclnodejsDiagnostic,
+  RclnodejsFeedbackMapper,
+  RclnodejsGoalHandleLike,
+  RclnodejsLoader,
+  RclnodejsModuleLike,
+  RclnodejsNodeLike,
+  RclnodejsTransportOptions,
+} from './rclnodejsTransport.js';
 export {
   createRos2SidecarBackend,
   defaultAllowedFrames,
